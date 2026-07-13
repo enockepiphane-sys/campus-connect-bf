@@ -63,12 +63,12 @@ function Page() {
       </p>
 
       {status === "ok" && (
-        <div className="mb-6 rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-200">
+        <div className="mb-6 rounded-lg border border-primary/30 bg-primary-soft p-4 text-primary">
           Votre demande a bien été envoyée. Merci !
         </div>
       )}
       {error && (
-        <div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 p-4 text-red-200">
+        <div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">
           {error}
         </div>
       )}
@@ -79,14 +79,14 @@ function Page() {
         <Field label="Email du contact" name="email_contact" type="email" required />
         <Field label="Téléphone (facultatif)" name="telephone_contact" />
         <div>
-          <label className="mb-1 block text-sm font-medium text-white/80">
+          <label className="mb-1 block text-sm font-medium text-foreground/80">
             Message (facultatif)
           </label>
           <textarea
             name="message"
             rows={4}
             maxLength={2000}
-            className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-emerald-400"
+            className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
           />
         </div>
         <button
@@ -114,15 +114,15 @@ function Field({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-white/80">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label className="mb-1 block text-sm font-medium text-foreground/80">
+        {label} {required && <span className="text-destructive">*</span>}
       </label>
       <input
         name={name}
         type={type}
         required={required}
         maxLength={250}
-        className="w-full rounded-lg border border-white/15 bg-black/30 px-3 py-2 text-white outline-none focus:border-emerald-400"
+        className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
       />
     </div>
   );

@@ -45,6 +45,11 @@ function Page() {
         niveau de la base de données. Les administrateurs ne peuvent pas
         consulter les données d'un établissement autre que le leur.
       </p>
+
+      <div className="mt-10 border-t border-border pt-6 text-center">
+        <p className="text-base font-semibold text-foreground">SWE Social Service</p>
+        <p className="mt-1 text-xs text-muted-foreground">© W.E. Epiphane Saouadogo</p>
+      </div>
     </PageShell>
   );
 }

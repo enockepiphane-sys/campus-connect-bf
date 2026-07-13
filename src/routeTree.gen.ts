@@ -21,6 +21,8 @@ import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexi
 import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
 import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
 import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
+import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiSuperAdminEnsureRoleRouteImport } from './routes/api.super-admin.ensure-role'
 
 const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
@@ -83,6 +85,16 @@ const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
   path: '/super-admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedEtudiantRoute = AuthenticatedEtudiantRouteImport.update({
+  id: '/etudiant',
+  path: '/etudiant',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiSuperAdminEnsureRoleRoute = ApiSuperAdminEnsureRoleRouteImport.update({
   id: '/api/super-admin/ensure-role',
   path: '/api/super-admin/ensure-role',
@@ -96,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/etudiant': typeof AuthenticatedEtudiantRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -110,6 +124,8 @@ export interface FileRoutesByTo {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/etudiant': typeof AuthenticatedEtudiantRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -126,6 +142,8 @@ export interface FileRoutesById {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -142,6 +160,8 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/super-admin-acces'
+    | '/admin'
+    | '/etudiant'
     | '/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -156,6 +176,8 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/super-admin-acces'
+    | '/admin'
+    | '/etudiant'
     | '/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -171,6 +193,8 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/super-admin-acces'
+    | '/_authenticated/admin'
+    | '/_authenticated/etudiant'
     | '/_authenticated/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -280,6 +304,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/etudiant': {
+      id: '/_authenticated/etudiant'
+      path: '/etudiant'
+      fullPath: '/etudiant'
+      preLoaderRoute: typeof AuthenticatedEtudiantRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/super-admin/ensure-role': {
       id: '/api/super-admin/ensure-role'
       path: '/api/super-admin/ensure-role'
@@ -291,10 +329,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedEtudiantRoute: typeof AuthenticatedEtudiantRoute
   AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedEtudiantRoute: AuthenticatedEtudiantRoute,
   AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
 }
 

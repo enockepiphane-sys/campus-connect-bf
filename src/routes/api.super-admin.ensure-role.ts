@@ -38,9 +38,17 @@ export const Route = createFileRoute("/api/super-admin/ensure-role")({
         if (!sa.user_id) {
           await supabaseAdmin.from("super_admins").update({ user_id: user.id }).eq("id", sa.id);
         }
-        await supabaseAdmin
+        const { data: existing } = await supabaseAdmin
           .from("user_roles")
-          .upsert({ user_id: user.id, role: "super_admin" }, { onConflict: "user_id,role" });
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("role", "super_admin")
+          .maybeSingle();
+        if (!existing) {
+          await supabaseAdmin
+            .from("user_roles")
+            .insert({ user_id: user.id, role: "super_admin" });
+        }
 
         return Response.json({ ok: true });
       },

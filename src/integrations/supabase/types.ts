@@ -62,6 +62,44 @@ export type Database = {
           },
         ]
       }
+      annonces: {
+        Row: {
+          contenu: string
+          created_at: string
+          created_by: string | null
+          id: string
+          niveau_id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          contenu: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          niveau_id: string
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          contenu?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          niveau_id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annonces_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandes_partenariat: {
         Row: {
           created_at: string
@@ -94,6 +132,53 @@ export type Database = {
           telephone_contact?: string | null
         }
         Relationships: []
+      }
+      emplois_du_temps: {
+        Row: {
+          created_at: string
+          enseignant: string | null
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour_semaine: number
+          matiere: string
+          niveau_id: string
+          salle: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enseignant?: string | null
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour_semaine: number
+          matiere: string
+          niveau_id: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enseignant?: string | null
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour_semaine?: number
+          matiere?: string
+          niveau_id?: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emplois_du_temps_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       etablissements: {
         Row: {
@@ -130,6 +215,268 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      etudiants_pre_inscrits: {
+        Row: {
+          created_at: string
+          date_naissance: string
+          email: string
+          etablissement_id: string
+          filiere_id: string
+          id: string
+          inscrit: boolean
+          niveau_id: string
+          nom_complet: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_naissance: string
+          email: string
+          etablissement_id: string
+          filiere_id: string
+          id?: string
+          inscrit?: boolean
+          niveau_id: string
+          nom_complet: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_naissance?: string
+          email?: string
+          etablissement_id?: string
+          filiere_id?: string
+          id?: string
+          inscrit?: boolean
+          niveau_id?: string
+          nom_complet?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etudiants_pre_inscrits_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etudiants_pre_inscrits_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etudiants_pre_inscrits_filiere_id_fkey"
+            columns: ["filiere_id"]
+            isOneToOne: false
+            referencedRelation: "filieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etudiants_pre_inscrits_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evenements: {
+        Row: {
+          created_at: string
+          date_evenement: string
+          description: string | null
+          id: string
+          lieu: string | null
+          niveau_id: string
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_evenement: string
+          description?: string | null
+          id?: string
+          lieu?: string | null
+          niveau_id: string
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_evenement?: string
+          description?: string | null
+          id?: string
+          lieu?: string | null
+          niveau_id?: string
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evenements_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      filieres: {
+        Row: {
+          created_at: string
+          etablissement_id: string
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          etablissement_id: string
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          etablissement_id?: string
+          id?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filieres_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "filieres_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matieres: {
+        Row: {
+          coefficient: number
+          created_at: string
+          id: string
+          niveau_id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          coefficient?: number
+          created_at?: string
+          id?: string
+          niveau_id: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          coefficient?: number
+          created_at?: string
+          id?: string
+          niveau_id?: string
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matieres_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      niveaux: {
+        Row: {
+          created_at: string
+          filiere_id: string
+          id: string
+          nom: string
+          ordre: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          filiere_id: string
+          id?: string
+          nom: string
+          ordre?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          filiere_id?: string
+          id?: string
+          nom?: string
+          ordre?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "niveaux_filiere_id_fkey"
+            columns: ["filiere_id"]
+            isOneToOne: false
+            referencedRelation: "filieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          commentaire: string | null
+          created_at: string
+          etudiant_user_id: string
+          id: string
+          matiere_id: string
+          type_evaluation: string
+          updated_at: string
+          valeur: number
+        }
+        Insert: {
+          commentaire?: string | null
+          created_at?: string
+          etudiant_user_id: string
+          id?: string
+          matiere_id: string
+          type_evaluation?: string
+          updated_at?: string
+          valeur: number
+        }
+        Update: {
+          commentaire?: string | null
+          created_at?: string
+          etudiant_user_id?: string
+          id?: string
+          matiere_id?: string
+          type_evaluation?: string
+          updated_at?: string
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       super_admins: {
         Row: {
@@ -213,6 +560,16 @@ export type Database = {
       }
     }
     Functions: {
+      etablissement_of_admin: { Args: { _user_id: string }; Returns: string }
+      etablissement_of_niveau: { Args: { _niveau_id: string }; Returns: string }
+      finaliser_inscription_admin: {
+        Args: { _pre_autorisation_id: string }
+        Returns: undefined
+      }
+      finaliser_inscription_etudiant: {
+        Args: { _pre_inscription_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -220,7 +577,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin_of_etablissement: {
+        Args: { _etab_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_etudiant_of_niveau: {
+        Args: { _niveau_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      niveau_of_etudiant: { Args: { _user_id: string }; Returns: string }
       verifier_admin_pre_autorise: {
         Args: {
           _date_naissance: string
@@ -231,6 +597,20 @@ export type Database = {
         Returns: {
           deja_inscrit: boolean
           pre_autorisation_id: string
+        }[]
+      }
+      verifier_etudiant_pre_inscrit: {
+        Args: {
+          _date_naissance: string
+          _email: string
+          _etablissement_id: string
+          _filiere_id: string
+          _niveau_id: string
+          _nom_complet: string
+        }
+        Returns: {
+          deja_inscrit: boolean
+          pre_inscription_id: string
         }[]
       }
     }

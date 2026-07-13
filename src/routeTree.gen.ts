@@ -9,8 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
+import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
+import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
+import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
 import { Route as IndexRouteImport } from './routes/index'
 
+const PolitiqueConfidentialiteRoute =
+  PolitiqueConfidentialiteRouteImport.update({
+    id: '/politique-confidentialite',
+    path: '/politique-confidentialite',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
+  id: '/fonctionnalites',
+  path: '/fonctionnalites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
+  id: '/devenir-partenaire',
+  path: '/devenir-partenaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
+  id: '/cours-en-ligne',
+  path: '/cours-en-ligne',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +44,88 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/cours-en-ligne'
+    | '/devenir-partenaire'
+    | '/fonctionnalites'
+    | '/politique-confidentialite'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/cours-en-ligne'
+    | '/devenir-partenaire'
+    | '/fonctionnalites'
+    | '/politique-confidentialite'
+  id:
+    | '__root__'
+    | '/'
+    | '/cours-en-ligne'
+    | '/devenir-partenaire'
+    | '/fonctionnalites'
+    | '/politique-confidentialite'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CoursEnLigneRoute: typeof CoursEnLigneRoute
+  DevenirPartenaireRoute: typeof DevenirPartenaireRoute
+  FonctionnalitesRoute: typeof FonctionnalitesRoute
+  PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/politique-confidentialite': {
+      id: '/politique-confidentialite'
+      path: '/politique-confidentialite'
+      fullPath: '/politique-confidentialite'
+      preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fonctionnalites': {
+      id: '/fonctionnalites'
+      path: '/fonctionnalites'
+      fullPath: '/fonctionnalites'
+      preLoaderRoute: typeof FonctionnalitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devenir-partenaire': {
+      id: '/devenir-partenaire'
+      path: '/devenir-partenaire'
+      fullPath: '/devenir-partenaire'
+      preLoaderRoute: typeof DevenirPartenaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cours-en-ligne': {
+      id: '/cours-en-ligne'
+      path: '/cours-en-ligne'
+      fullPath: '/cours-en-ligne'
+      preLoaderRoute: typeof CoursEnLigneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +138,10 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CoursEnLigneRoute: CoursEnLigneRoute,
+  DevenirPartenaireRoute: DevenirPartenaireRoute,
+  FonctionnalitesRoute: FonctionnalitesRoute,
+  PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

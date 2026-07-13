@@ -9,16 +9,25 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscription'
 import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexion'
 import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
 import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
+import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
+import { Route as ApiSuperAdminEnsureRoleRouteImport } from './routes/api.super-admin.ensure-role'
 
+const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
+  id: '/super-admin-acces',
+  path: '/super-admin-acces',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PolitiqueConfidentialiteRoute =
   PolitiqueConfidentialiteRouteImport.update({
     id: '/politique-confidentialite',
@@ -38,6 +47,10 @@ const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
 const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
   id: '/cours-en-ligne',
   path: '/cours-en-ligne',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -65,6 +78,16 @@ const AdminConnexionRoute = AdminConnexionRouteImport.update({
   path: '/admin/connexion',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiSuperAdminEnsureRoleRoute = ApiSuperAdminEnsureRoleRouteImport.update({
+  id: '/api/super-admin/ensure-role',
+  path: '/api/super-admin/ensure-role',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,10 +95,13 @@ export interface FileRoutesByFullPath {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -83,22 +109,29 @@ export interface FileRoutesByTo {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,10 +141,13 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/super-admin-acces'
+    | '/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/super-admin/ensure-role'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -119,37 +155,54 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/super-admin-acces'
+    | '/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/super-admin/ensure-role'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/super-admin-acces'
+    | '/_authenticated/super-admin'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/super-admin/ensure-role'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
   EtudiantConnexionRoute: typeof EtudiantConnexionRoute
   EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
+  ApiSuperAdminEnsureRoleRoute: typeof ApiSuperAdminEnsureRoleRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/super-admin-acces': {
+      id: '/super-admin-acces'
+      path: '/super-admin-acces'
+      fullPath: '/super-admin-acces'
+      preLoaderRoute: typeof SuperAdminAccesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/politique-confidentialite': {
       id: '/politique-confidentialite'
       path: '/politique-confidentialite'
@@ -176,6 +229,13 @@ declare module '@tanstack/react-router' {
       path: '/cours-en-ligne'
       fullPath: '/cours-en-ligne'
       preLoaderRoute: typeof CoursEnLigneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -213,19 +273,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminConnexionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/super-admin/ensure-role': {
+      id: '/api/super-admin/ensure-role'
+      path: '/api/super-admin/ensure-role'
+      fullPath: '/api/super-admin/ensure-role'
+      preLoaderRoute: typeof ApiSuperAdminEnsureRoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,
   EtudiantConnexionRoute: EtudiantConnexionRoute,
   EtudiantInscriptionRoute: EtudiantInscriptionRoute,
+  ApiSuperAdminEnsureRoleRoute: ApiSuperAdminEnsureRoleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

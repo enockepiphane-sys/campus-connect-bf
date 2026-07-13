@@ -129,7 +129,7 @@ function EtablissementsPanel() {
 
       <form onSubmit={save} className="card-glass space-y-3 rounded-xl p-6">
         <h3 className="font-bold">{editing ? "Modifier" : "Ajouter"} un établissement</h3>
-        <Input label="Nom *" v={form.nom} on={(v) => setForm({ ...form, nom: v })} />
+        <Input label="Nom *" v={form.nom ?? ""} on={(v) => setForm({ ...form, nom: v })} />
         <Input label="Email" v={form.email ?? ""} on={(v) => setForm({ ...form, email: v })} />
         <Input label="Téléphone" v={form.telephone ?? ""} on={(v) => setForm({ ...form, telephone: v })} />
         <Input label="Adresse" v={form.adresse ?? ""} on={(v) => setForm({ ...form, adresse: v })} />

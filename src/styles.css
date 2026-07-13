@@ -4,18 +4,13 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * CampusLink — Design system
- * Palette inspirée du drapeau du Burkina Faso : vert profond, rouge vif, or.
- * Fond sombre avec rayures verticales vert/noir pour l'identité principale.
- */
-
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 16px);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -25,146 +20,172 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-terracotta: var(--terracotta);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-gold: var(--gold);
-  --color-bf-green: var(--bf-green);
-  --color-bf-red: var(--bf-red);
+  --color-surface: var(--surface);
 
-  --font-display: "Poppins", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --shadow-elegant: 0 20px 40px -20px color-mix(in oklab, var(--primary) 30%, transparent);
+  --shadow-card: 0 2px 8px -2px oklch(0 0 0 / 0.06), 0 8px 24px -12px oklch(0 0 0 / 0.08);
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  /* Base sombre */
-  --background: oklch(0.16 0.03 155);
-  --foreground: oklch(0.98 0.005 120);
+  --background: oklch(0.985 0.008 85);
+  --foreground: oklch(0.18 0.02 160);
 
-  --card: oklch(0.21 0.04 155);
-  --card-foreground: oklch(0.98 0.005 120);
+  --surface: oklch(1 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 160);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.02 160);
 
-  --popover: oklch(0.19 0.035 155);
-  --popover-foreground: oklch(0.98 0.005 120);
+  --primary: oklch(0.32 0.06 160);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --primary-soft: oklch(0.95 0.03 160);
 
-  /* Vert BF */
-  --primary: oklch(0.62 0.16 148);
-  --primary-foreground: oklch(0.12 0.02 155);
+  --secondary: oklch(0.94 0.02 85);
+  --secondary-foreground: oklch(0.25 0.03 160);
 
-  --secondary: oklch(0.26 0.04 155);
-  --secondary-foreground: oklch(0.98 0.005 120);
+  --muted: oklch(0.95 0.012 85);
+  --muted-foreground: oklch(0.48 0.02 160);
 
-  --muted: oklch(0.24 0.03 155);
-  --muted-foreground: oklch(0.72 0.02 150);
+  --accent: oklch(0.95 0.03 40);
+  --accent-foreground: oklch(0.35 0.12 40);
+  --terracotta: oklch(0.62 0.15 40);
 
-  /* Rouge BF (accent) */
-  --accent: oklch(0.62 0.22 25);
-  --accent-foreground: oklch(0.99 0.005 30);
+  --gold: oklch(0.78 0.14 82);
+  --gold-foreground: oklch(0.25 0.05 82);
 
-  --destructive: oklch(0.6 0.24 25);
-  --destructive-foreground: oklch(0.99 0.005 30);
+  --destructive: oklch(0.55 0.2 27);
+  --destructive-foreground: oklch(0.98 0.01 85);
 
-  --border: oklch(0.32 0.03 155 / 60%);
-  --input: oklch(0.26 0.03 155);
-  --ring: oklch(0.62 0.16 148);
+  --border: oklch(0.9 0.015 85);
+  --input: oklch(0.92 0.015 85);
+  --ring: oklch(0.32 0.06 160);
+}
 
-  --gold: oklch(0.86 0.16 92);
-  --bf-green: oklch(0.55 0.17 148);
-  --bf-red: oklch(0.58 0.22 25);
+.dark {
+  --background: oklch(0.16 0.02 160);
+  --foreground: oklch(0.96 0.01 85);
+  --surface: oklch(0.22 0.03 160);
+  --card: oklch(0.22 0.03 160);
+  --card-foreground: oklch(0.96 0.01 85);
+  --popover: oklch(0.22 0.03 160);
+  --popover-foreground: oklch(0.96 0.01 85);
+  --primary: oklch(0.75 0.12 160);
+  --primary-foreground: oklch(0.16 0.02 160);
+  --primary-soft: oklch(0.28 0.05 160);
+  --secondary: oklch(0.28 0.03 160);
+  --secondary-foreground: oklch(0.96 0.01 85);
+  --muted: oklch(0.26 0.02 160);
+  --muted-foreground: oklch(0.72 0.02 85);
+  --accent: oklch(0.35 0.08 40);
+  --accent-foreground: oklch(0.96 0.03 40);
+  --terracotta: oklch(0.72 0.15 40);
+  --gold: oklch(0.82 0.14 82);
+  --gold-foreground: oklch(0.2 0.05 82);
+  --destructive: oklch(0.62 0.2 27);
+  --destructive-foreground: oklch(0.96 0.01 85);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.75 0.12 160);
 }
 
 @layer base {
   * {
     border-color: var(--color-border);
   }
-  body {
+  html, body {
+    font-family: var(--font-sans);
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
-    min-height: 100vh;
+    font-feature-settings: "ss01", "cv11";
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
   }
 }
 
-/* ============ Utilitaires signature CampusLink ============ */
-
-/* Rayures verticales vert / noir façon drapeau BF stylisé */
-@utility bg-stripes-bf {
-  background-color: #0a1512;
-  background-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)),
-    repeating-linear-gradient(
-      90deg,
-      #0a1512 0px,
-      #0a1512 42px,
-      #0f3d2a 42px,
-      #0f3d2a 84px
-    );
-  background-attachment: fixed;
+@utility kente-stripe {
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--color-primary) 0 14px,
+    var(--color-gold) 14px 20px,
+    var(--color-terracotta) 20px 30px,
+    var(--color-primary) 30px 44px
+  );
 }
 
-@utility bg-stripes-bf-soft {
-  background-color: #0a1512;
+@utility glass-card {
+  background: color-mix(in oklab, var(--color-surface) 85%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in oklab, var(--color-border) 80%, transparent);
+}
+
+/* === Compat utilities (mapped to new palette) === */
+
+@utility bg-paper {
+  background-color: var(--color-background);
   background-image:
-    linear-gradient(180deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.92)),
-    repeating-linear-gradient(
-      90deg,
-      #0a1512 0px,
-      #0a1512 56px,
-      #123a29 56px,
-      #123a29 112px
-    );
+    radial-gradient(circle at 10% 0%, color-mix(in oklab, var(--color-primary-soft) 60%, transparent), transparent 45%),
+    radial-gradient(circle at 90% 100%, color-mix(in oklab, var(--color-accent) 55%, transparent), transparent 50%);
 }
 
 @utility text-gradient-bf {
-  background: linear-gradient(90deg, #16a34a 0%, #facc15 55%, #ef4444 100%);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-terracotta) 60%, var(--color-gold));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 
 @utility card-glass {
-  background-color: rgba(15, 30, 24, 0.72);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(120, 200, 160, 0.18);
-  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card);
 }
 
 @utility btn-bf-primary {
-  background: linear-gradient(135deg, #16a34a 0%, #0e7a37 100%);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
   font-weight: 600;
   border-radius: var(--radius);
   padding: 0.75rem 1.25rem;
   transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
-  box-shadow: 0 8px 24px -8px rgba(22, 163, 74, 0.55);
+  box-shadow: var(--shadow-elegant);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-}
-@utility btn-bf-primary-hover {
-  filter: brightness(1.08);
-  transform: translateY(-1px);
+
+  &:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
 }
 
 @utility btn-bf-outline {
   background: transparent;
-  color: #d1fae5;
-  border: 1px solid rgba(163, 230, 190, 0.4);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
   font-weight: 600;
   border-radius: var(--radius);
   padding: 0.7rem 1.2rem;
@@ -173,4 +194,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+
+  &:hover {
+    background: var(--color-primary-soft);
+    border-color: var(--color-primary);
+  }
 }

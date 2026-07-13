@@ -14,16 +14,228 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      admins_pre_autorises: {
+        Row: {
+          created_at: string
+          date_naissance: string
+          email: string
+          etablissement_id: string
+          id: string
+          inscrit: boolean
+          nom_complet: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_naissance: string
+          email: string
+          etablissement_id: string
+          id?: string
+          inscrit?: boolean
+          nom_complet: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_naissance?: string
+          email?: string
+          etablissement_id?: string
+          id?: string
+          inscrit?: boolean
+          nom_complet?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admins_pre_autorises_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admins_pre_autorises_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demandes_partenariat: {
+        Row: {
+          created_at: string
+          email_contact: string
+          id: string
+          message: string | null
+          nom_contact: string
+          nom_etablissement: string
+          statut: string
+          telephone_contact: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_contact: string
+          id?: string
+          message?: string | null
+          nom_contact: string
+          nom_etablissement: string
+          statut?: string
+          telephone_contact?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_contact?: string
+          id?: string
+          message?: string | null
+          nom_contact?: string
+          nom_etablissement?: string
+          statut?: string
+          telephone_contact?: string | null
+        }
+        Relationships: []
+      }
+      etablissements: {
+        Row: {
+          adresse: string | null
+          created_at: string
+          description: string | null
+          email: string | null
+          id: string
+          nom: string
+          statut: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          nom: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          id?: string
+          nom?: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      super_admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          etablissement_id: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          etablissement_id?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          etablissement_id?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_roles_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      etablissements_public: {
+        Row: {
+          id: string | null
+          nom: string | null
+          statut: string | null
+        }
+        Insert: {
+          id?: string | null
+          nom?: string | null
+          statut?: string | null
+        }
+        Update: {
+          id?: string | null
+          nom?: string | null
+          statut?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      verifier_admin_pre_autorise: {
+        Args: {
+          _date_naissance: string
+          _email: string
+          _etablissement_id: string
+          _nom_complet: string
+        }
+        Returns: {
+          deja_inscrit: boolean
+          pre_autorisation_id: string
+        }[]
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "super_admin" | "admin" | "etudiant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +362,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["super_admin", "admin", "etudiant"],
+    },
   },
 } as const

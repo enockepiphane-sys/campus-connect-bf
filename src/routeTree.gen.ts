@@ -14,6 +14,10 @@ import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscription'
+import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexion'
+import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
+import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
 
 const PolitiqueConfidentialiteRoute =
   PolitiqueConfidentialiteRouteImport.update({
@@ -41,6 +45,26 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EtudiantInscriptionRoute = EtudiantInscriptionRouteImport.update({
+  id: '/etudiant/inscription',
+  path: '/etudiant/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EtudiantConnexionRoute = EtudiantConnexionRouteImport.update({
+  id: '/etudiant/connexion',
+  path: '/etudiant/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminInscriptionRoute = AdminInscriptionRouteImport.update({
+  id: '/admin/inscription',
+  path: '/admin/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConnexionRoute = AdminConnexionRouteImport.update({
+  id: '/admin/connexion',
+  path: '/admin/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -48,6 +72,10 @@ export interface FileRoutesByFullPath {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/inscription': typeof AdminInscriptionRoute
+  '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/inscription': typeof EtudiantInscriptionRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -55,6 +83,10 @@ export interface FileRoutesByTo {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/inscription': typeof AdminInscriptionRoute
+  '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/inscription': typeof EtudiantInscriptionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -63,6 +95,10 @@ export interface FileRoutesById {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/inscription': typeof AdminInscriptionRoute
+  '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/inscription': typeof EtudiantInscriptionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -72,6 +108,10 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/admin/connexion'
+    | '/admin/inscription'
+    | '/etudiant/connexion'
+    | '/etudiant/inscription'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -79,6 +119,10 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/admin/connexion'
+    | '/admin/inscription'
+    | '/etudiant/connexion'
+    | '/etudiant/inscription'
   id:
     | '__root__'
     | '/'
@@ -86,6 +130,10 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
+    | '/admin/connexion'
+    | '/admin/inscription'
+    | '/etudiant/connexion'
+    | '/etudiant/inscription'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -94,6 +142,10 @@ export interface RootRouteChildren {
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  AdminConnexionRoute: typeof AdminConnexionRoute
+  AdminInscriptionRoute: typeof AdminInscriptionRoute
+  EtudiantConnexionRoute: typeof EtudiantConnexionRoute
+  EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -133,6 +185,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/etudiant/inscription': {
+      id: '/etudiant/inscription'
+      path: '/etudiant/inscription'
+      fullPath: '/etudiant/inscription'
+      preLoaderRoute: typeof EtudiantInscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/etudiant/connexion': {
+      id: '/etudiant/connexion'
+      path: '/etudiant/connexion'
+      fullPath: '/etudiant/connexion'
+      preLoaderRoute: typeof EtudiantConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/inscription': {
+      id: '/admin/inscription'
+      path: '/admin/inscription'
+      fullPath: '/admin/inscription'
+      preLoaderRoute: typeof AdminInscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/connexion': {
+      id: '/admin/connexion'
+      path: '/admin/connexion'
+      fullPath: '/admin/connexion'
+      preLoaderRoute: typeof AdminConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -142,6 +222,10 @@ const rootRouteChildren: RootRouteChildren = {
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  AdminConnexionRoute: AdminConnexionRoute,
+  AdminInscriptionRoute: AdminInscriptionRoute,
+  EtudiantConnexionRoute: EtudiantConnexionRoute,
+  EtudiantInscriptionRoute: EtudiantInscriptionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

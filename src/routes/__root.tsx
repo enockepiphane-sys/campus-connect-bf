@@ -77,14 +77,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "CampusLink — Campus du Burkina Faso" },
+      {
+        name: "description",
+        content:
+          "CampusLink : la plateforme dédiée aux universités et étudiants du Burkina Faso.",
+      },
+      { property: "og:title", content: "CampusLink — Campus du Burkina Faso" },
+      {
+        property: "og:description",
+        content:
+          "Plateforme dédiée aux universités et étudiants du Burkina Faso.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {

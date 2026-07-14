@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
+import { signOutAndGoHome } from "@/lib/auth";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, Building2, UserPlus, Mail } from "lucide-react";
 
@@ -19,9 +19,25 @@ function Dashboard() {
 
   useEffect(() => {
     (async () => {
-      const role = await resolveUserRole();
-      setAuthorized(role === "super_admin");
-      if (role !== "super_admin") window.location.href = "/";
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token || token.split(".").length !== 3) {
+        setAuthorized(false);
+        window.location.href = "/";
+        return;
+      }
+
+      const res = await fetch("/api/super-admin/ensure-role", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ access_token: token }),
+      });
+      const json = await res.json().catch(() => ({ ok: false }));
+      setAuthorized(Boolean(json.ok));
+      if (!json.ok) window.location.href = "/";
     })();
   }, []);
 

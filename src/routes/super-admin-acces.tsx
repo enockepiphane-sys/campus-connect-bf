@@ -43,11 +43,22 @@ function Page() {
     const { data: signInData, error: le } = await supabase.auth.signInWithPassword({ email, password });
     if (le) { setError(le.message); setStatus("idle"); return; }
 
-    const token = signInData.session?.access_token;
+    const token = signInData.session?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
+    if (!token || token.split(".").length !== 3) {
+      await supabase.auth.signOut();
+      setError("Session invalide. Reconnectez-vous.");
+      setStatus("idle");
+      return;
+    }
+
     // Vérifier que l'email est bien dans super_admins et grant du rôle si besoin
     const res = await fetch("/api/super-admin/ensure-role", {
       method: "POST",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ access_token: token }),
     });
     const json = await res.json().catch(() => ({ ok: false }));
     if (!json.ok) {

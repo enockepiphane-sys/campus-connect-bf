@@ -40,11 +40,15 @@ function Page() {
       return;
     }
 
-    const { error: le } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: signInData, error: le } = await supabase.auth.signInWithPassword({ email, password });
     if (le) { setError(le.message); setStatus("idle"); return; }
 
+    const token = signInData.session?.access_token;
     // Vérifier que l'email est bien dans super_admins et grant du rôle si besoin
-    const res = await fetch("/api/super-admin/ensure-role", { method: "POST" });
+    const res = await fetch("/api/super-admin/ensure-role", {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
     const json = await res.json().catch(() => ({ ok: false }));
     if (!json.ok) {
       await supabase.auth.signOut();

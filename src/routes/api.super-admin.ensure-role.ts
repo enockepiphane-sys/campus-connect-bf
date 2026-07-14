@@ -10,13 +10,15 @@ export const Route = createFileRoute("/api/super-admin/ensure-role")({
     handlers: {
       POST: async ({ request }) => {
         const authHeader = request.headers.get("authorization");
+        const body = await request.json().catch(() => null) as { access_token?: unknown } | null;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        if (!authHeader?.startsWith("Bearer ")) {
+        if (authHeader && !authHeader.startsWith("Bearer ")) {
           return Response.json({ ok: false, error: "invalid_auth_header" }, { status: 401 });
         }
 
-        const token = authHeader.slice("Bearer ".length).trim();
+        const bodyToken = typeof body?.access_token === "string" ? body.access_token.trim() : "";
+        const token = authHeader?.startsWith("Bearer ") ? authHeader.slice("Bearer ".length).trim() : bodyToken;
         if (!token || token.split(".").length !== 3) {
           return Response.json({ ok: false, error: "invalid_token_format" }, { status: 401 });
         }

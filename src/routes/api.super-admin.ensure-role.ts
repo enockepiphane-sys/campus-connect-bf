@@ -1,6 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Vérifie que l'utilisateur connecté est présent dans super_admins,
@@ -12,42 +10,88 @@ export const Route = createFileRoute("/api/super-admin/ensure-role")({
     handlers: {
       POST: async ({ request }) => {
         const authHeader = request.headers.get("authorization");
-        if (!authHeader) return Response.json({ ok: false, error: "no auth" }, { status: 401 });
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-        const supabaseUser = createClient<Database>(
-          process.env.SUPABASE_URL!,
-          process.env.SUPABASE_PUBLISHABLE_KEY!,
-          { auth: { persistSession: false }, global: { headers: { Authorization: authHeader } } },
-        );
+        if (!authHeader?.startsWith("Bearer ")) {
+          return Response.json({ ok: false, error: "invalid_auth_header" }, { status: 401 });
+        }
 
-        const { data: userData, error: ue } = await supabaseUser.auth.getUser();
-        if (ue || !userData.user) return Response.json({ ok: false }, { status: 401 });
+        const token = authHeader.slice("Bearer ".length).trim();
+        if (!token || token.split(".").length !== 3) {
+          return Response.json({ ok: false, error: "invalid_token_format" }, { status: 401 });
+        }
+
+        const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+        if (userError || !userData.user) {
+          return Response.json({ ok: false, error: "invalid_session" }, { status: 401 });
+        }
+
         const user = userData.user;
         const email = (user.email ?? "").trim().toLowerCase();
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-        const { data: sa } = await supabaseAdmin
+        const { data: saByUserId, error: saByUserIdError } = await supabaseAdmin
           .from("super_admins")
           .select("id, user_id")
-          .ilike("email", email)
+          .eq("user_id", user.id)
           .maybeSingle();
 
-        if (!sa) return Response.json({ ok: false, reason: "not_super_admin" });
-
-        if (!sa.user_id) {
-          await supabaseAdmin.from("super_admins").update({ user_id: user.id }).eq("id", sa.id);
+        if (saByUserIdError) {
+          return Response.json({ ok: false, error: "super_admin_lookup_failed" }, { status: 500 });
         }
-        const { data: existing } = await supabaseAdmin
+
+        let superAdmin = saByUserId;
+
+        if (!superAdmin && email) {
+          const { data: saByEmail, error: saByEmailError } = await supabaseAdmin
+            .from("super_admins")
+            .select("id, user_id")
+            .ilike("email", email)
+            .maybeSingle();
+
+          if (saByEmailError) {
+            return Response.json({ ok: false, error: "super_admin_lookup_failed" }, { status: 500 });
+          }
+
+          if (saByEmail?.user_id && saByEmail.user_id !== user.id) {
+            return Response.json({ ok: false, reason: "user_id_mismatch" }, { status: 403 });
+          }
+
+          if (saByEmail && !saByEmail.user_id) {
+            const { error: linkError } = await supabaseAdmin
+              .from("super_admins")
+              .update({ user_id: user.id })
+              .eq("id", saByEmail.id);
+            if (linkError) {
+              return Response.json({ ok: false, error: "super_admin_link_failed" }, { status: 500 });
+            }
+            superAdmin = { ...saByEmail, user_id: user.id };
+          } else {
+            superAdmin = saByEmail;
+          }
+        }
+
+        if (!superAdmin || superAdmin.user_id !== user.id) {
+          return Response.json({ ok: false, reason: "not_super_admin" }, { status: 403 });
+        }
+
+        const { data: existing, error: roleLookupError } = await supabaseAdmin
           .from("user_roles")
           .select("id")
           .eq("user_id", user.id)
           .eq("role", "super_admin")
           .maybeSingle();
+
+        if (roleLookupError) {
+          return Response.json({ ok: false, error: "role_lookup_failed" }, { status: 500 });
+        }
+
         if (!existing) {
-          await supabaseAdmin
+          const { error: insertRoleError } = await supabaseAdmin
             .from("user_roles")
             .insert({ user_id: user.id, role: "super_admin" });
+          if (insertRoleError) {
+            return Response.json({ ok: false, error: "role_grant_failed" }, { status: 500 });
+          }
         }
 
         return Response.json({ ok: true });

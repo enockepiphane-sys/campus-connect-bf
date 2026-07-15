@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
+import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/super-admin-acces")({
   component: Page,
@@ -28,46 +29,56 @@ function Page() {
     e.preventDefault();
     setError(null); setInfo(null); setStatus("loading");
 
-    if (mode === "signup") {
-      const { error: se } = await supabase.auth.signUp({
-        email, password,
-        options: { emailRedirectTo: `${window.location.origin}/super-admin-acces` },
-      });
-      if (se) { setError(se.message); setStatus("idle"); return; }
-      setInfo("Compte créé. Si la confirmation par email est activée, vérifiez votre boîte, puis connectez-vous.");
-      setMode("login");
-      setStatus("idle");
-      return;
-    }
+    try {
+      if (mode === "signup") {
+        const { error: se } = await withTimeout(
+          supabase.auth.signUp({
+            email, password,
+            options: { emailRedirectTo: `${window.location.origin}/super-admin-acces` },
+          }),
+          10000, "la création du compte",
+        );
+        if (se) { setError(humanizeAuthError(se)); setStatus("idle"); return; }
+        setInfo("Compte créé. Si la confirmation par email est activée, vérifiez votre boîte, puis connectez-vous.");
+        setMode("login");
+        setStatus("idle");
+        return;
+      }
 
-    const { data: signInData, error: le } = await supabase.auth.signInWithPassword({ email, password });
-    if (le) { setError(le.message); setStatus("idle"); return; }
+      const { data: signInData, error: le } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        10000, "la connexion",
+      );
+      if (le) { setError(humanizeAuthError(le)); setStatus("idle"); return; }
 
-    const token = signInData.session?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
-    if (!token || token.split(".").length !== 3) {
-      await supabase.auth.signOut();
-      setError("Session invalide. Reconnectez-vous.");
-      setStatus("idle");
-      return;
-    }
+      const token = signInData.session?.access_token ?? (await supabase.auth.getSession()).data.session?.access_token;
+      if (!token || token.split(".").length !== 3) {
+        await supabase.auth.signOut();
+        setError("Session invalide. Reconnectez-vous.");
+        setStatus("idle");
+        return;
+      }
 
-    // Vérifier que l'email est bien dans super_admins et grant du rôle si besoin
-    const res = await fetch("/api/super-admin/ensure-role", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ access_token: token }),
-    });
-    const json = await res.json().catch(() => ({ ok: false }));
-    if (!json.ok) {
-      await supabase.auth.signOut();
-      setError("Accès non autorisé.");
+      const res = await withTimeout(
+        fetch("/api/super-admin/ensure-role", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ access_token: token }),
+        }),
+        10000, "la vérification des droits",
+      );
+      const json = await res.json().catch(() => ({ ok: false }));
+      if (!json.ok) {
+        await supabase.auth.signOut();
+        setError("Accès non autorisé.");
+        setStatus("idle");
+        return;
+      }
+      navigate({ to: dashboardPathForRole("super_admin") });
+    } catch (err) {
+      setError(humanizeAuthError(err));
       setStatus("idle");
-      return;
     }
-    navigate({ to: dashboardPathForRole("super_admin") });
   }
 
   return (

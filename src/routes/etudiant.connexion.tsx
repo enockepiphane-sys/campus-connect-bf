@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
+import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/etudiant/connexion")({
   component: Page,
@@ -17,19 +18,27 @@ function Page() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(null); setBusy(true);
-    const { error: le } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    if (le) { setError(le.message); setBusy(false); return; }
-    const role = await resolveUserRole();
-    if (!role) {
-      await supabase.auth.signOut();
-      setError("Aucun compte étudiant trouvé. Inscrivez-vous d'abord.");
-      setBusy(false); return;
+    try {
+      const { error: le } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: email.trim(), password }),
+        10000, "la connexion",
+      );
+      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
+      const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
+      if (!role) {
+        await supabase.auth.signOut();
+        setError("Aucun compte étudiant trouvé. Inscrivez-vous d'abord.");
+        setBusy(false); return;
+      }
+      if (role !== "etudiant") {
+        setError(`Ce compte est ${role}, pas étudiant.`);
+        setBusy(false); return;
+      }
+      navigate({ to: dashboardPathForRole(role) });
+    } catch (err) {
+      setError(humanizeAuthError(err));
+      setBusy(false);
     }
-    if (role !== "etudiant") {
-      setError(`Ce compte est ${role}, pas étudiant.`);
-      setBusy(false); return;
-    }
-    navigate({ to: dashboardPathForRole(role) });
   }
 
   return (

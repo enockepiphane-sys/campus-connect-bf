@@ -481,20 +481,29 @@ export type Database = {
       super_admins: {
         Row: {
           created_at: string
+          date_naissance: string | null
           email: string
           id: string
+          inscrit: boolean
+          nom_complet: string | null
           user_id: string | null
         }
         Insert: {
           created_at?: string
+          date_naissance?: string | null
           email: string
           id?: string
+          inscrit?: boolean
+          nom_complet?: string | null
           user_id?: string | null
         }
         Update: {
           created_at?: string
+          date_naissance?: string | null
           email?: string
           id?: string
+          inscrit?: boolean
+          nom_complet?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -570,6 +579,10 @@ export type Database = {
         Args: { _pre_inscription_id: string }
         Returns: undefined
       }
+      finaliser_inscription_super_admin: {
+        Args: { _super_admin_id: string }
+        Returns: undefined
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -611,6 +624,13 @@ export type Database = {
         Returns: {
           deja_inscrit: boolean
           pre_inscription_id: string
+        }[]
+      }
+      verifier_super_admin_pre_autorise: {
+        Args: { _date_naissance: string; _email: string; _nom_complet: string }
+        Returns: {
+          deja_inscrit: boolean
+          super_admin_id: string
         }[]
       }
     }

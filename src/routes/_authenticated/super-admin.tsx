@@ -20,24 +20,23 @@ function Dashboard() {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.auth.getSession();
-      const token = data.session?.access_token;
-      if (!token || token.split(".").length !== 3) {
+      const user = data.session?.user;
+      if (!user) {
         setAuthorized(false);
         window.location.href = "/";
         return;
       }
 
-      const res = await fetch("/api/super-admin/ensure-role", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ access_token: token }),
-      });
-      const json = await res.json().catch(() => ({ ok: false }));
-      setAuthorized(Boolean(json.ok));
-      if (!json.ok) window.location.href = "/";
+      // Vérification directe côté client : user_id doit exister dans super_admins
+      const { data: sa, error } = await supabase
+        .from("super_admins")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const ok = !error && Boolean(sa);
+      setAuthorized(ok);
+      if (!ok) window.location.href = "/";
     })();
   }, []);
 

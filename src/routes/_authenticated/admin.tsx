@@ -238,8 +238,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     setBusy(true);
     try {
       const text = await file.text();
-      const { data: session } = await supabase.auth.getSession();
-      const token = session?.access_token;
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
       if (!token) throw new Error("Session expirée. Reconnectez-vous.");
       const res = await fetch("/api/admin/import-csv", {
         method: "POST",

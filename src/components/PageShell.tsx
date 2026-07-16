@@ -1,27 +1,34 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import type { ReactNode } from "react";
+import { Logo } from "./Logo";
+import { DrapeauBF } from "./DrapeauBF";
+import { HamburgerMenu } from "./HamburgerMenu";
 
 export function PageShell({
-  title,
   children,
+  title,
 }: {
+  children: React.ReactNode;
   title: string;
-  children: ReactNode;
 }) {
   return (
     <div className="bg-paper min-h-screen text-foreground">
-      <div className="mx-auto max-w-4xl px-6 py-10">
-        <Link to="/" className="btn-bf-outline mb-8">
-          <ArrowLeft className="h-4 w-4" />
-          Retour
+      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <Link to="/" className="flex items-center gap-3">
+          <Logo />
+          <div className="flex items-center gap-2">
+            <span className="font-display text-2xl font-bold tracking-tight text-foreground">
+              Campus<span className="text-terracotta">Link</span>
+            </span>
+            <DrapeauBF className="h-5 w-8" />
+          </div>
         </Link>
-        <div className="kente-stripe mb-8 h-1.5 w-24 rounded-full" />
-        <h1 className="mb-8 text-4xl font-bold text-gradient-bf">{title}</h1>
-        <div className="card-glass rounded-2xl p-8 text-base leading-relaxed text-foreground/80">
-          {children}
-        </div>
-      </div>
+        <HamburgerMenu />
+      </header>
+      <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />
+      <main className="mx-auto max-w-4xl px-6 py-10">
+        <h1 className="mb-6 text-3xl font-bold text-foreground">{title}</h1>
+        {children}
+      </main>
     </div>
   );
 }

@@ -9,116 +9,265 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
+import { Route as SuperAdminRouteImport } from './routes/super-admin'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
-import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscription'
-import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexion'
-import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
-import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
-import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
-import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
-import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
+import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant/inscription'
+import { Route as EtudiantDashboardRouteImport } from './routes/etudiant/dashboard'
+import { Route as EtudiantConnexionRouteImport } from './routes/etudiant/connexion'
+import { Route as AdminInscriptionRouteImport } from './routes/admin/inscription'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminConnexionRouteImport } from './routes/admin/connexion'
+
+const SuperAdminRoute = SuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PolitiqueConfidentialiteRoute =
+  PolitiqueConfidentialiteRouteImport.update({
+    id: '/politique-confidentialite',
+    path: '/politique-confidentialite',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
+  id: '/fonctionnalites',
+  path: '/fonctionnalites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
+  id: '/devenir-partenaire',
+  path: '/devenir-partenaire',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EtudiantInscriptionRoute = EtudiantInscriptionRouteImport.update({
+  id: '/etudiant/inscription',
+  path: '/etudiant/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EtudiantDashboardRoute = EtudiantDashboardRouteImport.update({
+  id: '/etudiant/dashboard',
+  path: '/etudiant/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EtudiantConnexionRoute = EtudiantConnexionRouteImport.update({
+  id: '/etudiant/connexion',
+  path: '/etudiant/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminInscriptionRoute = AdminInscriptionRouteImport.update({
+  id: '/admin/inscription',
+  path: '/admin/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConnexionRoute = AdminConnexionRouteImport.update({
+  id: '/admin/connexion',
+  path: '/admin/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/super-admin-acces': typeof SuperAdminAccesRoute
-  '/admin': typeof AuthenticatedAdminRoute
-  '/etudiant': typeof AuthenticatedEtudiantRoute
-  '/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/super-admin': typeof SuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/dashboard': typeof EtudiantDashboardRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
-  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+}
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/fonctionnalites': typeof FonctionnalitesRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin': typeof SuperAdminRoute
+  '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
+  '/admin/inscription': typeof AdminInscriptionRoute
+  '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/dashboard': typeof EtudiantDashboardRoute
+  '/etudiant/inscription': typeof EtudiantInscriptionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/super-admin-acces': typeof SuperAdminAccesRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
-  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/super-admin': typeof SuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
+  '/etudiant/dashboard': typeof EtudiantDashboardRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
-  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
-  fileRoutesByTo: FileRoutesByTo
-  to:
+}
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
     | '/'
-    | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
-    | '/super-admin-acces'
-    | '/admin'
-    | '/etudiant'
     | '/super-admin'
     | '/admin/connexion'
+    | '/admin/dashboard'
     | '/admin/inscription'
     | '/etudiant/connexion'
+    | '/etudiant/dashboard'
     | '/etudiant/inscription'
-    | '/api/admin/import-csv'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/devenir-partenaire'
+    | '/fonctionnalites'
+    | '/politique-confidentialite'
+    | '/super-admin'
+    | '/admin/connexion'
+    | '/admin/dashboard'
+    | '/admin/inscription'
+    | '/etudiant/connexion'
+    | '/etudiant/dashboard'
+    | '/etudiant/inscription'
+  id:
+    | '__root__'
+    | '/'
+    | '/devenir-partenaire'
+    | '/fonctionnalites'
+    | '/politique-confidentialite'
+    | '/super-admin'
+    | '/admin/connexion'
+    | '/admin/dashboard'
+    | '/admin/inscription'
+    | '/etudiant/connexion'
+    | '/etudiant/dashboard'
+    | '/etudiant/inscription'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
-  SuperAdminAccesRoute: typeof SuperAdminAccesRoute
+  SuperAdminRoute: typeof SuperAdminRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
   EtudiantConnexionRoute: typeof EtudiantConnexionRoute
+  EtudiantDashboardRoute: typeof EtudiantDashboardRoute
   EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
-  ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/super-admin': {
+      id: '/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof SuperAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/politique-confidentialite': {
+      id: '/politique-confidentialite'
+      path: '/politique-confidentialite'
+      fullPath: '/politique-confidentialite'
+      preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/fonctionnalites': {
+      id: '/fonctionnalites'
+      path: '/fonctionnalites'
+      fullPath: '/fonctionnalites'
+      preLoaderRoute: typeof FonctionnalitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devenir-partenaire': {
+      id: '/devenir-partenaire'
+      path: '/devenir-partenaire'
+      fullPath: '/devenir-partenaire'
+      preLoaderRoute: typeof DevenirPartenaireRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/etudiant/inscription': {
+      id: '/etudiant/inscription'
+      path: '/etudiant/inscription'
+      fullPath: '/etudiant/inscription'
+      preLoaderRoute: typeof EtudiantInscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/etudiant/dashboard': {
+      id: '/etudiant/dashboard'
+      path: '/etudiant/dashboard'
+      fullPath: '/etudiant/dashboard'
+      preLoaderRoute: typeof EtudiantDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/etudiant/connexion': {
+      id: '/etudiant/connexion'
+      path: '/etudiant/connexion'
+      fullPath: '/etudiant/connexion'
+      preLoaderRoute: typeof EtudiantConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/inscription': {
+      id: '/admin/inscription'
+      path: '/admin/inscription'
+      fullPath: '/admin/inscription'
+      preLoaderRoute: typeof AdminInscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/connexion': {
+      id: '/admin/connexion'
+      path: '/admin/connexion'
+      fullPath: '/admin/connexion'
+      preLoaderRoute: typeof AdminConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedEtudiantRoute: typeof AuthenticatedEtudiantRoute
-  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
-}
-
-const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedEtudiantRoute: AuthenticatedEtudiantRoute,
-  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
-}
-
-const AuthenticatedRouteRouteWithChildren =
-  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
-  SuperAdminAccesRoute: SuperAdminAccesRoute,
+  SuperAdminRoute: SuperAdminRoute,
   AdminConnexionRoute: AdminConnexionRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,
   EtudiantConnexionRoute: EtudiantConnexionRoute,
+  EtudiantDashboardRoute: EtudiantDashboardRoute,
   EtudiantInscriptionRoute: EtudiantInscriptionRoute,
-  ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

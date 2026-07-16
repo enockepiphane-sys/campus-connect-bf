@@ -4,7 +4,7 @@
  * Redirect URLs autorisées du backend.
  */
 export const PRODUCTION_SITE_URL =
-  "https://campuslink-oo2az99qv-enockepiphane-sys-projects.vercel.app";
+  "https://campuslink-bf.vercel.app";
 
 export function getSiteUrl(): string {
   return PRODUCTION_SITE_URL;

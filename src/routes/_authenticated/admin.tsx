@@ -211,7 +211,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
-  const doImportCSV = useServerFn(importEtudiantsCSV);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -240,7 +239,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     setBusy(true);
     try {
       const text = await file.text();
-      const { imported } = await doImportCSV({ csvText: text, niveauId });
+      const { imported } = await importEtudiantsCSV({ csvText: text, niveauId });
       setMsg(`${imported} étudiant(s) importé(s)`);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Échec de l'import CSV");

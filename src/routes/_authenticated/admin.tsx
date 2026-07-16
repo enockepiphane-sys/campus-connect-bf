@@ -210,7 +210,9 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [list, setList] = useState<{ id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean }[]>([]);
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [msg, setMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
+  const doImportCSV = useServerFn(importEtudiantsCSV);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -236,20 +238,17 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   async function importCSV(file: File) {
     setMsg(null);
     if (!niveauId) { setMsg("Sélectionnez un niveau"); return; }
-    const { data: n } = await supabase.from("niveaux").select("filiere_id").eq("id", niveauId).maybeSingle();
-    if (!n) return;
-    const text = await file.text();
-    const { rows } = parseCSV(text);
-    // colonnes attendues : nom_complet, email, date_naissance (YYYY-MM-DD)
-    const payload = rows.filter((r) => r.nom_complet && r.email && r.date_naissance).map((r) => ({
-      etablissement_id: etabId, filiere_id: n.filiere_id, niveau_id: niveauId,
-      nom_complet: r.nom_complet.trim(), email: r.email.trim().toLowerCase(), date_naissance: r.date_naissance.trim(),
-    }));
-    if (!payload.length) { setMsg("Aucune ligne valide (colonnes attendues : nom_complet, email, date_naissance)"); return; }
-    const { error } = await supabase.from("etudiants_pre_inscrits").insert(payload);
-    if (error) setMsg(error.message);
-    else setMsg(`${payload.length} étudiant(s) importé(s)`);
-    load();
+    setBusy(true);
+    try {
+      const text = await file.text();
+      const { imported } = await doImportCSV({ csvText: text, niveauId });
+      setMsg(`${imported} étudiant(s) importé(s)`);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Échec de l'import CSV");
+    } finally {
+      setBusy(false);
+      load();
+    }
   }
 
   async function del(id: string) {

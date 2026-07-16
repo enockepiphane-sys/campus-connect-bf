@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const Route = createFileRoute("/super-admin-acces")({
   component: Page,

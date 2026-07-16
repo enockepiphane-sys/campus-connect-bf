@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
+import { getSiteUrl } from "@/lib/site-url";
 
 type Etab = { id: string; nom: string };
 type Filiere = { id: string; nom: string };

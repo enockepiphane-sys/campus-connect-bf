@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const Route = createFileRoute("/super-admin-acces")({
   component: Page,
@@ -34,7 +35,7 @@ function Page() {
         const { error: se } = await withTimeout(
           supabase.auth.signUp({
             email, password,
-            options: { emailRedirectTo: `${window.location.origin}/super-admin-acces` },
+            options: { emailRedirectTo: `${getSiteUrl()}/super-admin-acces` },
           }),
           10000, "la création du compte",
         );

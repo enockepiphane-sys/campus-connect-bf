@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
+import { getSiteUrl } from "@/lib/site-url";
 
 type Etab = { id: string; nom: string };
 type Filiere = { id: string; nom: string };
@@ -64,7 +65,7 @@ function Page() {
     setBusy(true);
     const { data, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: form.password,
-      options: { emailRedirectTo: `${window.location.origin}/etudiant/connexion` },
+      options: { emailRedirectTo: `${getSiteUrl()}/etudiant/connexion` },
     });
     if (se) { setError(se.message); setBusy(false); return; }
     if (data.session && preId) {

@@ -69,7 +69,7 @@ export const Route = createFileRoute("/api/admin/import-csv")({
           auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
         });
 
-        const { data: userData, error: userError } = await supabase.auth.getUser();
+        const { data: userData, error: userError } = await supabase.auth.getUser(token);
         if (userError || !userData.user) {
           return Response.json({ error: "invalid_session" }, { status: 401 });
         }

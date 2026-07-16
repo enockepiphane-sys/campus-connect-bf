@@ -15,9 +15,8 @@ const importInput = z.object({
  */
 export const importEtudiantsCSV = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => importInput.parse(data))
   .handler(async ({ data, context }) => {
-    const { csvText, niveauId } = data;
+    const { csvText, niveauId } = importInput.parse(data);
     const supabase = context.supabase;
     const userId = context.userId;
 

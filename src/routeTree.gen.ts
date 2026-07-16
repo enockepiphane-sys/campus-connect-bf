@@ -24,7 +24,7 @@ import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiSuperAdminEnsureRoleRouteImport } from './routes/api.super-admin.ensure-role'
-import { Route as ApiAdminImportCsvRouteImport } from './routes/api/admin/import-csv'
+import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
 
 const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
   id: '/super-admin-acces',

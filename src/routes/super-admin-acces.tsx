@@ -35,7 +35,7 @@ function Page() {
         const { error: se } = await withTimeout(
           supabase.auth.signUp({
             email, password,
-            options: { emailRedirectTo: `${window.location.origin}/super-admin-acces` },
+            options: { emailRedirectTo: `${getSiteUrl()}/super-admin-acces` },
           }),
           10000, "la création du compte",
         );

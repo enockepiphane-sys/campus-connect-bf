@@ -65,7 +65,7 @@ function Page() {
     setBusy(true);
     const { data, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: form.password,
-      options: { emailRedirectTo: `${window.location.origin}/etudiant/connexion` },
+      options: { emailRedirectTo: `${getSiteUrl()}/etudiant/connexion` },
     });
     if (se) { setError(se.message); setBusy(false); return; }
     if (data.session && preId) {

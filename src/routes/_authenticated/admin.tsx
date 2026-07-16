@@ -238,8 +238,17 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     setBusy(true);
     try {
       const text = await file.text();
-      const { imported } = await importEtudiantsCSV({ csvText: text, niveauId });
-      setMsg(`${imported} étudiant(s) importé(s)`);
+      const { data: session } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      if (!token) throw new Error("Session expirée. Reconnectez-vous.");
+      const res = await fetch("/api/admin/import-csv", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ csvText: text, niveauId }),
+      });
+      const json = await res.json().catch(() => ({ error: "Échec de l'import CSV" }));
+      if (!res.ok) throw new Error(json.message || json.error || "Échec de l'import CSV");
+      setMsg(`${json.imported} étudiant(s) importé(s)`);
     } catch (err) {
       setMsg(err instanceof Error ? err.message : "Échec de l'import CSV");
     } finally {

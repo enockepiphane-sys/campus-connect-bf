@@ -24,6 +24,7 @@ import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiSuperAdminEnsureRoleRouteImport } from './routes/api.super-admin.ensure-role'
+import { Route as ApiAdminImportCsvRouteImport } from './routes/api/admin/import-csv'
 
 const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
   id: '/super-admin-acces',
@@ -100,6 +101,11 @@ const ApiSuperAdminEnsureRoleRoute = ApiSuperAdminEnsureRoleRouteImport.update({
   path: '/api/super-admin/ensure-role',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
+  id: '/api/admin/import-csv',
+  path: '/api/admin/import-csv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
   '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRoutesByTo {
@@ -131,6 +138,7 @@ export interface FileRoutesByTo {
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
   '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRoutesById {
@@ -149,6 +157,7 @@ export interface FileRoutesById {
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
   '/api/super-admin/ensure-role': typeof ApiSuperAdminEnsureRoleRoute
 }
 export interface FileRouteTypes {
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
     | '/api/super-admin/ensure-role'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -183,6 +193,7 @@ export interface FileRouteTypes {
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
     | '/api/super-admin/ensure-role'
   id:
     | '__root__'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/admin/inscription'
     | '/etudiant/connexion'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
     | '/api/super-admin/ensure-role'
   fileRoutesById: FileRoutesById
 }
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   AdminInscriptionRoute: typeof AdminInscriptionRoute
   EtudiantConnexionRoute: typeof EtudiantConnexionRoute
   EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
+  ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
   ApiSuperAdminEnsureRoleRoute: typeof ApiSuperAdminEnsureRoleRoute
 }
 
@@ -325,6 +338,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSuperAdminEnsureRoleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/import-csv': {
+      id: '/api/admin/import-csv'
+      path: '/api/admin/import-csv'
+      fullPath: '/api/admin/import-csv'
+      preLoaderRoute: typeof ApiAdminImportCsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -355,6 +375,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminInscriptionRoute: AdminInscriptionRoute,
   EtudiantConnexionRoute: EtudiantConnexionRoute,
   EtudiantInscriptionRoute: EtudiantInscriptionRoute,
+  ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
   ApiSuperAdminEnsureRoleRoute: ApiSuperAdminEnsureRoleRoute,
 }
 export const routeTree = rootRouteImport

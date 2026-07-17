@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
-import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
@@ -32,12 +32,22 @@ const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
   path: '/super-admin-acces',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
+  id: '/reinitialiser-mot-de-passe',
+  path: '/reinitialiser-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PolitiqueConfidentialiteRoute =
   PolitiqueConfidentialiteRouteImport.update({
     id: '/politique-confidentialite',
     path: '/politique-confidentialite',
     getParentRoute: () => rootRouteImport,
   } as any)
+const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
+  id: '/mot-de-passe-oublie',
+  path: '/mot-de-passe-oublie',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
   id: '/fonctionnalites',
   path: '/fonctionnalites',
@@ -109,8 +119,8 @@ export interface FileRoutesByFullPath {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -126,7 +136,9 @@ export interface FileRoutesByTo {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -145,8 +157,8 @@ export interface FileRoutesById {
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
@@ -164,7 +176,9 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
+    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -181,8 +195,8 @@ export interface FileRouteTypes {
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/mot-de-passe-oublie'
-    | '/reinitialiser-mot-de-passe'
     | '/politique-confidentialite'
+    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -199,7 +213,9 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
+    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/_authenticated/admin'
     | '/_authenticated/etudiant'
@@ -218,8 +234,8 @@ export interface RootRouteChildren {
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
-  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
@@ -237,11 +253,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminAccesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reinitialiser-mot-de-passe': {
+      id: '/reinitialiser-mot-de-passe'
+      path: '/reinitialiser-mot-de-passe'
+      fullPath: '/reinitialiser-mot-de-passe'
+      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/politique-confidentialite': {
       id: '/politique-confidentialite'
       path: '/politique-confidentialite'
       fullPath: '/politique-confidentialite'
       preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mot-de-passe-oublie': {
+      id: '/mot-de-passe-oublie'
+      path: '/mot-de-passe-oublie'
+      fullPath: '/mot-de-passe-oublie'
+      preLoaderRoute: typeof MotDePasseOublieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fonctionnalites': {
@@ -360,8 +390,8 @@ const rootRouteChildren: RootRouteChildren = {
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
-  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,
@@ -372,3 +402,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

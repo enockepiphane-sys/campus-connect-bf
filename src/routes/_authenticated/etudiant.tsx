@@ -47,21 +47,21 @@ function Dashboard() {
   return (
     <div className="bg-paper min-h-screen text-foreground">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold">
-            Campus<span className="text-terracotta">Link</span>
-            <DrapeauBF className="h-4 w-6" />
-            <span className="ml-3 rounded-full bg-primary-soft px-3 py-1 text-xs font-medium text-primary">Étudiant · {ctx.etabNom}</span>
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
+          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+            <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+            <DrapeauBF className="h-4 w-6 shrink-0" />
+            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
           </Link>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{ctx.userName} · {ctx.niveauLabel}</span>
-            <button onClick={signOutAndGoHome} className="btn-bf-outline text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
+          <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
+            <span className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">{ctx.userName} · {ctx.niveauLabel}</span>
+            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
           </div>
         </div>
       </header>
 
       <nav className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl gap-1 px-6 overflow-x-auto">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
           {[
             { k: "annonces", l: "Annonces", i: <Megaphone className="h-4 w-4" /> },
             { k: "edt", l: "Emploi du temps", i: <Clock className="h-4 w-4" /> },
@@ -69,7 +69,7 @@ function Dashboard() {
             { k: "notes", l: "Mes notes", i: <GraduationCap className="h-4 w-4" /> },
           ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k as never)}
-              className={`inline-flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition ${tab === t.k ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
               {t.i}{t.l}
             </button>
           ))}

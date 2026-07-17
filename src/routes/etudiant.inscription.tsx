@@ -63,11 +63,34 @@ function Page() {
     if (form.password.length < 6) { setError("Mot de passe : 6 caractères min."); return; }
     if (form.password !== form.password2) { setError("Les mots de passe ne correspondent pas."); return; }
     setBusy(true);
+    const emailRedirectTo = `${getSiteUrl()}/etudiant/connexion`;
     const { data, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: form.password,
-      options: { emailRedirectTo: `${getSiteUrl()}/etudiant/connexion` },
+      options: { emailRedirectTo },
     });
-    if (se) { setError(se.message); setBusy(false); return; }
+    if (se) {
+      // Compte existant : tenter le renvoi de l'email de confirmation
+      if (/already registered|already been registered|User already/i.test(se.message)) {
+        const { error: re } = await supabase.auth.resend({
+          type: "signup", email: form.email.trim(),
+          options: { emailRedirectTo },
+        });
+        if (re) { setError(re.message); setBusy(false); return; }
+        setInfo("Un compte existe déjà avec cet email. Nous vous avons renvoyé un nouvel email de confirmation.");
+        setBusy(false); return;
+      }
+      setError(se.message); setBusy(false); return;
+    }
+    // Utilisateur existant non confirmé : identities vide → renvoyer l'email
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      const { error: re } = await supabase.auth.resend({
+        type: "signup", email: form.email.trim(),
+        options: { emailRedirectTo },
+      });
+      if (re) { setError(re.message); setBusy(false); return; }
+      setInfo("Un compte existe déjà avec cet email mais n'était pas confirmé. Un nouvel email de confirmation vient de vous être envoyé.");
+      setBusy(false); return;
+    }
     if (data.session && preId) {
       const { error: fe } = await supabase.rpc("finaliser_inscription_etudiant", { _pre_inscription_id: preId });
       if (fe) { setError(fe.message); setBusy(false); return; }

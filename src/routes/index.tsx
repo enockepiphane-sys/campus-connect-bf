@@ -1,16 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import {
-  GraduationCap,
-  ShieldCheck,
-  LogIn,
-  UserPlus,
-  Mail,
-  Building2,
-  Phone,
-  MessageSquare,
-  Send,
-} from "lucide-react";
+import { GraduationCap, ShieldCheck, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
@@ -25,6 +15,12 @@ export const Route = createFileRoute("/")({
         name: "description",
         content:
           "CampusLink connecte les universités, administrateurs et étudiants du Burkina Faso : annonces, emplois du temps, notes et événements en un seul espace.",
+      },
+      { property: "og:title", content: "CampusLink — Campus du Burkina Faso" },
+      {
+        property: "og:description",
+        content:
+          "La plateforme dédiée aux universités et étudiants du Burkina Faso.",
       },
     ],
   }),
@@ -42,6 +38,7 @@ const partnerSchema = z.object({
 function Home() {
   return (
     <div className="bg-paper min-h-screen text-foreground">
+      {/* Header */}
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-3">
           <Logo />
@@ -55,8 +52,10 @@ function Home() {
         <HamburgerMenu />
       </header>
 
+      {/* Kente accent */}
       <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />
 
+      {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">
         <div className="text-center">
           <span className="inline-block rounded-full border border-primary/20 bg-primary-soft px-4 py-1 text-xs font-medium uppercase tracking-widest text-primary">
@@ -73,15 +72,21 @@ function Home() {
           </p>
         </div>
 
+        {/* Deux blocs d'accès */}
         <div className="mx-auto mt-16 grid max-w-5xl gap-6 md:grid-cols-2">
+          {/* Étudiant */}
           <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">
               <div className="grid h-14 w-14 place-items-center rounded-xl bg-primary-soft text-primary">
                 <GraduationCap className="h-7 w-7" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Espace Étudiant</h2>
-                <p className="text-sm text-muted-foreground">Notes, annonces, emploi du temps</p>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Espace Étudiant
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Notes, annonces, emploi du temps
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
@@ -96,14 +101,19 @@ function Home() {
             </div>
           </section>
 
+          {/* Administrateur */}
           <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">
               <div className="grid h-14 w-14 place-items-center rounded-xl bg-accent text-accent-foreground">
                 <ShieldCheck className="h-7 w-7" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Espace Administrateur</h2>
-                <p className="text-sm text-muted-foreground">Filières, niveaux, listes étudiantes</p>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Espace Administrateur
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Filières, niveaux, listes étudiantes
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
@@ -119,12 +129,14 @@ function Home() {
           </section>
         </div>
 
+        {/* Devenir partenaire */}
         <PartnerSection />
 
+        {/* Footer */}
         <div className="mt-16 flex flex-col items-center gap-3">
           <Logo className="h-10 w-10" />
           <p className="text-center text-xs text-muted-foreground">
-            CampusLink — Une plateforme pensée pour les campus du Burkina Faso
+            CampusLink — Une plateforme pensée pour les campus du Burkina Faso 🇧🇫
           </p>
         </div>
       </main>
@@ -197,7 +209,11 @@ function PartnerSection() {
               className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
             />
           </div>
-          <button type="submit" disabled={status === "sending"} className="btn-bf-primary w-full disabled:opacity-60">
+          <button
+            type="submit"
+            disabled={status === "sending"}
+            className="btn-bf-primary w-full disabled:opacity-60"
+          >
             <Send className="h-4 w-4" />
             {status === "sending" ? "Envoi..." : "Envoyer ma demande"}
           </button>

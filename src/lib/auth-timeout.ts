@@ -25,5 +25,17 @@ export function humanizeAuthError(err: unknown): string {
   if (/Invalid login credentials/i.test(msg)) {
     return "Email ou mot de passe incorrect.";
   }
+  if (/Email not confirmed/i.test(msg)) {
+    return "Votre email n'est pas encore confirmé. Vérifiez votre boîte mail.";
+  }
+  if (/Password should be at least/i.test(msg)) {
+    return "Le mot de passe doit contenir au moins 6 caractères.";
+  }
+  if (/Token has expired|token is expired/i.test(msg)) {
+    return "Le lien a expiré. Faites une nouvelle demande de réinitialisation.";
+  }
+  if (/User not found/i.test(msg)) {
+    return "Aucun compte trouvé avec cet email.";
+  }
   return msg;
 }

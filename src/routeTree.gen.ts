@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
@@ -106,6 +108,8 @@ export interface FileRoutesByFullPath {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
@@ -140,6 +144,8 @@ export interface FileRoutesById {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
+  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -174,6 +180,8 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/mot-de-passe-oublie'
+    | '/reinitialiser-mot-de-passe'
     | '/politique-confidentialite'
     | '/super-admin-acces'
     | '/admin'
@@ -209,6 +217,8 @@ export interface RootRouteChildren {
   CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
+  MotDePasseOublieRoute: typeof MotDePasseOublieRoute
+  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
   SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
@@ -349,6 +359,8 @@ const rootRouteChildren: RootRouteChildren = {
   CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
+  MotDePasseOublieRoute: MotDePasseOublieRoute,
+  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
   SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,

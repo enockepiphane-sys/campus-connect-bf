@@ -145,7 +145,12 @@ function LoginForm() {
         </div>
       )}
       <Field label="Email" type="email" value={email} onChange={setEmail} />
-      <Field label="Mot de passe" type="password" value={password} onChange={setPassword} />
+      <div>
+        <Field label="Mot de passe" type="password" value={password} onChange={setPassword} />
+        <div className="mt-1 text-right">
+          <a href="/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</a>
+        </div>
+      </div>
       <button type="submit" disabled={busy} className="btn-bf-primary w-full disabled:opacity-60">
         {busy ? "Connexion…" : "Se connecter"}
       </button>

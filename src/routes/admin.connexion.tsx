@@ -54,6 +54,9 @@ function Page() {
           <label className="mb-1 block text-sm">Mot de passe</label>
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded border border-input bg-surface px-3 py-2" />
+          <div className="mt-1 text-right">
+            <Link to="/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</Link>
+          </div>
         </div>
         <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>

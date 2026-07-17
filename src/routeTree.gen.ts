@@ -9,38 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
-import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
-import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
-import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
-import { Route as SuperAdminRouteImport } from './routes/super-admin'
-import { Route as AdminConnexionRouteImport } from './routes/admin/connexion'
-import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
-import { Route as AdminInscriptionRouteImport } from './routes/admin/inscription'
-import { Route as EtudiantConnexionRouteImport } from './routes/etudiant/connexion'
-import { Route as EtudiantDashboardRouteImport } from './routes/etudiant/dashboard'
-import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant/inscription'
+import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
+import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
+import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
+import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
+import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
+import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscription'
+import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexion'
+import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
+import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
+import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
+import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
-  id: '/devenir-partenaire',
-  path: '/devenir-partenaire',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
-  id: '/fonctionnalites',
-  path: '/fonctionnalites',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
-  id: '/mot-de-passe-oublie',
-  path: '/mot-de-passe-oublie',
+const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
+  id: '/super-admin-acces',
+  path: '/super-admin-acces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PolitiqueConfidentialiteRoute =
@@ -49,39 +38,28 @@ const PolitiqueConfidentialiteRoute =
     path: '/politique-confidentialite',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
-  id: '/reinitialiser-mot-de-passe',
-  path: '/reinitialiser-mot-de-passe',
+const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
+  id: '/fonctionnalites',
+  path: '/fonctionnalites',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SuperAdminRoute = SuperAdminRouteImport.update({
-  id: '/super-admin',
-  path: '/super-admin',
+const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
+  id: '/devenir-partenaire',
+  path: '/devenir-partenaire',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminConnexionRoute = AdminConnexionRouteImport.update({
-  id: '/admin/connexion',
-  path: '/admin/connexion',
+const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
+  id: '/cours-en-ligne',
+  path: '/cours-en-ligne',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminDashboardRoute = AdminDashboardRouteImport.update({
-  id: '/admin/dashboard',
-  path: '/admin/dashboard',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminInscriptionRoute = AdminInscriptionRouteImport.update({
-  id: '/admin/inscription',
-  path: '/admin/inscription',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EtudiantConnexionRoute = EtudiantConnexionRouteImport.update({
-  id: '/etudiant/connexion',
-  path: '/etudiant/connexion',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EtudiantDashboardRoute = EtudiantDashboardRouteImport.update({
-  id: '/etudiant/dashboard',
-  path: '/etudiant/dashboard',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EtudiantInscriptionRoute = EtudiantInscriptionRouteImport.update({
@@ -89,145 +67,174 @@ const EtudiantInscriptionRoute = EtudiantInscriptionRouteImport.update({
   path: '/etudiant/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EtudiantConnexionRoute = EtudiantConnexionRouteImport.update({
+  id: '/etudiant/connexion',
+  path: '/etudiant/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminInscriptionRoute = AdminInscriptionRouteImport.update({
+  id: '/admin/inscription',
+  path: '/admin/inscription',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminConnexionRoute = AdminConnexionRouteImport.update({
+  id: '/admin/connexion',
+  path: '/admin/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEtudiantRoute = AuthenticatedEtudiantRouteImport.update({
+  id: '/etudiant',
+  path: '/etudiant',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
+  id: '/api/admin/import-csv',
+  path: '/api/admin/import-csv',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
-  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/etudiant': typeof AuthenticatedEtudiantRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
-  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
-  '/etudiant/dashboard': typeof EtudiantDashboardRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
-  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/admin': typeof AuthenticatedAdminRoute
+  '/etudiant': typeof AuthenticatedEtudiantRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
-  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
-  '/etudiant/dashboard': typeof EtudiantDashboardRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
-  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
-  '/super-admin': typeof SuperAdminRoute
+  '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
+  '/super-admin-acces': typeof SuperAdminAccesRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
+  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/admin/connexion': typeof AdminConnexionRoute
-  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/etudiant/connexion': typeof EtudiantConnexionRoute
-  '/etudiant/dashboard': typeof EtudiantDashboardRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
+  '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
-    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
-    | '/reinitialiser-mot-de-passe'
+    | '/super-admin-acces'
+    | '/admin'
+    | '/etudiant'
     | '/super-admin'
     | '/admin/connexion'
-    | '/admin/dashboard'
     | '/admin/inscription'
     | '/etudiant/connexion'
-    | '/etudiant/dashboard'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/mot-de-passe-oublie'
-    | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/politique-confidentialite'
+    | '/super-admin-acces'
+    | '/admin'
+    | '/etudiant'
     | '/super-admin'
     | '/admin/connexion'
-    | '/admin/dashboard'
     | '/admin/inscription'
     | '/etudiant/connexion'
-    | '/etudiant/dashboard'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
+    | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
-    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
-    | '/reinitialiser-mot-de-passe'
-    | '/super-admin'
+    | '/super-admin-acces'
+    | '/_authenticated/admin'
+    | '/_authenticated/etudiant'
+    | '/_authenticated/super-admin'
     | '/admin/connexion'
-    | '/admin/dashboard'
     | '/admin/inscription'
     | '/etudiant/connexion'
-    | '/etudiant/dashboard'
     | '/etudiant/inscription'
+    | '/api/admin/import-csv'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   MotDePasseOublieRoute: typeof MotDePasseOublieRoute
-  PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
-  SuperAdminRoute: typeof SuperAdminRoute
+  PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
+  SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
-  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
   EtudiantConnexionRoute: typeof EtudiantConnexionRoute
-  EtudiantDashboardRoute: typeof EtudiantDashboardRoute
   EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
+  ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/devenir-partenaire': {
-      id: '/devenir-partenaire'
-      path: '/devenir-partenaire'
-      fullPath: '/devenir-partenaire'
-      preLoaderRoute: typeof DevenirPartenaireRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/fonctionnalites': {
-      id: '/fonctionnalites'
-      path: '/fonctionnalites'
-      fullPath: '/fonctionnalites'
-      preLoaderRoute: typeof FonctionnalitesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mot-de-passe-oublie': {
-      id: '/mot-de-passe-oublie'
-      path: '/mot-de-passe-oublie'
-      fullPath: '/mot-de-passe-oublie'
-      preLoaderRoute: typeof MotDePasseOublieRouteImport
+    '/super-admin-acces': {
+      id: '/super-admin-acces'
+      path: '/super-admin-acces'
+      fullPath: '/super-admin-acces'
+      preLoaderRoute: typeof SuperAdminAccesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politique-confidentialite': {
@@ -237,53 +244,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reinitialiser-mot-de-passe': {
-      id: '/reinitialiser-mot-de-passe'
-      path: '/reinitialiser-mot-de-passe'
-      fullPath: '/reinitialiser-mot-de-passe'
-      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+    '/fonctionnalites': {
+      id: '/fonctionnalites'
+      path: '/fonctionnalites'
+      fullPath: '/fonctionnalites'
+      preLoaderRoute: typeof FonctionnalitesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/super-admin': {
-      id: '/super-admin'
-      path: '/super-admin'
-      fullPath: '/super-admin'
-      preLoaderRoute: typeof SuperAdminRouteImport
+    '/devenir-partenaire': {
+      id: '/devenir-partenaire'
+      path: '/devenir-partenaire'
+      fullPath: '/devenir-partenaire'
+      preLoaderRoute: typeof DevenirPartenaireRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/connexion': {
-      id: '/admin/connexion'
-      path: '/admin/connexion'
-      fullPath: '/admin/connexion'
-      preLoaderRoute: typeof AdminConnexionRouteImport
+    '/cours-en-ligne': {
+      id: '/cours-en-ligne'
+      path: '/cours-en-ligne'
+      fullPath: '/cours-en-ligne'
+      preLoaderRoute: typeof CoursEnLigneRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/dashboard': {
-      id: '/admin/dashboard'
-      path: '/admin/dashboard'
-      fullPath: '/admin/dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteImport
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin/inscription': {
-      id: '/admin/inscription'
-      path: '/admin/inscription'
-      fullPath: '/admin/inscription'
-      preLoaderRoute: typeof AdminInscriptionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/etudiant/connexion': {
-      id: '/etudiant/connexion'
-      path: '/etudiant/connexion'
-      fullPath: '/etudiant/connexion'
-      preLoaderRoute: typeof EtudiantConnexionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/etudiant/dashboard': {
-      id: '/etudiant/dashboard'
-      path: '/etudiant/dashboard'
-      fullPath: '/etudiant/dashboard'
-      preLoaderRoute: typeof EtudiantDashboardRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/etudiant/inscription': {
@@ -293,23 +286,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EtudiantInscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/etudiant/connexion': {
+      id: '/etudiant/connexion'
+      path: '/etudiant/connexion'
+      fullPath: '/etudiant/connexion'
+      preLoaderRoute: typeof EtudiantConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/inscription': {
+      id: '/admin/inscription'
+      path: '/admin/inscription'
+      fullPath: '/admin/inscription'
+      preLoaderRoute: typeof AdminInscriptionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/connexion': {
+      id: '/admin/connexion'
+      path: '/admin/connexion'
+      fullPath: '/admin/connexion'
+      preLoaderRoute: typeof AdminConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/etudiant': {
+      id: '/_authenticated/etudiant'
+      path: '/etudiant'
+      fullPath: '/etudiant'
+      preLoaderRoute: typeof AuthenticatedEtudiantRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/admin/import-csv': {
+      id: '/api/admin/import-csv'
+      path: '/api/admin/import-csv'
+      fullPath: '/api/admin/import-csv'
+      preLoaderRoute: typeof ApiAdminImportCsvRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedEtudiantRoute: typeof AuthenticatedEtudiantRoute
+  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedEtudiantRoute: AuthenticatedEtudiantRoute,
+  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   MotDePasseOublieRoute: MotDePasseOublieRoute,
-  PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
-  SuperAdminRoute: SuperAdminRoute,
+  PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
+  SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,
-  AdminDashboardRoute: AdminDashboardRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,
   EtudiantConnexionRoute: EtudiantConnexionRoute,
-  EtudiantDashboardRoute: EtudiantDashboardRoute,
   EtudiantInscriptionRoute: EtudiantInscriptionRoute,
+  ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

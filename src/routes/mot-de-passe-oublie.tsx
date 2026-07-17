@@ -1,98 +1,99 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Send, ArrowLeft, CircleCheck as CheckCircle2, CircleAlert as AlertCircle } from "lucide-react";
-import { PageShell } from "@/components/PageShell";
 import { supabase } from "@/integrations/supabase/client";
-import { getRedirectURL } from "@/lib/auth";
+import { PageShell } from "@/components/PageShell";
+import { humanizeAuthError } from "@/lib/auth-timeout";
+import { getSiteUrl } from "@/lib/site-url";
 
 export const Route = createFileRoute("/mot-de-passe-oublie")({
-  head: () => ({ meta: [{ title: "Mot de passe oublié — CampusLink" }] }),
   component: Page,
 });
 
 function Page() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    setStatus("sending");
+    setBusy(true);
 
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
+    const { error: err } = await supabase.auth.resetPasswordForEmail(
       email.trim(),
-      { redirectTo: `${getRedirectURL()}/reinitialiser-mot-de-passe` },
+      { redirectTo: `${getSiteUrl()}/reinitialiser-mot-de-passe` },
     );
 
-    if (resetError) {
-      setStatus("error");
-      const msg = resetError.message.toLowerCase();
-      if (msg.includes("rate limit") || msg.includes("too many")) {
-        setError("Trop de demandes. Veuillez patienter quelques minutes avant de réessayer.");
-      } else {
-        setError("Une erreur est survenue. Vérifiez votre adresse email et réessayez.");
-      }
+    if (err) {
+      setError(humanizeAuthError(err));
+      setBusy(false);
       return;
     }
 
-    setStatus("ok");
+    setSuccess(true);
+    setBusy(false);
+  }
+
+  if (success) {
+    return (
+      <PageShell title="Email envoyé">
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-3xl">
+            ✉️
+          </div>
+          <p className="text-foreground/80">
+            Un lien de réinitialisation a été envoyé à{" "}
+            <span className="font-semibold text-primary">{email}</span>.
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Vérifiez votre boîte mail (et les spams). Le lien est valable 1 heure.
+          </p>
+          <Link to="/" className="mt-4 inline-block text-sm text-primary underline">
+            Retour à l'accueil
+          </Link>
+        </div>
+      </PageShell>
+    );
   }
 
   return (
     <PageShell title="Mot de passe oublié">
-      <div className="card-glass mx-auto max-w-md rounded-2xl p-8">
-        {status === "ok" ? (
-          <div className="text-center">
-            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-accent/10 text-accent">
-              <CheckCircle2 className="h-7 w-7" />
-            </div>
-            <h2 className="mb-2 text-lg font-semibold text-foreground">Email envoyé</h2>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Un lien de réinitialisation a été envoyé à votre adresse email.
-              Vérifiez votre boîte de réception (et vos spams).
-            </p>
-            <Link to="/" className="btn-bf-outline">
-              <ArrowLeft className="h-4 w-4" /> Retour à l'accueil
-            </Link>
-          </div>
-        ) : (
-          <>
-            <p className="mb-6 text-sm text-muted-foreground">
-              Saisissez votre adresse email. Vous recevrez un lien pour réinitialiser votre mot de passe.
-            </p>
-            {error && (
-              <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                {error}
-              </div>
-            )}
-            <form onSubmit={onSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 flex items-center gap-2 text-sm font-medium text-foreground/80">
-                  <Mail className="h-4 w-4" /> Adresse email
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="votre@email.com"
-                  className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
-                />
-              </div>
-              <button type="submit" disabled={status === "sending"} className="btn-bf-primary w-full disabled:opacity-60">
-                <Send className="h-4 w-4" />
-                {status === "sending" ? "Envoi en cours..." : "Envoyer le lien de réinitialisation"}
-              </button>
-            </form>
-            <div className="mt-6 text-center">
-              <Link to="/" className="text-sm text-muted-foreground hover:text-primary">
-                <ArrowLeft className="mr-1 inline h-3 w-3" />Retour à l'accueil
-              </Link>
-            </div>
-          </>
-        )}
+      <p className="mb-6 text-sm text-muted-foreground">
+        Saisissez votre adresse email. Vous recevrez un lien pour créer un nouveau mot de passe.
+      </p>
+      {error && (
+        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div>
+          <label className="mb-1 block text-sm">Adresse email</label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded border border-input bg-surface px-3 py-2"
+            placeholder="votre@email.com"
+          />
+        </div>
+        <button disabled={busy} className="btn-bf-primary w-full">
+          {busy ? "Envoi en cours…" : "Envoyer le lien"}
+        </button>
+      </form>
+      <div className="mt-6 space-y-2 text-center text-sm">
+        <div>
+          <Link to="/admin/connexion" className="text-primary underline">
+            Connexion administrateur
+          </Link>
+        </div>
+        <div>
+          <Link to="/etudiant/connexion" className="text-primary underline">
+            Connexion étudiant
+          </Link>
+        </div>
       </div>
     </PageShell>
   );

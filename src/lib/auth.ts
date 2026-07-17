@@ -1,91 +1,69 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "super_admin" | "admin" | "etudiant";
-
-export interface AuthResult {
-  ok: boolean;
-  role: AppRole | null;
-  error: string | null;
-}
+export type UserRole = "super_admin" | "admin" | "etudiant" | null;
 
 /**
- * Shared authentication logic used by BOTH the normal login form
- * and the discreet super admin login form.
- *
- * 1. Calls supabase.auth.signInWithPassword (same method everywhere)
- * 2. Checks user_roles table for the user's role
- * 3. If expectedRole is provided, verifies the user has that role
+ * Résout le rôle de l'utilisateur courant. Auto-finalise :
+ *  - si email présent dans admins_pre_autorises (non lié) → appelle finaliser_inscription_admin
+ *  - si email présent dans etudiants_pre_inscrits (non lié) → appelle finaliser_inscription_etudiant
+ * Renvoie le rôle après finalisation.
  */
-export async function authenticateUser(
-  email: string,
-  password: string,
-  expectedRole?: AppRole,
-): Promise<AuthResult> {
-  const { data: authData, error: authError } =
-    await supabase.auth.signInWithPassword({ email: email.trim(), password });
+export async function resolveUserRole(): Promise<UserRole> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+  if (!user) return null;
 
-  if (authError || !authData.user) {
-    return { ok: false, role: null, error: "Accès non autorisé" };
-  }
-
-  const userId = authData.user.id;
-
-  const { data: roleData } = await supabase
+  // 1) rôle existant ?
+  const { data: roles } = await supabase
     .from("user_roles")
     .select("role")
-    .eq("user_id", userId)
+    .eq("user_id", user.id);
+  if (roles && roles.length > 0) {
+    if (roles.some((r) => r.role === "super_admin")) return "super_admin";
+    if (roles.some((r) => r.role === "admin")) return "admin";
+    if (roles.some((r) => r.role === "etudiant")) return "etudiant";
+  }
+
+  const email = (user.email ?? "").trim().toLowerCase();
+  if (!email) return null;
+
+  // 2) auto-finalisation admin
+  const { data: preAdmin } = await supabase
+    .from("admins_pre_autorises")
+    .select("id")
+    .eq("user_id", user.id)
     .maybeSingle();
-
-  if (!roleData) {
-    const { data: superAdmin } = await supabase
-      .from("super_admins")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (superAdmin) {
-      if (expectedRole && expectedRole !== "super_admin") {
-        await supabase.auth.signOut();
-        return { ok: false, role: null, error: "Accès non autorisé" };
-      }
-      return { ok: true, role: "super_admin", error: null };
-    }
-
-    const { data: admin } = await supabase
-      .from("admins_pre_autorises")
-      .select("id")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (admin) {
-      if (expectedRole && expectedRole !== "admin") {
-        await supabase.auth.signOut();
-        return { ok: false, role: null, error: "Accès non autorisé" };
-      }
-      return { ok: true, role: "admin", error: null };
-    }
-
-    await supabase.auth.signOut();
-    return { ok: false, role: null, error: "Accès non autorisé" };
+  if (preAdmin) {
+    await supabase.rpc("finaliser_inscription_admin", {
+      _pre_autorisation_id: preAdmin.id,
+    });
+    return "admin";
   }
 
-  const role = roleData.role as AppRole;
-
-  if (expectedRole && role !== expectedRole) {
-    await supabase.auth.signOut();
-    return { ok: false, role: null, error: "Accès non autorisé" };
+  // 3) auto-finalisation étudiant
+  const { data: preEtu } = await supabase
+    .from("etudiants_pre_inscrits")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (preEtu) {
+    await supabase.rpc("finaliser_inscription_etudiant", {
+      _pre_inscription_id: preEtu.id,
+    });
+    return "etudiant";
   }
 
-  return { ok: true, role, error: null };
+  return null;
 }
 
-/**
- * Get the site URL for password reset redirects.
- * Uses the current origin in production, falls back to localhost in dev.
- */
-export function getRedirectURL(): string {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return "http://localhost:5173";
+export function dashboardPathForRole(role: UserRole): string {
+  if (role === "super_admin") return "/super-admin";
+  if (role === "admin") return "/admin";
+  if (role === "etudiant") return "/etudiant";
+  return "/";
+}
+
+export async function signOutAndGoHome() {
+  await supabase.auth.signOut();
+  window.location.href = "/";
 }

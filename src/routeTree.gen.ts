@@ -10,9 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
-import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
-import { Route as MotDePasseOublieRouteImport } from './routes/mot-de-passe-oublie'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
@@ -32,22 +30,12 @@ const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
   path: '/super-admin-acces',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
-  id: '/reinitialiser-mot-de-passe',
-  path: '/reinitialiser-mot-de-passe',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const PolitiqueConfidentialiteRoute =
   PolitiqueConfidentialiteRouteImport.update({
     id: '/politique-confidentialite',
     path: '/politique-confidentialite',
     getParentRoute: () => rootRouteImport,
   } as any)
-const MotDePasseOublieRoute = MotDePasseOublieRouteImport.update({
-  id: '/mot-de-passe-oublie',
-  path: '/mot-de-passe-oublie',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
   id: '/fonctionnalites',
   path: '/fonctionnalites',
@@ -118,9 +106,7 @@ export interface FileRoutesByFullPath {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
-  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -136,9 +122,7 @@ export interface FileRoutesByTo {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
-  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -156,9 +140,7 @@ export interface FileRoutesById {
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
-  '/mot-de-passe-oublie': typeof MotDePasseOublieRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
-  '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
@@ -176,9 +158,7 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
-    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
-    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -194,9 +174,7 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
-    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
-    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -213,9 +191,7 @@ export interface FileRouteTypes {
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
-    | '/mot-de-passe-oublie'
     | '/politique-confidentialite'
-    | '/reinitialiser-mot-de-passe'
     | '/super-admin-acces'
     | '/_authenticated/admin'
     | '/_authenticated/etudiant'
@@ -233,9 +209,7 @@ export interface RootRouteChildren {
   CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
-  MotDePasseOublieRoute: typeof MotDePasseOublieRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
-  ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
@@ -253,25 +227,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuperAdminAccesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/reinitialiser-mot-de-passe': {
-      id: '/reinitialiser-mot-de-passe'
-      path: '/reinitialiser-mot-de-passe'
-      fullPath: '/reinitialiser-mot-de-passe'
-      preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/politique-confidentialite': {
       id: '/politique-confidentialite'
       path: '/politique-confidentialite'
       fullPath: '/politique-confidentialite'
       preLoaderRoute: typeof PolitiqueConfidentialiteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mot-de-passe-oublie': {
-      id: '/mot-de-passe-oublie'
-      path: '/mot-de-passe-oublie'
-      fullPath: '/mot-de-passe-oublie'
-      preLoaderRoute: typeof MotDePasseOublieRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/fonctionnalites': {
@@ -389,9 +349,7 @@ const rootRouteChildren: RootRouteChildren = {
   CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
-  MotDePasseOublieRoute: MotDePasseOublieRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
-  ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,

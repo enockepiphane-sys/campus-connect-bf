@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
@@ -14,7 +14,19 @@ function Page() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash;
+    if (hash && /type=(signup|email_change)/.test(hash)) {
+      supabase.auth.signOut().finally(() => {
+        setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");
+        history.replaceState(null, "", window.location.pathname);
+      });
+    }
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault(); setError(null); setBusy(true);
@@ -44,6 +56,7 @@ function Page() {
   return (
     <PageShell title="Connexion administrateur">
       {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm">Email</label>
@@ -54,6 +67,9 @@ function Page() {
           <label className="mb-1 block text-sm">Mot de passe</label>
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded border border-input bg-surface px-3 py-2" />
+          <div className="mt-1 text-right">
+            <Link to="/admin/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</Link>
+          </div>
         </div>
         <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>

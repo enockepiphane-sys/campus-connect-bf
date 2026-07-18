@@ -57,6 +57,7 @@ function Page() {
   return (
     <PageShell title="Connexion étudiant">
       {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm">Email</label>
@@ -67,6 +68,9 @@ function Page() {
           <label className="mb-1 block text-sm">Mot de passe</label>
           <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded border border-input bg-surface px-3 py-2" />
+          <div className="mt-1 text-right">
+            <Link to="/etudiant/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</Link>
+          </div>
         </div>
         <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>

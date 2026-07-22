@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 import { ForgotPasswordForm } from "@/components/ForgotPasswordForm";
 
-export const Route = createFileRoute("/super-admin-acces/mot-de-passe-oublie")({
+export const Route = createFileRoute("/super-admin-acces_/mot-de-passe-oublie")({
   component: Page,
 });
 

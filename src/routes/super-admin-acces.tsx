@@ -94,6 +94,11 @@ function Page() {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-lg border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
           />
+          <div className="mt-1 text-right">
+            <Link to="/super-admin-acces/mot-de-passe-oublie" className="text-xs text-primary underline">
+              Mot de passe oublié ?
+            </Link>
+          </div>
         </div>
         <button
           type="submit"

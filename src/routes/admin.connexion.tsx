@@ -17,7 +17,6 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -31,7 +30,7 @@ function Page() {
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setInfo(null); setNeedsVerification(false); setBusy(true);
+    e.preventDefault(); setError(null); setInfo(null); setBusy(true);
     try {
       const { error: le } = await withTimeout(
         supabase.auth.signInWithPassword({ email: email.trim(), password }),
@@ -39,7 +38,7 @@ function Page() {
       );
       if (le) {
         if (/email not confirmed|not confirmed/i.test(le.message)) {
-          setNeedsVerification(true);
+
           // Renvoi automatique d'un nouveau lien de vérification (remplace un lien expiré).
           setError(await resendSignupVerification(email, "/admin/connexion"));
         } else {

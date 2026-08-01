@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
+import { ResendVerificationForm } from "@/components/ResendVerificationForm";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
@@ -16,6 +17,7 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

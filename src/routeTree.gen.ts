@@ -26,6 +26,7 @@ import { Route as AdminMotDePasseOublieRouteImport } from './routes/admin.mot-de
 import { Route as EtudiantConnexionRouteImport } from './routes/etudiant.connexion'
 import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscription'
 import { Route as EtudiantMotDePasseOublieRouteImport } from './routes/etudiant.mot-de-passe-oublie'
+import { Route as SuperAdminAccesMotDePasseOublieRouteImport } from './routes/super-admin-acces_.mot-de-passe-oublie'
 import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
 
 const IndexRoute = IndexRouteImport.update({
@@ -114,6 +115,12 @@ const EtudiantMotDePasseOublieRoute =
     path: '/etudiant/mot-de-passe-oublie',
     getParentRoute: () => rootRouteImport,
   } as any)
+const SuperAdminAccesMotDePasseOublieRoute =
+  SuperAdminAccesMotDePasseOublieRouteImport.update({
+    id: '/super-admin-acces_/mot-de-passe-oublie',
+    path: '/super-admin-acces/mot-de-passe-oublie',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
   id: '/api/admin/import-csv',
   path: '/api/admin/import-csv',
@@ -137,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
+  '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRoutesByTo {
@@ -156,6 +164,7 @@ export interface FileRoutesByTo {
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
+  '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRoutesById {
@@ -177,6 +186,7 @@ export interface FileRoutesById {
   '/etudiant/connexion': typeof EtudiantConnexionRoute
   '/etudiant/inscription': typeof EtudiantInscriptionRoute
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
+  '/super-admin-acces_/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
 }
 export interface FileRouteTypes {
@@ -198,6 +208,7 @@ export interface FileRouteTypes {
     | '/etudiant/connexion'
     | '/etudiant/inscription'
     | '/etudiant/mot-de-passe-oublie'
+    | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -217,6 +228,7 @@ export interface FileRouteTypes {
     | '/etudiant/connexion'
     | '/etudiant/inscription'
     | '/etudiant/mot-de-passe-oublie'
+    | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
   id:
     | '__root__'
@@ -237,6 +249,7 @@ export interface FileRouteTypes {
     | '/etudiant/connexion'
     | '/etudiant/inscription'
     | '/etudiant/mot-de-passe-oublie'
+    | '/super-admin-acces_/mot-de-passe-oublie'
     | '/api/admin/import-csv'
   fileRoutesById: FileRoutesById
 }
@@ -255,6 +268,7 @@ export interface RootRouteChildren {
   EtudiantConnexionRoute: typeof EtudiantConnexionRoute
   EtudiantInscriptionRoute: typeof EtudiantInscriptionRoute
   EtudiantMotDePasseOublieRoute: typeof EtudiantMotDePasseOublieRoute
+  SuperAdminAccesMotDePasseOublieRoute: typeof SuperAdminAccesMotDePasseOublieRoute
   ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
 }
 
@@ -379,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EtudiantMotDePasseOublieRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/super-admin-acces_/mot-de-passe-oublie': {
+      id: '/super-admin-acces_/mot-de-passe-oublie'
+      path: '/super-admin-acces/mot-de-passe-oublie'
+      fullPath: '/super-admin-acces/mot-de-passe-oublie'
+      preLoaderRoute: typeof SuperAdminAccesMotDePasseOublieRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/import-csv': {
       id: '/api/admin/import-csv'
       path: '/api/admin/import-csv'
@@ -419,6 +440,7 @@ const rootRouteChildren: RootRouteChildren = {
   EtudiantConnexionRoute: EtudiantConnexionRoute,
   EtudiantInscriptionRoute: EtudiantInscriptionRoute,
   EtudiantMotDePasseOublieRoute: EtudiantMotDePasseOublieRoute,
+  SuperAdminAccesMotDePasseOublieRoute: SuperAdminAccesMotDePasseOublieRoute,
   ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
 }
 export const routeTree = rootRouteImport

@@ -24,6 +24,15 @@ export async function resolveUserRole(): Promise<UserRole> {
     if (roles.some((r) => r.role === "etudiant")) return "etudiant";
   }
 
+  // 1bis) super admin ? (les super admins sont référencés dans super_admins,
+  // pas nécessairement dans user_roles)
+  const { data: superAdmin } = await supabase
+    .from("super_admins")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (superAdmin) return "super_admin";
+
   const email = (user.email ?? "").trim().toLowerCase();
   if (!email) return null;
 

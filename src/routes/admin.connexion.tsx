@@ -5,77 +5,12 @@ import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
-export const Route = createFileRoute("/admin/connexion")({
-  component: Page,
-});
+export const Route = createFileRoute("/admin/connexion")({\n  component: Page,\n});
 
-function Page() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
+function Page() {\n  const navigate = useNavigate();\n  const [email, setEmail] = useState("");\n  const [password, setPassword] = useState("");\n  const [error, setError] = useState<string | null>(null);\n  const [info, setInfo] = useState<string | null>(null);\n  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const hash = window.location.hash;
-    if (hash && /type=(signup|email_change)/.test(hash)) {
-      supabase.auth.signOut().finally(() => {
-        setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");
-        history.replaceState(null, "", window.location.pathname);
-      });
-    }
-  }, []);
+  useEffect(() => {\n    if (typeof window === "undefined") return;\n    const hash = window.location.hash;\n    if (hash && /type=(signup|email_change)/.test(hash)) {\n      supabase.auth.signOut().finally(() => {\n        setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");\n        history.replaceState(null, "", window.location.pathname);\n      });\n    }\n  }, []);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setBusy(true);
-    try {
-      const { error: le } = await withTimeout(
-        supabase.auth.signInWithPassword({ email: email.trim(), password }),
-        10000, "la connexion",
-      );
-      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
-      const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
-      if (!role) {
-        await supabase.auth.signOut();
-        setError("Aucun compte administrateur trouvé pour cet email. Inscrivez-vous d'abord.");
-        setBusy(false); return;
-      }
-      if (role !== "admin") {
-        setError(`Ce compte est ${role}, pas administrateur.`);
-        setBusy(false); return;
-      }
-      navigate({ to: dashboardPathForRole(role) });
-    } catch (err) {
-      setError(humanizeAuthError(err));
-      setBusy(false);
-    }
-  }
+  async function onSubmit(e: React.FormEvent) {\n    e.preventDefault();\n    setError(null);\n    setBusy(true);\n    try {\n      const { error: le } = await withTimeout(\n        supabase.auth.signInWithPassword({ email: email.trim(), password }),\n        10000,\n        "la connexion",\n      );\n      if (le) {\n        setError(humanizeAuthError(le));\n        setBusy(false);\n        return;\n      }\n      const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");\n      if (!role) {\n        await supabase.auth.signOut();\n        setError("Aucun compte administrateur trouvé pour cet email. Inscrivez-vous d'abord.");\n        setBusy(false);\n        return;\n      }\n      if (role !== "admin") {\n        setError(`Ce compte est ${role}, pas administrateur.`);\n        setBusy(false);\n        return;\n      }\n      navigate({ to: dashboardPathForRole(role) });\n    } catch (err) {\n      setError(humanizeAuthError(err));\n      setBusy(false);\n    }\n  }
 
-  return (
-    <PageShell title="Connexion administrateur">
-      {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
-      {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
-      <form onSubmit={onSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm">Email</label>
-          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-input bg-surface px-3 py-2" />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm">Mot de passe</label>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-input bg-surface px-3 py-2" />
-          <div className="mt-1 text-right">
-            <Link to="/admin/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</Link>
-          </div>
-        </div>
-        <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
-      </form>
-      <div className="mt-6 text-center">
-        <Link to="/admin/inscription" className="text-sm text-primary underline">Pas encore de compte ? S'inscrire</Link>
-      </div>
-    </PageShell>
-  );
-}
+  return (\n    <PageShell title="Connexion administrateur">\n      {error && (\n        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">\n          {error}\n        </div>\n      )}\n      {info && (\n        <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">\n          {info}\n        </div>\n      )}\n      <form onSubmit={onSubmit} className="space-y-4">\n        <div>\n          <label className="mb-1 block text-sm">Email</label>\n          <input\n            type="email"\n            required\n            value={email}\n            onChange={(e) => setEmail(e.target.value)}\n            className="w-full rounded border border-input bg-surface px-3 py-2"\n          />\n        </div>\n        <div>\n          <label className="mb-1 block text-sm">Mot de passe</label>\n          <input\n            type="password"\n            required\n            value={password}\n            onChange={(e) => setPassword(e.target.value)}\n            className="w-full rounded border border-input bg-surface px-3 py-2"\n          />\n          <div className="mt-1 text-right">\n            <Link\n              to="/admin/mot-de-passe-oublie"\n              className="text-xs text-primary underline"\n            >\n              Mot de passe oublié ?\n            </Link>\n          </div>\n        </div>\n        <button disabled={busy} className="btn-bf-primary w-full">\n          {busy ? "..." : "Se connecter"}\n        </button>\n      </form>\n      <div className="mt-6 text-center">\n        <Link to="/admin/inscription" className="text-sm text-primary underline">\n          Pas encore de compte ? S'inscrire\n        </Link>\n      </div>\n    </PageShell>\n  );\n}

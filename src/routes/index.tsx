@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, ShieldCheck, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
+import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
@@ -73,7 +73,7 @@ function Home() {
         </div>
 
         {/* Deux blocs d'accès */}
-        <div className="mx-auto mt-16 grid max-w-5xl gap-6 md:grid-cols-2">
+        <div className="mx-auto mt-16 grid max-w-2xl gap-6">
           {/* Étudiant */}
           <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">

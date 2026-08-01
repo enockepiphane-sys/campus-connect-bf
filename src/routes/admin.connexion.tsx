@@ -22,38 +22,29 @@ function Page() {
     const hash = window.location.hash;
     if (hash && /type=(signup|email_change)/.test(hash)) {
       supabase.auth.signOut().finally(() => {
-        setInfo("Votre compte a ete confirme, connectez-vous pour continuer.");
+        setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");
         history.replaceState(null, "", window.location.pathname);
       });
     }
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBusy(true);
+    e.preventDefault(); setError(null); setBusy(true);
     try {
       const { error: le } = await withTimeout(
         supabase.auth.signInWithPassword({ email: email.trim(), password }),
-        10000,
-        "la connexion",
+        10000, "la connexion",
       );
-      if (le) {
-        setError(humanizeAuthError(le));
-        setBusy(false);
-        return;
-      }
-      const role = await withTimeout(resolveUserRole(), 10000, "la verification du role");
+      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
+      const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();
-        setError("Aucun compte administrateur trouve pour cet email. Inscrivez-vous d'abord.");
-        setBusy(false);
-        return;
+        setError("Aucun compte administrateur trouvé pour cet email. Inscrivez-vous d'abord.");
+        setBusy(false); return;
       }
       if (role !== "admin") {
         setError(`Ce compte est ${role}, pas administrateur.`);
-        setBusy(false);
-        return;
+        setBusy(false); return;
       }
       navigate({ to: dashboardPathForRole(role) });
     } catch (err) {
@@ -64,53 +55,26 @@ function Page() {
 
   return (
     <PageShell title="Connexion administrateur">
-      {error && (
-        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-        </div>
-      )}
-      {info && (
-        <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">
-          {info}
-        </div>
-      )}
+      {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
+      {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
           <label className="mb-1 block text-sm">Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded border border-input bg-surface px-3 py-2"
-          />
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+            className="w-full rounded border border-input bg-surface px-3 py-2" />
         </div>
         <div>
           <label className="mb-1 block text-sm">Mot de passe</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded border border-input bg-surface px-3 py-2"
-          />
+          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
+            className="w-full rounded border border-input bg-surface px-3 py-2" />
           <div className="mt-1 text-right">
-            <Link
-              to="/admin/mot-de-passe-oublie"
-              className="text-xs text-primary underline"
-            >
-              Mot de passe oublie ?
-            </Link>
+            <Link to="/admin/mot-de-passe-oublie" className="text-xs text-primary underline">Mot de passe oublié ?</Link>
           </div>
         </div>
-        <button disabled={busy} className="btn-bf-primary w-full">
-          {busy ? "..." : "Se connecter"}
-        </button>
+        <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>
       <div className="mt-6 text-center">
-        <Link to="/admin/inscription" className="text-sm text-primary underline">
-          Pas encore de compte ? S'inscrire
-        </Link>
+        <Link to="/admin/inscription" className="text-sm text-primary underline">Pas encore de compte ? S'inscrire</Link>
       </div>
     </PageShell>
   );

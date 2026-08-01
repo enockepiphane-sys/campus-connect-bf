@@ -83,10 +83,6 @@ function Page() {
         </div>
         <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>
-      <ResendVerificationForm
-        redirectPath="/admin/connexion"
-        defaultEmail={needsVerification ? email : ""}
-      />
       <div className="mt-6 text-center">
         <Link to="/admin/inscription" className="text-sm text-primary underline">Pas encore de compte ? S'inscrire</Link>
       </div>

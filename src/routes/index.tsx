@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
+import { GraduationCap, ShieldCheck, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
@@ -73,7 +73,7 @@ function Home() {
         </div>
 
         {/* Deux blocs d'accès */}
-        <div className="mx-auto mt-16 grid max-w-2xl gap-6">
+        <div className="mx-auto mt-16 grid max-w-5xl gap-6 md:grid-cols-2">
           {/* Étudiant */}
           <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">
@@ -101,6 +101,32 @@ function Home() {
             </div>
           </section>
 
+          {/* Administrateur */}
+          <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+            <div className="mb-6 flex items-center gap-4">
+              <div className="grid h-14 w-14 place-items-center rounded-xl bg-accent text-accent-foreground">
+                <ShieldCheck className="h-7 w-7" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Espace Administrateur
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Filières, niveaux, listes étudiantes
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3">
+              <Link to="/admin/inscription" className="btn-bf-primary">
+                <UserPlus className="h-4 w-4" />
+                S'inscrire à mon compte administrateur
+              </Link>
+              <Link to="/admin/connexion" className="btn-bf-outline">
+                <LogIn className="h-4 w-4" />
+                Se connecter à mon compte administrateur
+              </Link>
+            </div>
+          </section>
         </div>
 
         {/* Devenir partenaire */}

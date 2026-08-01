@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
-import { resendSignupVerification } from "@/lib/resend-verification";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
@@ -30,22 +29,13 @@ function Page() {
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setInfo(null); setBusy(true);
+    e.preventDefault(); setError(null); setBusy(true);
     try {
       const { error: le } = await withTimeout(
         supabase.auth.signInWithPassword({ email: email.trim(), password }),
         10000, "la connexion",
       );
-      if (le) {
-        if (/email not confirmed|not confirmed/i.test(le.message)) {
-
-          // Renvoi automatique d'un nouveau lien de vérification (remplace un lien expiré).
-          setError(await resendSignupVerification(email, "/admin/connexion"));
-        } else {
-          setError(humanizeAuthError(le));
-        }
-        setBusy(false); return;
-      }
+      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();

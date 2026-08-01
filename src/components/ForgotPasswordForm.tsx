@@ -1,33 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getSiteUrl } from "@/lib/site-url";
 import { humanizeAuthError, withTimeout } from "@/lib/auth-timeout";
-
-const COOLDOWN_SECONDS = 60;
 
 export function ForgotPasswordForm({ backTo }: { backTo: string }) {
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [remaining, setRemaining] = useState(0);
-
-  // Décompte anti-spam : une nouvelle demande reste possible après le délai,
-  // et chaque demande génère un nouveau lien valide (remplace un lien expiré).
-  useEffect(() => {
-    if (remaining <= 0) return;
-    const id = setInterval(() => setRemaining((r) => Math.max(0, r - 1)), 1000);
-    return () => clearInterval(id);
-  }, [remaining]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setInfo(null);
-    if (remaining > 0) {
-      setError(`Merci de patienter ${remaining} s avant de redemander un email.`);
-      return;
-    }
     setBusy(true);
     try {
       const redirectTo = `${getSiteUrl()}/reinitialiser-mot-de-passe`;
@@ -37,25 +22,13 @@ export function ForgotPasswordForm({ backTo }: { backTo: string }) {
         "l'envoi de l'email de réinitialisation",
       );
       if (re) {
-        console.error("[CampusLink] resetPasswordForEmail failed", {
-          email: email.trim(),
-          status: (re as { status?: number }).status,
-          code: (re as { code?: string }).code,
-          message: re.message,
-        });
-        if (/rate limit|too many|over_email_send_rate_limit|security purposes/i.test(re.message)) {
-          setError("Trop de demandes en peu de temps. Réessayez dans quelques minutes.");
-        } else {
-          setError(humanizeAuthError(re));
-        }
+        setError(humanizeAuthError(re));
       } else {
-        setRemaining(COOLDOWN_SECONDS);
         setInfo(
           "Si un compte existe avec cette adresse, un lien de réinitialisation a été envoyé à votre adresse email. Vérifiez votre boîte de réception (et les spams).",
         );
       }
     } catch (err) {
-      console.error("[CampusLink] resetPasswordForEmail exception", err);
       setError(humanizeAuthError(err));
     } finally {
       setBusy(false);
@@ -81,12 +54,8 @@ export function ForgotPasswordForm({ backTo }: { backTo: string }) {
             className="w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
           />
         </div>
-        <button disabled={busy || remaining > 0} className="btn-bf-primary w-full disabled:opacity-60">
-          {busy
-            ? "..."
-            : remaining > 0
-              ? `Nouvelle demande dans ${remaining} s`
-              : "Envoyer le lien de réinitialisation"}
+        <button disabled={busy} className="btn-bf-primary w-full">
+          {busy ? "..." : "Envoyer le lien de réinitialisation"}
         </button>
       </form>
       <div className="mt-6 text-center">

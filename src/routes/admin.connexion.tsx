@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
+import { ResendVerificationForm } from "@/components/ResendVerificationForm";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
@@ -16,6 +17,7 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -29,13 +31,21 @@ function Page() {
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setBusy(true);
+    e.preventDefault(); setError(null); setNeedsVerification(false); setBusy(true);
     try {
       const { error: le } = await withTimeout(
         supabase.auth.signInWithPassword({ email: email.trim(), password }),
         10000, "la connexion",
       );
-      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
+      if (le) {
+        if (/email not confirmed|not confirmed/i.test(le.message)) {
+          setNeedsVerification(true);
+          setError("Votre email n'est pas encore vérifié. Renvoyez-vous un nouveau lien ci-dessous.");
+        } else {
+          setError(humanizeAuthError(le));
+        }
+        setBusy(false); return;
+      }
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();
@@ -73,6 +83,10 @@ function Page() {
         </div>
         <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Se connecter"}</button>
       </form>
+      <ResendVerificationForm
+        redirectPath="/admin/connexion"
+        defaultEmail={needsVerification ? email : ""}
+      />
       <div className="mt-6 text-center">
         <Link to="/admin/inscription" className="text-sm text-primary underline">Pas encore de compte ? S'inscrire</Link>
       </div>

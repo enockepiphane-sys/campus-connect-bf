@@ -7,16 +7,286 @@ import { getSiteUrl } from "@/lib/site-url";
 
 type Etab = { id: string; nom: string };
 
-export const Route = createFileRoute("/admin/inscription")({\n  component: Page,\n});
+export const Route = createFileRoute("/admin/inscription")({
+  component: Page,
+});
 
-function Page() {\n  const navigate = useNavigate();\n  const [etabs, setEtabs] = useState<Etab[]>([]);\n  const [step, setStep] = useState<1 | 2 | 3>(1);\n  const [etabId, setEtabId] = useState("");\n  const [form, setForm] = useState({\n    nom_complet: "",\n    email: "",\n    date_naissance: "",\n    password: "",\n    password2: "",\n  });\n  const [preAuthId, setPreAuthId] = useState<string | null>(null);\n  const [error, setError] = useState<string | null>(null);\n  const [info, setInfo] = useState<string | null>(null);\n  const [busy, setBusy] = useState(false);
+function Page() {
+  const navigate = useNavigate();
+  const [etabs, setEtabs] = useState<Etab[]>([]);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [etabId, setEtabId] = useState("");
+  const [form, setForm] = useState({
+    nom_complet: "",
+    email: "",
+    date_naissance: "",
+    password: "",
+    password2: "",
+  });
+  const [preAuthId, setPreAuthId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {\n    supabase\n      .from("etablissements")\n      .select("id,nom")\n      .eq("statut", "actif")\n      .order("nom")\n      .then(({ data }) => setEtabs((data as Etab[]) ?? []));\n  }, []);
+  useEffect(() => {
+    supabase
+      .from("etablissements")
+      .select("id,nom")
+      .eq("statut", "actif")
+      .order("nom")
+      .then(({ data }) => setEtabs((data as Etab[]) ?? []));
+  }, []);
 
-  async function verifier(e: React.FormEvent) {\n    e.preventDefault();\n    setError(null);\n    setBusy(true);\n    const { data, error } = await supabase.rpc(\n      "verifier_admin_pre_autorise",\n      {\n        _etablissement_id: etabId,\n        _nom_complet: form.nom_complet,\n        _email: form.email,\n        _date_naissance: form.date_naissance,\n      }\n    );\n    setBusy(false);\n    if (error) {\n      setError(error.message);\n      return;\n    }\n    if (!data || data.length === 0) {\n      setError(\n        "Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."\n      );\n      return;\n    }\n    const row = data[0] as {\n      pre_autorisation_id: string;\n      deja_inscrit: boolean;\n    };\n    if (row.deja_inscrit) {\n      setError(\n        "Cet administrateur est déjà inscrit. Utilisez la page de connexion."\n      );\n      return;\n    }\n    setPreAuthId(row.pre_autorisation_id);\n    setStep(3);\n  }
+  async function verifier(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setBusy(true);
+    const { data, error } = await supabase.rpc(
+      "verifier_admin_pre_autorise",
+      {
+        _etablissement_id: etabId,
+        _nom_complet: form.nom_complet,
+        _email: form.email,
+        _date_naissance: form.date_naissance,
+      }
+    );
+    setBusy(false);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    if (!data || data.length === 0) {
+      setError(
+        "Vous n'etes pas pre-autorise comme administrateur pour cet etablissement."
+      );
+      return;
+    }
+    const row = data[0] as {
+      pre_autorisation_id: string;
+      deja_inscrit: boolean;
+    };
+    if (row.deja_inscrit) {
+      setError(
+        "Cet administrateur est deja inscrit. Utilisez la page de connexion."
+      );
+      return;
+    }
+    setPreAuthId(row.pre_autorisation_id);
+    setStep(3);
+  }
 
-  async function inscrire(e: React.FormEvent) {\n    e.preventDefault();\n    setError(null);\n    setInfo(null);\n    if (form.password.length < 6) {\n      setError("Mot de passe : 6 caractères minimum.");\n      return;\n    }\n    if (form.password !== form.password2) {\n      setError("Les mots de passe ne correspondent pas.");\n      return;\n    }\n    setBusy(true);\n    const emailRedirectTo = `${getSiteUrl()}/admin/connexion`;\n    const { data, error: se } = await supabase.auth.signUp({\n      email: form.email.trim(),\n      password: form.password,\n      options: { emailRedirectTo },\n    });\n    if (se) {\n      if (/already registered|already been registered|User already/i.test(se.message)) {\n        const { error: re } = await supabase.auth.resend({\n          type: "signup",\n          email: form.email.trim(),\n          options: { emailRedirectTo },\n        });\n        if (re) {\n          setError(re.message);\n          setBusy(false);\n          return;\n        }\n        setInfo(\n          "Un compte existe déjà avec cet email. Nous vous avons renvoyé un nouvel email de confirmation."\n        );\n        setBusy(false);\n        return;\n      }\n      setError(se.message);\n      setBusy(false);\n      return;\n    }\n    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {\n      const { error: re } = await supabase.auth.resend({\n        type: "signup",\n        email: form.email.trim(),\n        options: { emailRedirectTo },\n      });\n      if (re) {\n        setError(re.message);\n        setBusy(false);\n        return;\n      }\n      setInfo(\n        "Un compte existe déjà avec cet email mais n'était pas confirmé. Un nouvel email de confirmation vient de vous être envoyé."\n      );\n      setBusy(false);\n      return;\n    }\n    if (data.session && preAuthId) {\n      const { error: fe } = await supabase.rpc("finaliser_inscription_admin", {\n        _pre_autorisation_id: preAuthId,\n      });\n      if (fe) {\n        setError(fe.message);\n        setBusy(false);\n        return;\n      }\n      const role = await resolveUserRole();\n      navigate({ to: dashboardPathForRole(role) });\n      return;\n    }\n    setInfo(\n      "Compte créé. Confirmez votre email puis connectez-vous — votre rôle sera activé automatiquement."\n    );\n    setBusy(false);\n  }
+  async function inscrire(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setInfo(null);
+    if (form.password.length < 6) {
+      setError("Mot de passe : 6 caracteres minimum.");
+      return;
+    }
+    if (form.password !== form.password2) {
+      setError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    setBusy(true);
+    const emailRedirectTo = `${getSiteUrl()}/admin/connexion`;
+    const { data, error: se } = await supabase.auth.signUp({
+      email: form.email.trim(),
+      password: form.password,
+      options: { emailRedirectTo },
+    });
+    if (se) {
+      if (/already registered|already been registered|User already/i.test(se.message)) {
+        const { error: re } = await supabase.auth.resend({
+          type: "signup",
+          email: form.email.trim(),
+          options: { emailRedirectTo },
+        });
+        if (re) {
+          setError(re.message);
+          setBusy(false);
+          return;
+        }
+        setInfo(
+          "Un compte existe deja avec cet email. Nous vous avons renvoye un nouvel email de confirmation."
+        );
+        setBusy(false);
+        return;
+      }
+      setError(se.message);
+      setBusy(false);
+      return;
+    }
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      const { error: re } = await supabase.auth.resend({
+        type: "signup",
+        email: form.email.trim(),
+        options: { emailRedirectTo },
+      });
+      if (re) {
+        setError(re.message);
+        setBusy(false);
+        return;
+      }
+      setInfo(
+        "Un compte existe deja avec cet email mais n'etait pas confirme. Un nouvel email de confirmation vient de vous etre envoye."
+      );
+      setBusy(false);
+      return;
+    }
+    if (data.session && preAuthId) {
+      const { error: fe } = await supabase.rpc("finaliser_inscription_admin", {
+        _pre_autorisation_id: preAuthId,
+      });
+      if (fe) {
+        setError(fe.message);
+        setBusy(false);
+        return;
+      }
+      const role = await resolveUserRole();
+      navigate({ to: dashboardPathForRole(role) });
+      return;
+    }
+    setInfo(
+      "Compte cree. Confirmez votre email puis connectez-vous - votre role sera active automatiquement."
+    );
+    setBusy(false);
+  }
 
-  return (\n    <PageShell title="Inscription administrateur">\n      {error && (\n        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">\n          {error}\n        </div>\n      )}\n      {info && (\n        <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">\n          {info}\n        </div>\n      )}\n      <p className="mb-4 text-sm text-muted-foreground">Étape {step} sur 3</p>\n\n      {step === 1 && (\n        <form\n          onSubmit={(e) => {\n            e.preventDefault();\n            if (!etabId) return;\n            setStep(2);\n          }}\n          className="space-y-4"\n        >\n          <div>\n            <label className="mb-1 block text-sm">\n              Sélectionnez votre établissement\n            </label>\n            <select\n              required\n              value={etabId}\n              onChange={(e) => setEtabId(e.target.value)}\n              className="w-full rounded border border-input bg-surface px-3 py-2"\n            >\n              <option value="">— Choisir —</option>\n              {etabs.map((e) => (\n                <option key={e.id} value={e.id}>\n                  {e.nom}\n                </option>\n              ))}\n            </select>\n          </div>\n          <button className="btn-bf-primary w-full">Continuer</button>\n        </form>\n      )}\n\n      {step === 2 && (\n        <form onSubmit={verifier} className="space-y-4">\n          <Field\n            label="Nom complet"\n            v={form.nom_complet}\n            on={(v) => setForm({ ...form, nom_complet: v })}\n          />\n          <Field\n            label="Email"\n            type="email"\n            v={form.email}\n            on={(v) => setForm({ ...form, email: v })}\n          />\n          <Field\n            label="Date de naissance"\n            type="date"\n            v={form.date_naissance}\n            on={(v) => setForm({ ...form, date_naissance: v })}\n          />\n          <div className="flex gap-2">\n            <button\n              type="button"\n              onClick={() => setStep(1)}\n              className="btn-bf-outline"\n            >\n              Retour\n            </button>\n            <button disabled={busy} className="btn-bf-primary flex-1">\n              {busy ? "..." : "Vérifier"}\n            </button>\n          </div>\n        </form>\n      )}\n\n      {step === 3 && (\n        <form onSubmit={inscrire} className="space-y-4">\n          <p className="text-sm text-primary">\n            ✓ Vérification réussie. Créez votre mot de passe.\n          </p>\n          <Field\n            label="Mot de passe"\n            type="password"\n            v={form.password}\n            on={(v) => setForm({ ...form, password: v })}\n          />\n          <Field\n            label="Confirmez le mot de passe"\n            type="password"\n            v={form.password2}\n            on={(v) => setForm({ ...form, password2: v })}\n          />\n          <button disabled={busy} className="btn-bf-primary w-full">\n            {busy ? "..." : "Créer mon compte"}\n          </button>\n        </form>\n      )}\n\n      <div className="mt-6 text-center">\n        <Link\n          to="/admin/connexion"\n          className="text-sm text-primary underline"\n        >\n          J'ai déjà un compte administrateur\n        </Link>\n      </div>\n    </PageShell>\n  );\n}
+  return (
+    <PageShell title="Inscription administrateur">
+      {error && (
+        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+      {info && (
+        <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">
+          {info}
+        </div>
+      )}
+      <p className="mb-4 text-sm text-muted-foreground">Etape {step} sur 3</p>
 
-function Field({\n  label,\n  v,\n  on,\n  type = "text",\n}: {\n  label: string;\n  v: string;\n  on: (v: string) => void;\n  type?: string;\n}) {\n  return (\n    <div>\n      <label className="mb-1 block text-sm">{label}</label>\n      <input\n        required\n        type={type}\n        value={v}\n        onChange={(e) => on(e.target.value)}\n        className="w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-primary"\n      />\n    </div>\n  );\n}
+      {step === 1 && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!etabId) return;
+            setStep(2);
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="mb-1 block text-sm">
+              Selectionnez votre etablissement
+            </label>
+            <select
+              required
+              value={etabId}
+              onChange={(e) => setEtabId(e.target.value)}
+              className="w-full rounded border border-input bg-surface px-3 py-2"
+            >
+              <option value="">-- Choisir --</option>
+              {etabs.map((e) => (
+                <option key={e.id} value={e.id}>
+                  {e.nom}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className="btn-bf-primary w-full">Continuer</button>
+        </form>
+      )}
+
+      {step === 2 && (
+        <form onSubmit={verifier} className="space-y-4">
+          <Field
+            label="Nom complet"
+            v={form.nom_complet}
+            on={(v) => setForm({ ...form, nom_complet: v })}
+          />
+          <Field
+            label="Email"
+            type="email"
+            v={form.email}
+            on={(v) => setForm({ ...form, email: v })}
+          />
+          <Field
+            label="Date de naissance"
+            type="date"
+            v={form.date_naissance}
+            on={(v) => setForm({ ...form, date_naissance: v })}
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="btn-bf-outline"
+            >
+              Retour
+            </button>
+            <button disabled={busy} className="btn-bf-primary flex-1">
+              {busy ? "..." : "Verifier"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {step === 3 && (
+        <form onSubmit={inscrire} className="space-y-4">
+          <p className="text-sm text-primary">
+            Verification reussie. Creez votre mot de passe.
+          </p>
+          <Field
+            label="Mot de passe"
+            type="password"
+            v={form.password}
+            on={(v) => setForm({ ...form, password: v })}
+          />
+          <Field
+            label="Confirmez le mot de passe"
+            type="password"
+            v={form.password2}
+            on={(v) => setForm({ ...form, password2: v })}
+          />
+          <button disabled={busy} className="btn-bf-primary w-full">
+            {busy ? "..." : "Creer mon compte"}
+          </button>
+        </form>
+      )}
+
+      <div className="mt-6 text-center">
+        <Link
+          to="/admin/connexion"
+          className="text-sm text-primary underline"
+        >
+          J'ai deja un compte administrateur
+        </Link>
+      </div>
+    </PageShell>
+  );
+}
+
+function Field({
+  label,
+  v,
+  on,
+  type = "text",
+}: {
+  label: string;
+  v: string;
+  on: (v: string) => void;
+  type?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-sm">{label}</label>
+      <input
+        required
+        type={type}
+        value={v}
+        onChange={(e) => on(e.target.value)}
+        className="w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
+      />
+    </div>
+  );
+}

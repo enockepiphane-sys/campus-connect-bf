@@ -32,13 +32,21 @@ function Page() {
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setBusy(true);
+    e.preventDefault(); setError(null); setNeedsVerification(false); setBusy(true);
     try {
       const { error: le } = await withTimeout(
         supabase.auth.signInWithPassword({ email: email.trim(), password }),
         10000, "la connexion",
       );
-      if (le) { setError(humanizeAuthError(le)); setBusy(false); return; }
+      if (le) {
+        if (/email not confirmed|not confirmed/i.test(le.message)) {
+          setNeedsVerification(true);
+          setError("Votre email n'est pas encore vérifié. Renvoyez-vous un nouveau lien ci-dessous.");
+        } else {
+          setError(humanizeAuthError(le));
+        }
+        setBusy(false); return;
+      }
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();

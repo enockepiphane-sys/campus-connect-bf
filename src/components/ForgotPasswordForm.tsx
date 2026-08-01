@@ -81,8 +81,12 @@ export function ForgotPasswordForm({ backTo }: { backTo: string }) {
             className="w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-primary"
           />
         </div>
-        <button disabled={busy} className="btn-bf-primary w-full">
-          {busy ? "..." : "Envoyer le lien de réinitialisation"}
+        <button disabled={busy || remaining > 0} className="btn-bf-primary w-full disabled:opacity-60">
+          {busy
+            ? "..."
+            : remaining > 0
+              ? `Nouvelle demande dans ${remaining} s`
+              : "Envoyer le lien de réinitialisation"}
         </button>
       </form>
       <div className="mt-6 text-center">

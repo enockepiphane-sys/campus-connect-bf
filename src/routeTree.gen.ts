@@ -15,6 +15,7 @@ import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
+import { Route as AdminAccesRouteImport } from './routes/admin-acces'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SuperAdminAccesMotDePasseOublieRouteImport } from './routes/super-admin-acces_.mot-de-passe-oublie'
@@ -58,6 +59,11 @@ const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
 const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
   id: '/cours-en-ligne',
   path: '/cours-en-ligne',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminAccesRoute = AdminAccesRouteImport.update({
+  id: '/admin-acces',
+  path: '/admin-acces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -129,6 +135,7 @@ const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-acces': typeof AdminAccesRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-acces': typeof AdminAccesRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/admin-acces': typeof AdminAccesRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin-acces'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin-acces'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/admin-acces'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -256,6 +268,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AdminAccesRoute: typeof AdminAccesRoute
   CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
@@ -314,6 +327,13 @@ declare module '@tanstack/react-router' {
       path: '/cours-en-ligne'
       fullPath: '/cours-en-ligne'
       preLoaderRoute: typeof CoursEnLigneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-acces': {
+      id: '/admin-acces'
+      path: '/admin-acces'
+      fullPath: '/admin-acces'
+      preLoaderRoute: typeof AdminAccesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -428,6 +448,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AdminAccesRoute: AdminAccesRoute,
   CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,

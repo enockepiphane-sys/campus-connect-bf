@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site-url";
+import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
 
 type Etab = { id: string; nom: string };
 
@@ -21,6 +22,7 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showResend, setShowResend] = useState(false);
 
   useEffect(() => {
     supabase.from("etablissements").select("id,nom").eq("statut", "actif").order("nom")

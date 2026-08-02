@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { GraduationCap, ShieldCheck, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
+import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";

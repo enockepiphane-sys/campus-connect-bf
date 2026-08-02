@@ -6,10 +6,10 @@ import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/admin/connexion")({
-  component: Page,
+  component: AdminConnexionPage,
 });
 
-function Page() {
+export function AdminConnexionPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

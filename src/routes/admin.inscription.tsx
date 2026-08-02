@@ -83,7 +83,15 @@ function Page() {
     <PageShell title="Inscription administrateur">
       {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
-      <p className="mb-4 text-sm text-muted-foreground">Étape {step} sur 3</p>
+      {showResend && (
+        <ResendConfirmationEmail
+          email={form.email}
+          emailRedirectTo={`${getSiteUrl()}/admin/connexion`}
+          startCooledDown
+        />
+      )}
+      <p className="mb-4 mt-4 text-sm text-muted-foreground">Étape {step} sur 3</p>
+
 
       {step === 1 && (
         <form onSubmit={(e) => { e.preventDefault(); if (!etabId) return; setStep(2); }} className="space-y-4">

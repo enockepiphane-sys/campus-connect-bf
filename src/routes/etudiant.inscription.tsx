@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site-url";
+import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
 
 type Etab = { id: string; nom: string };
 type Filiere = { id: string; nom: string };
@@ -27,6 +28,8 @@ function Page() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+
 
   useEffect(() => {
     supabase.from("etablissements").select("id,nom").eq("statut", "actif").order("nom")
@@ -68,29 +71,18 @@ function Page() {
       email: form.email.trim(), password: form.password,
       options: { emailRedirectTo },
     });
-    if (se) {
-      // Compte existant : tenter le renvoi de l'email de confirmation
-      if (/already registered|already been registered|User already/i.test(se.message)) {
-        const { error: re } = await supabase.auth.resend({
-          type: "signup", email: form.email.trim(),
-          options: { emailRedirectTo },
-        });
-        if (re) { setError(re.message); setBusy(false); return; }
-        setInfo("Un compte existe déjà avec cet email. Nous vous avons renvoyé un nouvel email de confirmation.");
-        setBusy(false); return;
-      }
-      setError(se.message); setBusy(false); return;
-    }
-    // Utilisateur existant non confirmé : identities vide → renvoyer l'email
-    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
-      const { error: re } = await supabase.auth.resend({
-        type: "signup", email: form.email.trim(),
-        options: { emailRedirectTo },
-      });
-      if (re) { setError(re.message); setBusy(false); return; }
+    const existant =
+      (se && /already registered|already been registered|User already/i.test(se.message)) ||
+      (!se && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+
+    if (existant) {
+      const { error: re } = await resendSignupEmail(form.email, emailRedirectTo);
+      setShowResend(true);
+      if (re) { setError(re); setInfo(null); setBusy(false); return; }
       setInfo("Un compte existe déjà avec cet email mais n'était pas confirmé. Un nouvel email de confirmation vient de vous être envoyé.");
       setBusy(false); return;
     }
+    if (se) { setError(se.message); setBusy(false); return; }
     if (data.session && preId) {
       const { error: fe } = await supabase.rpc("finaliser_inscription_etudiant", { _pre_inscription_id: preId });
       if (fe) { setError(fe.message); setBusy(false); return; }
@@ -106,7 +98,15 @@ function Page() {
     <PageShell title="Inscription étudiant">
       {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
-      <p className="mb-4 text-sm text-muted-foreground">Étape {step} sur 5</p>
+      {showResend && (
+        <ResendConfirmationEmail
+          email={form.email}
+          emailRedirectTo={`${getSiteUrl()}/etudiant/connexion`}
+          startCooledDown
+        />
+      )}
+      <p className="mb-4 mt-4 text-sm text-muted-foreground">Étape {step} sur 5</p>
+
 
       {step === 1 && (
         <form onSubmit={(e) => { e.preventDefault(); if (etabId) setStep(2); }} className="space-y-4">

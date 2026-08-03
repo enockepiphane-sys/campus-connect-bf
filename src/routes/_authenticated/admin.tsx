@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { parseCSV } from "@/lib/csv";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,
@@ -18,6 +18,7 @@ function Dashboard() {
   const [ok, setOk] = useState<boolean | null>(null);
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
+  const [menu, setMenu] = useState(false);
   const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt">("structure");
 
   useEffect(() => {
@@ -38,38 +39,74 @@ function Dashboard() {
   if (ok === null) return <div className="p-8 text-center">Chargement…</div>;
   if (!etabId) return null;
 
+  const sections = [
+    { k: "structure", l: "Filières & niveaux", i: BookOpen },
+    { k: "etudiants", l: "Étudiants", i: Users },
+    { k: "matieres", l: "Matières & notes", i: GraduationCap },
+    { k: "annonces", l: "Annonces", i: Megaphone },
+    { k: "evenements", l: "Événements", i: Calendar },
+    { k: "edt", l: "Emploi du temps", i: Clock },
+  ] as const;
+  const current = sections.find((s) => s.k === tab);
+
   return (
-    <div className="bg-paper min-h-screen text-foreground">
-      <header className="border-b border-border bg-surface">
+    <div className="bg-app min-h-screen text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-            <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0" />
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
-          </Link>
-          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Ouvrir le menu"
+              onClick={() => setMenu(true)}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-foreground transition hover:bg-muted"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+              <DrapeauBF className="h-4 w-6 shrink-0" />
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
+            </Link>
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">{current?.l}</span>
         </div>
       </header>
 
-      <nav className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
-          {[
-            { k: "structure", l: "Filières & niveaux", i: <BookOpen className="h-4 w-4" /> },
-            { k: "etudiants", l: "Étudiants", i: <Users className="h-4 w-4" /> },
-            { k: "matieres", l: "Matières & notes", i: <GraduationCap className="h-4 w-4" /> },
-            { k: "annonces", l: "Annonces", i: <Megaphone className="h-4 w-4" /> },
-            { k: "evenements", l: "Événements", i: <Calendar className="h-4 w-4" /> },
-            { k: "edt", l: "Emploi du temps", i: <Clock className="h-4 w-4" /> },
-          ].map((t) => (
-            <button key={t.k} onClick={() => setTab(t.k as never)}
-              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
-              {t.i}{t.l}
+      {menu && (
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+          <aside className="flex w-72 max-w-[85%] flex-col border-r border-border bg-surface p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-display text-base font-bold">Menu</span>
+              <button
+                type="button"
+                aria-label="Fermer le menu"
+                onClick={() => setMenu(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-border hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-1">
+              {sections.map((s) => (
+                <button
+                  key={s.k}
+                  onClick={() => { setTab(s.k as never); setMenu(false); }}
+                  className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${tab === s.k ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  <s.i className="h-4 w-4 shrink-0" />
+                  {s.l}
+                </button>
+              ))}
+            </nav>
+            <button onClick={signOutAndGoHome} className="btn-bf-outline mt-4 w-full text-sm">
+              <LogOut className="h-4 w-4" />Déconnexion
             </button>
-          ))}
+          </aside>
+          <button aria-label="Fermer" onClick={() => setMenu(false)} className="flex-1 bg-foreground/40 backdrop-blur-sm" />
         </div>
-      </nav>
+      )}
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {tab === "structure" && <StructurePanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}
@@ -122,16 +159,16 @@ function StructurePanel({ etabId }: { etabId: string }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <h2 className="mb-3 font-bold">Filières</h2>
         <form onSubmit={addFil} className="mb-3 flex gap-2">
           <input value={nfil} onChange={(e) => setNfil(e.target.value)} placeholder="Nom de la filière"
-            className="flex-1 rounded border border-input bg-surface px-3 py-2" />
-          <button className="btn-bf-primary">Ajouter</button>
+            className="flex-1 input-soft" />
+          <button className="btn-forest">Ajouter</button>
         </form>
         <ul className="space-y-2">
           {filieres.map((f) => (
-            <li key={f.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+            <li key={f.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
               <span>{f.nom}</span>
               <button onClick={() => delFil(f.id)} className="text-xs text-destructive underline">Suppr.</button>
             </li>
@@ -139,20 +176,20 @@ function StructurePanel({ etabId }: { etabId: string }) {
         </ul>
       </div>
 
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <h2 className="mb-3 font-bold">Niveaux</h2>
         <form onSubmit={addNiv} className="mb-3 space-y-2">
           <select value={nniv.filiere_id} onChange={(e) => setNniv({ ...nniv, filiere_id: e.target.value })}
-            className="w-full rounded border border-input bg-surface px-3 py-2" required>
+            className="w-full input-soft" required>
             <option value="">— Filière —</option>
             {filieres.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
           </select>
           <div className="flex gap-2">
             <input value={nniv.nom} onChange={(e) => setNniv({ ...nniv, nom: e.target.value })} placeholder="Nom (ex: L1)"
-              className="flex-1 rounded border border-input bg-surface px-3 py-2" />
+              className="flex-1 input-soft" />
             <input type="number" value={nniv.ordre} onChange={(e) => setNniv({ ...nniv, ordre: e.target.value })}
-              className="w-20 rounded border border-input bg-surface px-3 py-2" />
-            <button className="btn-bf-primary">Ajouter</button>
+              className="w-20 input-soft" />
+            <button className="btn-forest">Ajouter</button>
           </div>
         </form>
         <ul className="space-y-2">
@@ -161,7 +198,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
               <div className="mb-1 text-xs font-bold text-muted-foreground">{f.nom}</div>
               <div className="space-y-1">
                 {niveaux.filter((n) => n.filiere_id === f.id).map((n) => (
-                  <div key={n.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+                  <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
                     <span>{n.ordre}. {n.nom}</span>
                     <button onClick={() => delNiv(n.id)} className="text-xs text-destructive underline">Suppr.</button>
                   </div>
@@ -194,7 +231,7 @@ function useNiveauxOfEtab(etabId: string) {
 function NiveauPicker({ items, value, onChange }: { items: { niveau_id: string; label: string }[]; value: string; onChange: (v: string) => void }) {
   return (
     <select value={value} onChange={(e) => onChange(e.target.value)}
-      className="w-full max-w-md rounded border border-input bg-surface px-3 py-2">
+      className="w-full max-w-md input-soft">
       <option value="">— Niveau —</option>
       {items.map((n) => <option key={n.niveau_id} value={n.niveau_id}>{n.label}</option>)}
     </select>
@@ -263,13 +300,13 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
               <label className="btn-bf-outline cursor-pointer text-sm">
@@ -280,7 +317,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             <div className="space-y-1">
               {list.map((e) => (
-                <div key={e.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+                <div key={e.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <div>
                     <span className="font-semibold">{e.nom_complet}</span>
                     <span className="ml-2 text-xs text-muted-foreground">{e.email} · {e.date_naissance} · {e.inscrit ? "✓ inscrit" : "en attente"}</span>
@@ -292,12 +329,12 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             </div>
           </div>
 
-          <form onSubmit={add} className="card-glass space-y-3 rounded-xl p-6">
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
             <h3 className="font-bold">Ajouter un étudiant</h3>
             <SmInput label="Nom complet" v={form.nom_complet} on={(v) => setForm({ ...form, nom_complet: v })} />
             <SmInput label="Email" type="email" v={form.email} on={(v) => setForm({ ...form, email: v })} />
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
-            <button className="btn-bf-primary w-full">Ajouter</button>
+            <button className="btn-forest w-full">Ajouter</button>
             <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
           </form>
         </div>
@@ -373,21 +410,21 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
 
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
             <form onSubmit={addMat} className="mb-3 flex gap-2">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                className="flex-1 rounded border border-input bg-surface px-3 py-2" />
+                className="flex-1 input-soft" />
               <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="w-20 rounded border border-input bg-surface px-3 py-2" title="Coefficient" />
-              <button className="btn-bf-primary">+</button>
+                className="w-20 input-soft" title="Coefficient" />
+              <button className="btn-forest">+</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
@@ -401,7 +438,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
             </ul>
           </div>
 
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">Notes {selMat ? `(${notes.length})` : ""}</h3>
               {selMat && (
@@ -416,7 +453,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
             {selMat && (
               <div className="space-y-1">
                 {notes.map((n) => (
-                  <div key={n.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+                  <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
                     <span>{etuName(n.etudiant_user_id)} — <strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span></span>
                     <button onClick={async () => { await supabase.from("notes").delete().eq("id", n.id); setNotes((l) => l.filter((x) => x.id !== n.id)); }}
                       className="text-xs text-destructive underline">Suppr.</button>
@@ -455,16 +492,16 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
   }
   return (
     <div className="space-y-6">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Annonces ({list.length})</h3>
             <div className="space-y-3">
               {list.map((a) => (
-                <article key={a.id} className="rounded border border-border bg-surface p-4">
+                <article key={a.id} className="rounded-[10px] border border-border bg-surface p-4">
                   <div className="flex justify-between">
                     <h4 className="font-semibold">{a.titre}</h4>
                     <button onClick={async () => { await supabase.from("annonces").delete().eq("id", a.id); load(); }}
@@ -477,15 +514,15 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}
             </div>
           </div>
-          <form onSubmit={add} className="card-glass space-y-3 rounded-xl p-6">
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
             <h3 className="font-bold">Nouvelle annonce</h3>
             <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
             <div>
               <label className="mb-1 block text-sm">Contenu</label>
               <textarea required rows={5} value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })}
-                className="w-full rounded border border-input bg-surface px-3 py-2" />
+                className="w-full input-soft" />
             </div>
-            <button className="btn-bf-primary w-full">Publier</button>
+            <button className="btn-forest w-full">Publier</button>
           </form>
         </div>
       )}
@@ -517,16 +554,16 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   }
   return (
     <div className="space-y-6">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Événements ({list.length})</h3>
             <div className="space-y-2">
               {list.map((e) => (
-                <div key={e.id} className="rounded border border-border bg-surface p-3">
+                <div key={e.id} className="rounded-[10px] border border-border bg-surface p-3">
                   <div className="flex justify-between">
                     <div>
                       <h4 className="font-semibold">{e.titre}</h4>
@@ -541,7 +578,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
             </div>
           </div>
-          <form onSubmit={add} className="card-glass space-y-3 rounded-xl p-6">
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
             <h3 className="font-bold">Nouvel événement</h3>
             <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
             <SmInput label="Date & heure" type="datetime-local" v={form.date_evenement} on={(v) => setForm({ ...form, date_evenement: v })} />
@@ -549,9 +586,9 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
             <div>
               <label className="mb-1 block text-sm">Description</label>
               <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full rounded border border-input bg-surface px-3 py-2" />
+                className="w-full input-soft" />
             </div>
-            <button className="btn-bf-primary w-full">Ajouter</button>
+            <button className="btn-forest w-full">Ajouter</button>
           </form>
         </div>
       )}
@@ -585,12 +622,12 @@ function EDTPanel({ etabId }: { etabId: string }) {
   }
   return (
     <div className="space-y-6">
-      <div className="card-glass rounded-xl p-6">
+      <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-glass rounded-xl p-6">
+          <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Emploi du temps</h3>
             {JOURS.map((j, i) => {
               const items = list.filter((x) => x.jour_semaine === i + 1);
@@ -600,7 +637,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
                   <h4 className="mb-1 text-sm font-bold text-primary">{j}</h4>
                   <div className="space-y-1">
                     {items.map((x) => (
-                      <div key={x.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+                      <div key={x.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
                         <span>{x.heure_debut.slice(0, 5)}–{x.heure_fin.slice(0, 5)} · <strong>{x.matiere}</strong>{x.salle ? ` · ${x.salle}` : ""}{x.enseignant ? ` · ${x.enseignant}` : ""}</span>
                         <button onClick={async () => { await supabase.from("emplois_du_temps").delete().eq("id", x.id); load(); }}
                           className="text-xs text-destructive underline">Suppr.</button>
@@ -612,12 +649,12 @@ function EDTPanel({ etabId }: { etabId: string }) {
             })}
             {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun créneau.</p>}
           </div>
-          <form onSubmit={add} className="card-glass space-y-3 rounded-xl p-6">
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
             <h3 className="font-bold">Ajouter un créneau</h3>
             <div>
               <label className="mb-1 block text-sm">Jour</label>
               <select value={form.jour_semaine} onChange={(e) => setForm({ ...form, jour_semaine: e.target.value })}
-                className="w-full rounded border border-input bg-surface px-3 py-2">
+                className="w-full input-soft">
                 {JOURS.map((j, i) => <option key={j} value={i + 1}>{j}</option>)}
               </select>
             </div>
@@ -628,7 +665,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
             <SmInput label="Matière" v={form.matiere} on={(v) => setForm({ ...form, matiere: v })} />
             <SmInput label="Salle" v={form.salle} on={(v) => setForm({ ...form, salle: v })} />
             <SmInput label="Enseignant" v={form.enseignant} on={(v) => setForm({ ...form, enseignant: v })} />
-            <button className="btn-bf-primary w-full">Ajouter</button>
+            <button className="btn-forest w-full">Ajouter</button>
           </form>
         </div>
       )}
@@ -641,7 +678,7 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
     <div>
       <label className="mb-1 block text-sm">{label}</label>
       <input required={label !== "Salle" && label !== "Enseignant"} type={type} value={v} onChange={(e) => on(e.target.value)}
-        className="w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-primary" />
+        className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
 }

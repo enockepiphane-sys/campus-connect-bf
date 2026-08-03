@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Megaphone, Calendar, Clock, GraduationCap } from "lucide-react";
+import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,
@@ -44,9 +44,16 @@ function Dashboard() {
   if (ok === null) return <div className="p-8 text-center">Chargement…</div>;
   if (!ctx) return null;
 
+  const tabs = [
+    { k: "annonces", l: "Annonces", i: Megaphone },
+    { k: "edt", l: "Emploi du temps", i: Clock },
+    { k: "evenements", l: "Événements", i: Calendar },
+    { k: "notes", l: "Mes notes", i: GraduationCap },
+  ] as const;
+
   return (
-    <div className="bg-paper min-h-screen text-foreground">
-      <header className="border-b border-border bg-surface">
+    <div className="bg-app min-h-screen text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
             <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
@@ -60,28 +67,117 @@ function Dashboard() {
         </div>
       </header>
 
-      <nav className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
-          {[
-            { k: "annonces", l: "Annonces", i: <Megaphone className="h-4 w-4" /> },
-            { k: "edt", l: "Emploi du temps", i: <Clock className="h-4 w-4" /> },
-            { k: "evenements", l: "Événements", i: <Calendar className="h-4 w-4" /> },
-            { k: "notes", l: "Mes notes", i: <GraduationCap className="h-4 w-4" /> },
-          ].map((t) => (
-            <button key={t.k} onClick={() => setTab(t.k as never)}
-              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
-              {t.i}{t.l}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        {tab === "annonces" && <Annonces niveauId={ctx.niveauId} />}
+      <main className="mx-auto max-w-5xl px-4 pt-6 pb-28 sm:px-6">
+        {tab === "annonces" && (
+          <>
+            <StatsBanner niveauId={ctx.niveauId} />
+            <Annonces niveauId={ctx.niveauId} />
+          </>
+        )}
         {tab === "edt" && <EDT niveauId={ctx.niveauId} />}
         {tab === "evenements" && <Evenements niveauId={ctx.niveauId} />}
         {tab === "notes" && <Notes />}
       </main>
+
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto flex max-w-5xl">
+          {tabs.map((t) => {
+            const active = tab === t.k;
+            return (
+              <button
+                key={t.k}
+                onClick={() => setTab(t.k)}
+                aria-current={active ? "page" : undefined}
+                className={`flex flex-1 flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium transition ${active ? "text-foreground" : "text-muted-foreground/70"}`}
+              >
+                <t.i className={`h-5 w-5 ${active ? "" : "opacity-70"}`} strokeWidth={active ? 2.4 : 1.8} />
+                <span className="truncate">{t.l}</span>
+              </button>
+            );
+          })}
+        </div>
+      </nav>
+    </div>
+  );
+}
+
+function StatsBanner({ niveauId }: { niveauId: string }) {
+  const [stats, setStats] = useState<{ label: string; value: string; sub: string; icon: typeof TrendingUp }[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: notes }, { data: edt }] = await Promise.all([
+        supabase.from("notes").select("valeur,matiere_id"),
+        supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut"),
+      ]);
+      const rows = (notes as { valeur: number; matiere_id: string }[]) ?? [];
+      const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
+      let mats: { id: string; nom: string; coefficient: number }[] = [];
+      if (ids.length) {
+        const { data } = await supabase.from("matieres").select("id,nom,coefficient").in("id", ids);
+        mats = (data as never) ?? [];
+      }
+      const byMat = new Map<string, number[]>();
+      rows.forEach((n) => byMat.set(n.matiere_id, [...(byMat.get(n.matiere_id) ?? []), Number(n.valeur)]));
+
+      let totalPts = 0, totalCoef = 0, credits = 0;
+      byMat.forEach((vals, mid) => {
+        const coef = Number(mats.find((m) => m.id === mid)?.coefficient ?? 1);
+        const moy = vals.reduce((s, v) => s + v, 0) / vals.length;
+        totalPts += moy * coef; totalCoef += coef;
+        if (moy >= 10) credits += coef;
+      });
+
+      const list = (edt as { jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null }[]) ?? [];
+      const now = new Date();
+      const today = ((now.getDay() + 6) % 7) + 1;
+      const hm = now.toTimeString().slice(0, 8);
+      const next =
+        list.find((c) => c.jour_semaine === today && c.heure_debut > hm) ??
+        list.find((c) => c.jour_semaine > today) ??
+        list[0];
+
+      setStats([
+        {
+          label: "Moyenne générale",
+          value: totalCoef ? (totalPts / totalCoef).toFixed(2) : "—",
+          sub: totalCoef ? "sur 20" : "aucune note",
+          icon: TrendingUp,
+        },
+        {
+          label: "Crédits validés",
+          value: totalCoef ? String(credits) : "—",
+          sub: totalCoef ? `sur ${totalCoef}` : "aucune matière",
+          icon: Award,
+        },
+        {
+          label: "Prochain cours",
+          value: next ? next.matiere : "—",
+          sub: next ? `${JOURS[next.jour_semaine]} ${next.heure_debut.slice(0, 5)}${next.salle ? ` · ${next.salle}` : ""}` : "aucun cours planifié",
+          icon: Clock,
+        },
+      ]);
+    })();
+  }, [niveauId]);
+
+  if (!stats.length) return null;
+
+  const Card = ({ s }: { s: (typeof stats)[number] }) => (
+    <div className="card-soft w-56 shrink-0 p-4">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <s.icon className="h-4 w-4 text-primary" />
+        {s.label}
+      </div>
+      <p className="mt-2 truncate text-xl font-bold text-foreground">{s.value}</p>
+      <p className="truncate text-xs text-muted-foreground">{s.sub}</p>
+    </div>
+  );
+
+  return (
+    <div className="mb-6 overflow-hidden">
+      <div className="marquee-track flex w-max gap-3">
+        {[...stats, ...stats].map((s, i) => <Card key={i} s={s} />)}
+      </div>
     </div>
   );
 }
@@ -92,16 +188,34 @@ function Annonces({ niveauId }: { niveauId: string }) {
     supabase.from("annonces").select("id,titre,contenu,created_at").eq("niveau_id", niveauId).order("created_at", { ascending: false })
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
+
+  if (list.length === 0) {
+    return (
+      <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
+        <Megaphone className="h-8 w-8 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">Aucune annonce pour le moment</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {list.map((a) => (
-        <article key={a.id} className="card-glass rounded-xl p-5">
-          <h3 className="font-bold">{a.titre}</h3>
-          <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
-          <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
-        </article>
-      ))}
-      {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce pour votre niveau.</p>}
+      {list.map((a, i) => {
+        const recent = Date.now() - new Date(a.created_at).getTime() < 7 * 864e5;
+        return (
+          <article key={a.id} className="card-soft p-5">
+            <div className="mb-2 flex items-center gap-2">
+              <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${recent ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
+                {recent ? "Nouveau" : "Annonce"}
+              </span>
+              {i === 0 && <Pin className="h-3.5 w-3.5 text-terracotta" />}
+            </div>
+            <h3 className="font-bold">{a.titre}</h3>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -113,7 +227,7 @@ function EDT({ niveauId }: { niveauId: string }) {
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
   return (
-    <div className="card-glass rounded-xl p-6">
+    <div className="card-soft p-6">
       {[1, 2, 3, 4, 5, 6, 7].map((j) => {
         const items = list.filter((x) => x.jour_semaine === j);
         if (!items.length) return null;
@@ -122,7 +236,7 @@ function EDT({ niveauId }: { niveauId: string }) {
             <h3 className="mb-2 text-sm font-bold text-primary">{JOURS[j]}</h3>
             <div className="space-y-1">
               {items.map((x, idx) => (
-                <div key={idx} className="rounded border border-border bg-surface p-2 text-sm">
+                <div key={idx} className="rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <span className="font-mono text-xs text-muted-foreground">{x.heure_debut.slice(0, 5)}–{x.heure_fin.slice(0, 5)}</span>
                   {" · "}<strong>{x.matiere}</strong>
                   {x.salle && <span className="text-muted-foreground"> · {x.salle}</span>}
@@ -147,13 +261,18 @@ function Evenements({ niveauId }: { niveauId: string }) {
   return (
     <div className="space-y-3">
       {list.map((e) => (
-        <article key={e.id} className="card-glass rounded-xl p-5">
+        <article key={e.id} className="card-soft p-5">
           <h3 className="font-bold">{e.titre}</h3>
           <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
           {e.description && <p className="mt-2 text-sm">{e.description}</p>}
         </article>
       ))}
-      {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
+      {list.length === 0 && (
+        <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
+          <Calendar className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">Aucun événement pour le moment</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -186,14 +305,14 @@ function Notes() {
         const mat = matieres[mid];
         const moy = notes.reduce((s, n) => s + Number(n.valeur), 0) / notes.length;
         return (
-          <div key={mid} className="card-glass rounded-xl p-5">
+          <div key={mid} className="card-soft p-5">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-bold">{mat?.nom ?? "Matière"}</h3>
               <div className="text-sm">Moyenne : <strong className="text-primary">{moy.toFixed(2)}</strong> {mat && <span className="text-xs text-muted-foreground">· coef {mat.coefficient}</span>}</div>
             </div>
             <div className="space-y-1">
               {notes.map((n) => (
-                <div key={n.id} className="flex items-center justify-between rounded border border-border bg-surface p-2 text-sm">
+                <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <span><strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span>{n.commentaire ? ` — ${n.commentaire}` : ""}</span>
                   <span className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
                 </div>
@@ -202,7 +321,12 @@ function Notes() {
           </div>
         );
       })}
-      {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune note enregistrée pour le moment.</p>}
+      {list.length === 0 && (
+        <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
+          <GraduationCap className="h-8 w-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">Aucune note enregistrée pour le moment</p>
+        </div>
+      )}
     </div>
   );
 }

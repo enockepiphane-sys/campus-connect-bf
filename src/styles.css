@@ -251,7 +251,7 @@
 
 @utility marquee-track {
   animation: cl-marquee 26s linear infinite;
-  &:hover { animation-play-state: paused; }
+  &:hover, &:active { animation-play-state: paused; }
 }
 
 @keyframes cl-marquee {

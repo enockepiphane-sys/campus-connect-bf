@@ -44,7 +44,7 @@ function Dashboard() {
   if (!authorized) return null;
 
   return (
-    <div className="bg-paper min-h-screen text-foreground">
+    <div className="bg-app min-h-screen text-foreground">
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
@@ -52,16 +52,16 @@ function Dashboard() {
             <DrapeauBF className="h-4 w-6 shrink-0" />
             <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Super Admin</span>
           </Link>
-          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
+          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
         </div>
       </header>
 
       <nav className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
           {[
-            { k: "etabs", l: "Établissements", i: <Building2 className="h-4 w-4" /> },
-            { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="h-4 w-4" /> },
-            { k: "demandes", l: "Demandes partenariat", i: <Mail className="h-4 w-4" /> },
+            { k: "etabs", l: "Établissements", i: <Building2 className="icon-green h-4 w-4" /> },
+            { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="icon-blue h-4 w-4" /> },
+            { k: "demandes", l: "Demandes partenariat", i: <Mail className="icon-terracotta h-4 w-4" /> },
           ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k as never)}
               className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>

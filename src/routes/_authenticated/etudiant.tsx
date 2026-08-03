@@ -45,10 +45,10 @@ function Dashboard() {
   if (!ctx) return null;
 
   const tabs = [
-    { k: "annonces", l: "Annonces", i: Megaphone },
-    { k: "edt", l: "Emploi du temps", i: Clock },
-    { k: "evenements", l: "Événements", i: Calendar },
-    { k: "notes", l: "Mes notes", i: GraduationCap },
+    { k: "annonces", l: "Annonces", i: Megaphone, c: "icon-terracotta" },
+    { k: "edt", l: "Emploi du temps", i: Clock, c: "icon-teal" },
+    { k: "evenements", l: "Événements", i: Calendar, c: "icon-gold" },
+    { k: "notes", l: "Mes notes", i: GraduationCap, c: "icon-violet" },
   ] as const;
 
   return (
@@ -62,7 +62,7 @@ function Dashboard() {
           </Link>
           <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
             <span className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">{ctx.userName} · {ctx.niveauLabel}</span>
-            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
+            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
           </div>
         </div>
       </header>
@@ -90,7 +90,7 @@ function Dashboard() {
                 aria-current={active ? "page" : undefined}
                 className={`flex flex-1 flex-col items-center gap-1 px-1 py-2.5 text-[11px] font-medium transition ${active ? "text-foreground" : "text-muted-foreground/70"}`}
               >
-                <t.i className={`h-5 w-5 ${active ? "" : "opacity-70"}`} strokeWidth={active ? 2.4 : 1.8} />
+                <t.i className={`h-5 w-5 ${t.c} ${active ? "" : "opacity-60"}`} strokeWidth={active ? 2.4 : 1.8} />
                 <span className="truncate">{t.l}</span>
               </button>
             );
@@ -102,7 +102,7 @@ function Dashboard() {
 }
 
 function StatsBanner({ niveauId }: { niveauId: string }) {
-  const [stats, setStats] = useState<{ label: string; value: string; sub: string; icon: typeof TrendingUp }[]>([]);
+  const [stats, setStats] = useState<{ label: string; value: string; sub: string; icon: typeof TrendingUp; color: string }[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -142,19 +142,19 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
           label: "Moyenne générale",
           value: totalCoef ? (totalPts / totalCoef).toFixed(2) : "—",
           sub: totalCoef ? "sur 20" : "aucune note",
-          icon: TrendingUp,
+          icon: TrendingUp, color: "icon-green",
         },
         {
           label: "Crédits validés",
           value: totalCoef ? String(credits) : "—",
           sub: totalCoef ? `sur ${totalCoef}` : "aucune matière",
-          icon: Award,
+          icon: Award, color: "icon-gold",
         },
         {
           label: "Prochain cours",
           value: next ? next.matiere : "—",
           sub: next ? `${JOURS[next.jour_semaine]} ${next.heure_debut.slice(0, 5)}${next.salle ? ` · ${next.salle}` : ""}` : "aucun cours planifié",
-          icon: Clock,
+          icon: Clock, color: "icon-teal",
         },
       ]);
     })();
@@ -165,7 +165,7 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
   const Card = ({ s }: { s: (typeof stats)[number] }) => (
     <div className="card-soft w-56 shrink-0 p-4">
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <s.icon className="h-4 w-4 text-primary" />
+        <s.icon className={`h-4 w-4 ${s.color}`} />
         {s.label}
       </div>
       <p className="mt-2 truncate text-xl font-bold text-foreground">{s.value}</p>
@@ -192,7 +192,7 @@ function Annonces({ niveauId }: { niveauId: string }) {
   if (list.length === 0) {
     return (
       <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
-        <Megaphone className="h-8 w-8 text-muted-foreground/50" />
+        <Megaphone className="icon-terracotta h-8 w-8 opacity-60" />
         <p className="text-sm text-muted-foreground">Aucune annonce pour le moment</p>
       </div>
     );
@@ -208,7 +208,7 @@ function Annonces({ niveauId }: { niveauId: string }) {
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${recent ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
                 {recent ? "Nouveau" : "Annonce"}
               </span>
-              {i === 0 && <Pin className="h-3.5 w-3.5 text-terracotta" />}
+              {i === 0 && <Pin className="icon-terracotta h-3.5 w-3.5" />}
             </div>
             <h3 className="font-bold">{a.titre}</h3>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
@@ -269,7 +269,7 @@ function Evenements({ niveauId }: { niveauId: string }) {
       ))}
       {list.length === 0 && (
         <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
-          <Calendar className="h-8 w-8 text-muted-foreground/50" />
+          <Calendar className="icon-gold h-8 w-8 opacity-60" />
           <p className="text-sm text-muted-foreground">Aucun événement pour le moment</p>
         </div>
       )}
@@ -323,7 +323,7 @@ function Notes() {
       })}
       {list.length === 0 && (
         <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
-          <GraduationCap className="h-8 w-8 text-muted-foreground/50" />
+          <GraduationCap className="icon-violet h-8 w-8 opacity-60" />
           <p className="text-sm text-muted-foreground">Aucune note enregistrée pour le moment</p>
         </div>
       )}

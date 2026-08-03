@@ -38,38 +38,74 @@ function Dashboard() {
   if (ok === null) return <div className="p-8 text-center">Chargement…</div>;
   if (!etabId) return null;
 
+  const sections = [
+    { k: "structure", l: "Filières & niveaux", i: BookOpen },
+    { k: "etudiants", l: "Étudiants", i: Users },
+    { k: "matieres", l: "Matières & notes", i: GraduationCap },
+    { k: "annonces", l: "Annonces", i: Megaphone },
+    { k: "evenements", l: "Événements", i: Calendar },
+    { k: "edt", l: "Emploi du temps", i: Clock },
+  ] as const;
+  const current = sections.find((s) => s.k === tab);
+
   return (
-    <div className="bg-paper min-h-screen text-foreground">
-      <header className="border-b border-border bg-surface">
+    <div className="bg-app min-h-screen text-foreground">
+      <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-            <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0" />
-            <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
-          </Link>
-          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="h-4 w-4" />Déconnexion</button>
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              aria-label="Ouvrir le menu"
+              onClick={() => setMenu(true)}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-foreground transition hover:bg-muted"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+              <DrapeauBF className="h-4 w-6 shrink-0" />
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
+            </Link>
+          </div>
+          <span className="text-sm font-medium text-muted-foreground">{current?.l}</span>
         </div>
       </header>
 
-      <nav className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
-          {[
-            { k: "structure", l: "Filières & niveaux", i: <BookOpen className="h-4 w-4" /> },
-            { k: "etudiants", l: "Étudiants", i: <Users className="h-4 w-4" /> },
-            { k: "matieres", l: "Matières & notes", i: <GraduationCap className="h-4 w-4" /> },
-            { k: "annonces", l: "Annonces", i: <Megaphone className="h-4 w-4" /> },
-            { k: "evenements", l: "Événements", i: <Calendar className="h-4 w-4" /> },
-            { k: "edt", l: "Emploi du temps", i: <Clock className="h-4 w-4" /> },
-          ].map((t) => (
-            <button key={t.k} onClick={() => setTab(t.k as never)}
-              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
-              {t.i}{t.l}
+      {menu && (
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
+          <aside className="flex w-72 max-w-[85%] flex-col border-r border-border bg-surface p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="font-display text-base font-bold">Menu</span>
+              <button
+                type="button"
+                aria-label="Fermer le menu"
+                onClick={() => setMenu(false)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-[10px] border border-border hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-1">
+              {sections.map((s) => (
+                <button
+                  key={s.k}
+                  onClick={() => { setTab(s.k as never); setMenu(false); }}
+                  className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${tab === s.k ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-muted"}`}
+                >
+                  <s.i className="h-4 w-4 shrink-0" />
+                  {s.l}
+                </button>
+              ))}
+            </nav>
+            <button onClick={signOutAndGoHome} className="btn-bf-outline mt-4 w-full text-sm">
+              <LogOut className="h-4 w-4" />Déconnexion
             </button>
-          ))}
+          </aside>
+          <button aria-label="Fermer" onClick={() => setMenu(false)} className="flex-1 bg-foreground/40 backdrop-blur-sm" />
         </div>
-      </nav>
+      )}
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {tab === "structure" && <StructurePanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}

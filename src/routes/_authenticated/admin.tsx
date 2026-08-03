@@ -40,12 +40,12 @@ function Dashboard() {
   if (!etabId) return null;
 
   const sections = [
-    { k: "structure", l: "Filières & niveaux", i: BookOpen },
-    { k: "etudiants", l: "Étudiants", i: Users },
-    { k: "matieres", l: "Matières & notes", i: GraduationCap },
-    { k: "annonces", l: "Annonces", i: Megaphone },
-    { k: "evenements", l: "Événements", i: Calendar },
-    { k: "edt", l: "Emploi du temps", i: Clock },
+    { k: "structure", l: "Filières & niveaux", i: BookOpen, c: "icon-green" },
+    { k: "etudiants", l: "Étudiants", i: Users, c: "icon-blue" },
+    { k: "matieres", l: "Matières & notes", i: GraduationCap, c: "icon-violet" },
+    { k: "annonces", l: "Annonces", i: Megaphone, c: "icon-terracotta" },
+    { k: "evenements", l: "Événements", i: Calendar, c: "icon-gold" },
+    { k: "edt", l: "Emploi du temps", i: Clock, c: "icon-teal" },
   ] as const;
   const current = sections.find((s) => s.k === tab);
 
@@ -93,13 +93,13 @@ function Dashboard() {
                   onClick={() => { setTab(s.k as never); setMenu(false); }}
                   className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${tab === s.k ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-muted"}`}
                 >
-                  <s.i className="h-4 w-4 shrink-0" />
+                  <s.i className={`h-4 w-4 shrink-0 ${s.c}`} />
                   {s.l}
                 </button>
               ))}
             </nav>
             <button onClick={signOutAndGoHome} className="btn-bf-outline mt-4 w-full text-sm">
-              <LogOut className="h-4 w-4" />Déconnexion
+              <LogOut className="icon-danger h-4 w-4" />Déconnexion
             </button>
           </aside>
           <button aria-label="Fermer" onClick={() => setMenu(false)} className="flex-1 bg-foreground/40 backdrop-blur-sm" />
@@ -310,7 +310,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
               <label className="btn-bf-outline cursor-pointer text-sm">
-                <Upload className="h-4 w-4" />Import CSV
+                <Upload className="icon-tinted h-4 w-4" />Import CSV
                 <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
               </label>
             </div>
@@ -443,7 +443,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
               <h3 className="font-bold">Notes {selMat ? `(${notes.length})` : ""}</h3>
               {selMat && (
                 <label className="btn-bf-outline cursor-pointer text-sm">
-                  <Upload className="h-4 w-4" />Import CSV
+                  <Upload className="icon-tinted h-4 w-4" />Import CSV
                   <input hidden type="file" accept=".csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importNotes(f); e.target.value = ""; }} />
                 </label>
               )}

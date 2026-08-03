@@ -159,7 +159,7 @@
 }
 
 @utility card-glass {
-  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
+  background: var(--color-surface);
   backdrop-filter: blur(12px);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-card);
@@ -206,7 +206,9 @@
 /* === Refonte visuelle des espaces Étudiant / Admin === */
 
 @utility bg-app {
-  background-color: var(--app-bg);
+  background-color: #FDF6E9;
+  background-image: linear-gradient(160deg, #FDF6E9 0%, #F6FBF3 55%, #FDF0EE 100%);
+  background-attachment: fixed;
 }
 
 @utility card-soft {
@@ -258,3 +260,17 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+
+/* === Icônes de section colorées et remplies === */
+
+@utility icon-tinted {
+  fill: color-mix(in oklab, currentColor 22%, transparent);
+}
+
+@utility icon-green { color: #1a7a3e; fill: color-mix(in oklab, #1a7a3e 22%, transparent); }
+@utility icon-blue { color: #1d6fa5; fill: color-mix(in oklab, #1d6fa5 22%, transparent); }
+@utility icon-violet { color: #6d4aa8; fill: color-mix(in oklab, #6d4aa8 22%, transparent); }
+@utility icon-terracotta { color: #c2603c; fill: color-mix(in oklab, #c2603c 22%, transparent); }
+@utility icon-gold { color: #c08a1e; fill: color-mix(in oklab, #c08a1e 22%, transparent); }
+@utility icon-teal { color: #167d78; fill: color-mix(in oklab, #167d78 22%, transparent); }
+@utility icon-danger { color: #b4442f; fill: color-mix(in oklab, #b4442f 22%, transparent); }

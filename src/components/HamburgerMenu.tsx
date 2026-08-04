@@ -6,6 +6,7 @@ const links = [
   { to: "/fonctionnalites", label: "Fonctionnalités" },
   { to: "/cours-en-ligne", label: "Cours en ligne" },
   { to: "/devenir-partenaire", label: "Devenir partenaire" },
+  { to: "/a-propos", label: "À propos de CampusLink" },
   { to: "/politique-confidentialite", label: "Politique de confidentialité" },
 ] as const;
 

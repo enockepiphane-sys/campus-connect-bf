@@ -47,8 +47,8 @@ function Page() {
       </p>
 
       <div className="mt-10 border-t border-border pt-6 text-center">
-        <p className="text-base font-semibold text-foreground">SWE Social Service</p>
-        <p className="mt-1 text-xs text-muted-foreground">© W.E. Epiphane Saouadogo</p>
+        <p className="text-base font-semibold text-foreground">SWEE Social-Services</p>
+        <p className="mt-1 text-xs text-muted-foreground">© SAOUADOGO W. E. Epiphane</p>
       </div>
     </PageShell>
   );

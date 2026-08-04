@@ -4,6 +4,7 @@ import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, 
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
+import { PhoneMockup } from "@/components/PhoneMockup";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 

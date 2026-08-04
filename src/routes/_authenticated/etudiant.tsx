@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
+import { setupPushNotifications } from "@/lib/push-notifications";
+
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award } from "lucide-react";
 
@@ -38,6 +40,9 @@ function Dashboard() {
         userName: pre.nom_complet,
       });
       setOk(true);
+      // Notifications push : non bloquant, échec silencieux si refus/non supporté.
+      void setupPushNotifications();
+
     })();
   }, []);
 

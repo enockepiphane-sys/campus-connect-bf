@@ -4,6 +4,7 @@ import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, 
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
+import { PhoneMockup } from "@/components/PhoneMockup";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
@@ -57,19 +58,22 @@ function Home() {
 
       {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">
-        <div className="text-center">
-          <span className="inline-block rounded-full border border-primary/20 bg-primary-soft px-4 py-1 text-xs font-medium uppercase tracking-widest text-primary">
-            Burkina Faso
-          </span>
-          <h1 className="mt-6 text-4xl font-bold leading-tight text-foreground md:text-6xl">
-            La vie universitaire, <br />
-            <span className="text-gradient-bf">simplement connectée.</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            CampusLink relie les universités, leurs administrateurs et leurs
-            étudiants du Burkina Faso : notes, annonces, emplois du temps et
-            événements dans un espace sécurisé.
-          </p>
+        <div className="grid items-center gap-12 md:grid-cols-2">
+          <div className="text-center md:text-left">
+            <span className="inline-block rounded-full border border-primary/20 bg-primary-soft px-4 py-1 text-xs font-medium uppercase tracking-widest text-primary">
+              Burkina Faso
+            </span>
+            <h1 className="mt-6 text-4xl font-bold leading-tight text-foreground md:text-5xl">
+              La vie universitaire, <br />
+              <span className="text-gradient-bf">simplement connectée.</span>
+            </h1>
+            <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:mx-0">
+              CampusLink relie les universités, leurs administrateurs et leurs
+              étudiants du Burkina Faso : notes, annonces, emplois du temps et
+              événements dans un espace sécurisé.
+            </p>
+          </div>
+          <PhoneMockup />
         </div>
 
         {/* Accès étudiant */}

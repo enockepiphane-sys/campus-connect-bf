@@ -187,10 +187,12 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
   );
 }
 
+type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean };
+
 function Annonces({ niveauId }: { niveauId: string }) {
-  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string }[]>([]);
+  const [list, setList] = useState<AnnonceRow[]>([]);
   useEffect(() => {
-    supabase.from("annonces").select("id,titre,contenu,created_at").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false })
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
 
@@ -209,6 +211,13 @@ function Annonces({ niveauId }: { niveauId: string }) {
         const recent = Date.now() - new Date(a.created_at).getTime() < 7 * 864e5;
         return (
           <article key={a.id} className="card-soft p-5">
+            {a.is_urgent && (
+              <div className="mb-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-destructive px-2.5 py-0.5 text-[11px] font-bold text-destructive-foreground">
+                  🚨 URGENT
+                </span>
+              </div>
+            )}
             <div className="mb-2 flex items-center gap-2">
               <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${recent ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
                 {recent ? "Nouveau" : "Annonce"}
@@ -218,12 +227,115 @@ function Annonces({ niveauId }: { niveauId: string }) {
             <h3 className="font-bold">{a.titre}</h3>
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
             <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
+            <LikeButton annonceId={a.id} />
+            {a.comments_enabled && <Commentaires annonceId={a.id} />}
           </article>
         );
       })}
     </div>
   );
 }
+
+function LikeButton({ annonceId }: { annonceId: string }) {
+  const [count, setCount] = useState(0);
+  const [liked, setLiked] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data: u } = await supabase.auth.getUser();
+    const { data } = await supabase.from("announcement_likes").select("id,user_id").eq("announcement_id", annonceId);
+    const rows = (data as { id: string; user_id: string }[]) ?? [];
+    setCount(rows.length);
+    setLiked(!!u.user && rows.some((r) => r.user_id === u.user!.id));
+  }
+  useEffect(() => { load(); }, [annonceId]);
+
+  async function toggle() {
+    if (busy) return;
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      if (liked) {
+        await supabase.from("announcement_likes").delete().eq("announcement_id", annonceId).eq("user_id", u.user.id);
+      } else {
+        await supabase.from("announcement_likes").insert({ announcement_id: annonceId, user_id: u.user.id });
+      }
+      await load();
+    }
+    setBusy(false);
+  }
+
+  return (
+    <button onClick={toggle} disabled={busy}
+      className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-sm transition disabled:opacity-60">
+      <Heart className={`h-4 w-4 ${liked ? "icon-terracotta fill-current" : "text-muted-foreground"}`} />
+      <span className={liked ? "font-semibold text-foreground" : "text-muted-foreground"}>{count}</span>
+    </button>
+  );
+}
+
+function Commentaires({ annonceId }: { annonceId: string }) {
+  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data } = await supabase.from("announcement_comments")
+      .select("id,content,created_at,user_id").eq("announcement_id", annonceId)
+      .order("created_at", { ascending: false });
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    const ids = Array.from(new Set(rows.map((c) => c.user_id)));
+    if (ids.length) {
+      const { data: etus } = await supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet").in("user_id", ids);
+      const m: Record<string, string> = {};
+      (etus ?? []).forEach((e) => { if (e.user_id) m[e.user_id] = e.nom_complet; });
+      setNames(m);
+    }
+  }
+  useEffect(() => { load(); }, [annonceId]);
+
+  async function publier(e: React.FormEvent) {
+    e.preventDefault();
+    const content = text.trim();
+    if (!content || busy) return;
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      const { error } = await supabase.from("announcement_comments").insert({ announcement_id: annonceId, user_id: u.user.id, content });
+      if (!error) { setText(""); await load(); }
+    }
+    setBusy(false);
+  }
+
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <MessageCircle className="icon-teal h-4 w-4" />
+        Commentaires ({list.length})
+      </div>
+      <form onSubmit={publier} className="mb-3 flex gap-2">
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
+          className="input-soft flex-1" maxLength={2000} />
+        <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
+      </form>
+      <div className="space-y-2">
+        {list.map((c) => (
+          <div key={c.id} className="rounded-[10px] border border-border bg-surface p-2 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">{names[c.user_id] ?? "Étudiant"}</span>
+              <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
+            </div>
+            <p className="whitespace-pre-wrap">{c.content}</p>
+          </div>
+        ))}
+        {list.length === 0 && <p className="text-xs text-muted-foreground">Aucun commentaire pour le moment.</p>}
+      </div>
+    </div>
+  );
+}
+
 
 function EDT({ niveauId }: { niveauId: string }) {
   const [list, setList] = useState<{ jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null; enseignant: string | null }[]>([]);

@@ -474,12 +474,12 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string }[]>([]);
-  const [form, setForm] = useState({ titre: "", contenu: "" });
+  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean }[]>([]);
+  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false });
 
   async function load() {
     if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at").eq("niveau_id", niveauId).order("created_at", { ascending: false });
+    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false });
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
@@ -487,9 +487,22 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
   async function add(e: React.FormEvent) {
     e.preventDefault(); if (!niveauId) return;
     const { data: u } = await supabase.auth.getUser();
-    await supabase.from("annonces").insert({ niveau_id: niveauId, titre: form.titre.trim(), contenu: form.contenu.trim(), created_by: u.user?.id });
-    setForm({ titre: "", contenu: "" }); load();
+    await supabase.from("annonces").insert({
+      niveau_id: niveauId,
+      titre: form.titre.trim(),
+      contenu: form.contenu.trim(),
+      is_urgent: form.is_urgent,
+      comments_enabled: form.comments_enabled,
+      created_by: u.user?.id,
+    });
+    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false }); load();
   }
+
+  async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
+    await supabase.from("annonces").update({ [field]: value }).eq("id", id);
+    load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -503,12 +516,26 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               {list.map((a) => (
                 <article key={a.id} className="rounded-[10px] border border-border bg-surface p-4">
                   <div className="flex justify-between">
-                    <h4 className="font-semibold">{a.titre}</h4>
+                    <h4 className="font-semibold">
+                      {a.is_urgent && <span className="mr-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">🚨 URGENT</span>}
+                      {a.titre}
+                    </h4>
                     <button onClick={async () => { await supabase.from("annonces").delete().eq("id", a.id); load(); }}
                       className="text-xs text-destructive underline">Suppr.</button>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+                    <label className="flex items-center gap-1.5">
+                      <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
+                      Marquer comme urgent
+                    </label>
+                    <label className="flex items-center gap-1.5">
+                      <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
+                      Autoriser les commentaires
+                    </label>
+                  </div>
                   <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
+                  {a.comments_enabled && <AdminComments annonceId={a.id} />}
                 </article>
               ))}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}
@@ -522,6 +549,14 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               <textarea required rows={5} value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })}
                 className="w-full input-soft" />
             </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.is_urgent} onChange={(e) => setForm({ ...form, is_urgent: e.target.checked })} />
+              Marquer comme urgent
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
+              Autoriser les commentaires
+            </label>
             <button className="btn-forest w-full">Publier</button>
           </form>
         </div>
@@ -529,6 +564,46 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
     </div>
   );
 }
+
+function AdminComments({ annonceId }: { annonceId: string }) {
+  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+
+  async function load() {
+    const { data } = await supabase.from("announcement_comments")
+      .select("id,content,created_at,user_id").eq("announcement_id", annonceId)
+      .order("created_at", { ascending: false });
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    const ids = Array.from(new Set(rows.map((c) => c.user_id)));
+    if (ids.length) {
+      const { data: etus } = await supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet").in("user_id", ids);
+      const m: Record<string, string> = {};
+      (etus ?? []).forEach((e) => { if (e.user_id) m[e.user_id] = e.nom_complet; });
+      setNames(m);
+    }
+  }
+  useEffect(() => { load(); }, [annonceId]);
+
+  if (!list.length) return <p className="mt-2 text-xs text-muted-foreground">Aucun commentaire.</p>;
+  return (
+    <div className="mt-3 space-y-2 border-t border-border pt-3">
+      {list.map((c) => (
+        <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
+          <div>
+            <span className="font-medium">{names[c.user_id] ?? "Étudiant"}</span>{" "}
+            <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
+            <p className="whitespace-pre-wrap">{c.content}</p>
+          </div>
+          <button
+            onClick={async () => { await supabase.from("announcement_comments").delete().eq("id", c.id); load(); }}
+            className="shrink-0 text-xs text-destructive underline">Suppr.</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 
 // -------------- Événements --------------
 function EvenementsPanel({ etabId }: { etabId: string }) {

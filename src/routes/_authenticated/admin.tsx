@@ -499,7 +499,8 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
   }
 
   async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
-    await supabase.from("annonces").update({ [field]: value }).eq("id", id);
+    const patch = field === "is_urgent" ? { is_urgent: value } : { comments_enabled: value };
+    await supabase.from("annonces").update(patch).eq("id", id);
     load();
   }
 

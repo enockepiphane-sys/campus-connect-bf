@@ -74,13 +74,13 @@ function Home() {
               événements dans un espace sécurisé.
             </p>
           </div>
-          <div className="relative mx-auto flex items-end justify-center">
+          <div className="relative mx-auto flex items-end justify-center px-2 sm:px-0">
             <img
               src={graduateHero}
               alt="Jeune diplômé universitaire africain présentant fièrement l'application CampusLink"
               width={1024}
               height={1536}
-              className="relative z-0 max-h-[320px] w-auto md:max-h-[420px] -mr-16 md:-mr-24"
+              className="relative z-0 max-h-[260px] w-auto sm:max-h-[300px] md:max-h-[420px] -mr-8 sm:-mr-12 md:-mr-24"
             />
             <div className="relative z-10">
               <PhoneMockup />

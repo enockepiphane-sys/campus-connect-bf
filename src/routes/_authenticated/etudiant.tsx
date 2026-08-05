@@ -5,7 +5,7 @@ import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { setupPushNotifications } from "@/lib/push-notifications";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award } from "lucide-react";
+import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,

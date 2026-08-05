@@ -9,7 +9,7 @@ export function PhoneMockup() {
       aria-label="Aperçu de l'espace étudiant CampusLink"
       role="img"
     >
-      <div className="relative overflow-hidden rounded-[1.7rem]" style={{ background: "linear-gradient(160deg, #FDF6E9 0%, #F6FBF3 55%, #FDF0EE 100%)" }}>
+      <div className="relative overflow-hidden rounded-[1.55rem]" style={{ background: "linear-gradient(160deg, #FDF6E9 0%, #F6FBF3 55%, #FDF0EE 100%)" }}>
         {/* Encoche caméra */}
         <div className="absolute left-1/2 top-1.5 z-10 h-2 w-2 -translate-x-1/2 rounded-full bg-[#1a1a1a]" />
 

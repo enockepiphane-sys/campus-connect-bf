@@ -64,28 +64,34 @@ export type Database = {
       }
       annonces: {
         Row: {
+          comments_enabled: boolean
           contenu: string
           created_at: string
           created_by: string | null
           id: string
+          is_urgent: boolean
           niveau_id: string
           titre: string
           updated_at: string
         }
         Insert: {
+          comments_enabled?: boolean
           contenu: string
           created_at?: string
           created_by?: string | null
           id?: string
+          is_urgent?: boolean
           niveau_id: string
           titre: string
           updated_at?: string
         }
         Update: {
+          comments_enabled?: boolean
           contenu?: string
           created_at?: string
           created_by?: string | null
           id?: string
+          is_urgent?: boolean
           niveau_id?: string
           titre?: string
           updated_at?: string
@@ -96,6 +102,67 @@ export type Database = {
             columns: ["niveau_id"]
             isOneToOne: false
             referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcement_comments: {
+        Row: {
+          announcement_id: string
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          content: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_comments_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "annonces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      announcement_likes: {
+        Row: {
+          announcement_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          announcement_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          announcement_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_likes_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "annonces"
             referencedColumns: ["id"]
           },
         ]

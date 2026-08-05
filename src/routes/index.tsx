@@ -5,6 +5,7 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
+import graduateHero from "@/assets/graduate-hero.png";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 
@@ -73,7 +74,18 @@ function Home() {
               événements dans un espace sécurisé.
             </p>
           </div>
-          <PhoneMockup />
+          <div className="relative mx-auto flex items-end justify-center">
+            <img
+              src={graduateHero}
+              alt="Jeune diplômé universitaire africain présentant fièrement l'application CampusLink"
+              width={1024}
+              height={1536}
+              className="relative z-0 max-h-[320px] w-auto md:max-h-[420px] -mr-16 md:-mr-24"
+            />
+            <div className="relative z-10">
+              <PhoneMockup />
+            </div>
+          </div>
         </div>
 
         {/* Accès étudiant */}

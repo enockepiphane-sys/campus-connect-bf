@@ -71,8 +71,6 @@ export type Database = {
           niveau_id: string
           titre: string
           updated_at: string
-          is_urgent: boolean
-          comments_enabled: boolean
         }
         Insert: {
           contenu: string
@@ -82,8 +80,6 @@ export type Database = {
           niveau_id: string
           titre: string
           updated_at?: string
-          is_urgent?: boolean
-          comments_enabled?: boolean
         }
         Update: {
           contenu?: string
@@ -93,8 +89,6 @@ export type Database = {
           niveau_id?: string
           titre?: string
           updated_at?: string
-          is_urgent?: boolean
-          comments_enabled?: boolean
         }
         Relationships: [
           {
@@ -104,67 +98,6 @@ export type Database = {
             referencedRelation: "niveaux"
             referencedColumns: ["id"]
           },
-        ]
-      }
-      announcement_likes: {
-        Row: {
-          id: string
-          announcement_id: string
-          user_id: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          announcement_id: string
-          user_id: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          announcement_id?: string
-          user_id?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcement_likes_announcement_id_fkey"
-            columns: ["announcement_id"]
-            isOneToOne: false
-            referencedRelation: "annonces"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      announcement_comments: {
-        Row: {
-          id: string
-          announcement_id: string
-          user_id: string | null
-          content: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          announcement_id: string
-          user_id?: string | null
-          content: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          announcement_id?: string
-          user_id?: string | null
-          content?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "announcement_comments_announcement_id_fkey"
-            columns: ["announcement_id"]
-            isOneToOne: false
-            referencedRelation: "annonces"
-            referencedColumns: ["id"]
-          }
         ]
       }
       demandes_partenariat: {

@@ -4,7 +4,7 @@ import { DrapeauBF } from "@/components/DrapeauBF";
 export function PhoneMockup() {
   return (
     <div
-      className="mx-auto w-[220px] rounded-[2rem] bg-[#1a1a1a] p-2 sm:w-[248px] md:w-[288px]"
+      className="mx-auto w-[200px] rounded-[1.8rem] bg-[#1a1a1a] p-2 sm:w-[248px] md:w-[288px]"
       style={{ boxShadow: "0 40px 70px -25px rgba(0,0,0,0.45), 0 12px 30px -18px rgba(0,0,0,0.35)" }}
       aria-label="Aperçu de l'espace étudiant CampusLink"
       role="img"

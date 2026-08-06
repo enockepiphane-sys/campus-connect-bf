@@ -233,7 +233,7 @@ function Annonces({ niveauId }: { niveauId: string }) {
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
             <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
             <LikeButton annonceId={a.id} />
-            {a.comments_enabled && <Commentaires annonceId={a.id} />}
+            {a.comments_enabled && <Commentaires annonceId={a.id} maxComments={a.max_comments} />}
           </article>
         );
       })}

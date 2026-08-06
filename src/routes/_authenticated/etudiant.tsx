@@ -314,17 +314,26 @@ function Commentaires({ annonceId, maxComments }: { annonceId: string; maxCommen
     setBusy(false);
   }
 
+  const limitReached = maxComments != null && list.length >= maxComments;
+
   return (
     <div className="mt-4 border-t border-border pt-4">
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <MessageCircle className="icon-teal h-4 w-4" />
-        Commentaires ({list.length})
+        Commentaires ({list.length}{maxComments ? ` / ${maxComments}` : ""})
       </div>
-      <form onSubmit={publier} className="mb-3 flex gap-2">
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
-          className="input-soft flex-1" maxLength={2000} />
-        <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
-      </form>
+      {limitReached ? (
+        <p className="mb-3 rounded-[10px] border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Limite de commentaires atteinte
+        </p>
+      ) : (
+        <form onSubmit={publier} className="mb-3 flex gap-2">
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
+            className="input-soft flex-1" maxLength={2000} />
+          <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
+        </form>
+      )}
+
       <div className="space-y-2">
         {list.map((c) => (
           <div key={c.id} className="rounded-[10px] border border-border bg-surface p-2 text-sm">

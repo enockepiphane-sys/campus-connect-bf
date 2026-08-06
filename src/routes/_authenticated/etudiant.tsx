@@ -191,12 +191,13 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
   );
 }
 
-type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean };
+type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number };
 
 function Annonces({ niveauId }: { niveauId: string }) {
   const [list, setList] = useState<AnnonceRow[]>([]);
   useEffect(() => {
-    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
 

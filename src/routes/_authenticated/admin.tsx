@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { parseCSV } from "@/lib/csv";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,

@@ -544,6 +544,10 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5">
+                      <Heart className="icon-terracotta h-3.5 w-3.5 fill-current" />
+                      <span className="font-semibold">{likes[a.id] ?? 0}</span> like{(likes[a.id] ?? 0) > 1 ? "s" : ""}
+                    </span>
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
                       Marquer comme urgent
@@ -552,6 +556,14 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                       <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
                       Autoriser les commentaires
                     </label>
+                    {a.comments_enabled && (
+                      <label className="flex items-center gap-1.5">
+                        Nombre maximum de commentaires
+                        <input type="number" min="1" defaultValue={a.max_comments}
+                          onBlur={(e) => { const v = Number(e.target.value); if (v && v !== a.max_comments) setMaxComments(a.id, v); }}
+                          className="input-soft w-20 py-1" />
+                      </label>
+                    )}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
                   {a.comments_enabled && <AdminComments annonceId={a.id} />}

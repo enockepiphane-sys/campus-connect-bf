@@ -70,6 +70,7 @@ export type Database = {
           created_by: string | null
           id: string
           is_urgent: boolean
+          max_comments: number
           niveau_id: string
           titre: string
           updated_at: string
@@ -81,6 +82,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_urgent?: boolean
+          max_comments?: number
           niveau_id: string
           titre: string
           updated_at?: string
@@ -92,6 +94,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           is_urgent?: boolean
+          max_comments?: number
           niveau_id?: string
           titre?: string
           updated_at?: string
@@ -383,6 +386,7 @@ export type Database = {
       }
       evenements: {
         Row: {
+          affiche_url: string | null
           created_at: string
           date_evenement: string
           description: string | null
@@ -393,6 +397,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affiche_url?: string | null
           created_at?: string
           date_evenement: string
           description?: string | null
@@ -403,6 +408,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affiche_url?: string | null
           created_at?: string
           date_evenement?: string
           description?: string | null
@@ -465,6 +471,7 @@ export type Database = {
         Row: {
           coefficient: number
           created_at: string
+          credits: number
           id: string
           niveau_id: string
           nom: string
@@ -473,6 +480,7 @@ export type Database = {
         Insert: {
           coefficient?: number
           created_at?: string
+          credits?: number
           id?: string
           niveau_id: string
           nom: string
@@ -481,6 +489,7 @@ export type Database = {
         Update: {
           coefficient?: number
           created_at?: string
+          credits?: number
           id?: string
           niveau_id?: string
           nom?: string

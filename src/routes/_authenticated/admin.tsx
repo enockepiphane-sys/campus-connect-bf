@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { parseCSV } from "@/lib/csv";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
+import { SLOTS, SLOT_MINUTES, JOURS_LONGS, addMinutes, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,
@@ -347,8 +349,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [matieres, setMatieres] = useState<{ id: string; nom: string; coefficient: number }[]>([]);
-  const [nMat, setNMat] = useState({ nom: "", coefficient: "1" });
+  const [matieres, setMatieres] = useState<{ id: string; nom: string; coefficient: number; credits: number }[]>([]);
+  const [nMat, setNMat] = useState({ nom: "", coefficient: "1", credits: "1" });
   const [selMat, setSelMat] = useState<string>("");
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);
@@ -356,7 +358,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 
   useEffect(() => {
     if (!niveauId) { setMatieres([]); setEtudiants([]); return; }
-    supabase.from("matieres").select("id,nom,coefficient").eq("niveau_id", niveauId).order("nom")
+    supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom")
       .then(({ data }) => setMatieres((data as never) ?? []));
     supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true)
       .then(({ data }) => setEtudiants(((data ?? []).filter((e) => e.user_id)) as never));
@@ -371,9 +373,9 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   async function addMat(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !nMat.nom.trim()) return;
-    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), coefficient: Number(nMat.coefficient) || 1 });
-    setNMat({ nom: "", coefficient: "1" });
-    const { data } = await supabase.from("matieres").select("id,nom,coefficient").eq("niveau_id", niveauId).order("nom");
+    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), coefficient: Number(nMat.coefficient) || 1, credits: Number(nMat.credits) || 0 });
+    setNMat({ nom: "", coefficient: "1", credits: "1" });
+    const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom");
     setMatieres((data as never) ?? []);
   }
 
@@ -419,19 +421,23 @@ function MatieresPanel({ etabId }: { etabId: string }) {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
-            <form onSubmit={addMat} className="mb-3 flex gap-2">
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                className="flex-1 input-soft" />
+                className="input-soft" />
               <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="w-20 input-soft" title="Coefficient" />
+                className="input-soft" title="Coefficient" placeholder="Coef" />
+              <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
+                className="input-soft" title="Crédits" placeholder="Crédits" />
               <button className="btn-forest">+</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
                 <li key={m.id}>
                   <button onClick={() => setSelMat(m.id)}
-                    className={`w-full rounded border p-2 text-left text-sm ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface"}`}>
-                    <span className="font-semibold">{m.nom}</span> <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>
+                    className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
+                    <span className="font-semibold">{m.nom}</span>{" "}
+                    <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>{" "}
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{m.credits} crédit{m.credits > 1 ? "s" : ""}</span>
                   </button>
                 </li>
               ))}
@@ -474,13 +480,21 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean }[]>([]);
-  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false });
+  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number }[]>([]);
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" });
 
   async function load() {
-    if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false });
-    setList((data as never) ?? []);
+    if (!niveauId) { setList([]); setLikes({}); return; }
+    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false });
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    if (rows.length) {
+      const { data: lk } = await supabase.from("announcement_likes").select("announcement_id").in("announcement_id", rows.map((a) => a.id));
+      const counts: Record<string, number> = {};
+      ((lk as { announcement_id: string }[]) ?? []).forEach((l) => { counts[l.announcement_id] = (counts[l.announcement_id] ?? 0) + 1; });
+      setLikes(counts);
+    } else setLikes({});
   }
   useEffect(() => { load(); }, [niveauId]);
 
@@ -493,14 +507,20 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
       contenu: form.contenu.trim(),
       is_urgent: form.is_urgent,
       comments_enabled: form.comments_enabled,
+      max_comments: Math.max(1, Number(form.max_comments) || 10),
       created_by: u.user?.id,
     });
-    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false }); load();
+    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" }); load();
   }
 
   async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
     const patch = field === "is_urgent" ? { is_urgent: value } : { comments_enabled: value };
     await supabase.from("annonces").update(patch).eq("id", id);
+    load();
+  }
+
+  async function setMaxComments(id: string, value: number) {
+    await supabase.from("annonces").update({ max_comments: Math.max(1, value) }).eq("id", id);
     load();
   }
 
@@ -526,6 +546,10 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5">
+                      <Heart className="icon-terracotta h-3.5 w-3.5 fill-current" />
+                      <span className="font-semibold">{likes[a.id] ?? 0}</span> like{(likes[a.id] ?? 0) > 1 ? "s" : ""}
+                    </span>
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
                       Marquer comme urgent
@@ -534,6 +558,14 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                       <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
                       Autoriser les commentaires
                     </label>
+                    {a.comments_enabled && (
+                      <label className="flex items-center gap-1.5">
+                        Nombre maximum de commentaires
+                        <input type="number" min="1" defaultValue={a.max_comments}
+                          onBlur={(e) => { const v = Number(e.target.value); if (v && v !== a.max_comments) setMaxComments(a.id, v); }}
+                          className="input-soft w-20 py-1" />
+                      </label>
+                    )}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
                   {a.comments_enabled && <AdminComments annonceId={a.id} />}
@@ -558,6 +590,14 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
               Autoriser les commentaires
             </label>
+            {form.comments_enabled && (
+              <div>
+                <label className="mb-1 block text-sm">Nombre maximum de commentaires</label>
+                <input type="number" min="1" value={form.max_comments}
+                  onChange={(e) => setForm({ ...form, max_comments: e.target.value })}
+                  className="input-soft w-full" />
+              </div>
+            )}
             <button className="btn-forest w-full">Publier</button>
           </form>
         </div>
@@ -610,24 +650,42 @@ function AdminComments({ annonceId }: { annonceId: string }) {
 function EvenementsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null }[]>([]);
+  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null; affiche_url: string | null }[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
   const [form, setForm] = useState({ titre: "", description: "", date_evenement: "", lieu: "" });
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
   async function load() {
-    if (!niveauId) { setList([]); return; }
+    if (!niveauId) { setList([]); setUrls({}); return; }
     const { data } = await supabase.from("evenements").select("*").eq("niveau_id", niveauId).order("date_evenement");
-    setList((data as never) ?? []);
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    setUrls(await afficheUrls(rows.map((e) => e.affiche_url)));
   }
   useEffect(() => { load(); }, [niveauId]);
 
   async function add(e: React.FormEvent) {
-    e.preventDefault(); if (!niveauId) return;
-    await supabase.from("evenements").insert({
+    e.preventDefault(); if (!niveauId || busy) return;
+    setBusy(true); setErr("");
+    let affiche: string | null = null;
+    if (file) {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${niveauId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(AFFICHES_BUCKET).upload(path, file, { contentType: file.type });
+      if (error) { setErr("Échec de l'envoi de l'affiche : " + error.message); setBusy(false); return; }
+      affiche = path;
+    }
+    const { error } = await supabase.from("evenements").insert({
       niveau_id: niveauId, titre: form.titre.trim(), description: form.description.trim() || null,
-      date_evenement: form.date_evenement, lieu: form.lieu.trim() || null,
+      date_evenement: form.date_evenement, lieu: form.lieu.trim() || null, affiche_url: affiche,
     });
-    setForm({ titre: "", description: "", date_evenement: "", lieu: "" }); load();
+    if (error) setErr(error.message);
+    else { setForm({ titre: "", description: "", date_evenement: "", lieu: "" }); setFile(null); await load(); }
+    setBusy(false);
   }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -636,21 +694,25 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
           <div className="card-soft p-6">
-            <h3 className="mb-3 font-bold">Événements ({list.length})</h3>
-            <div className="space-y-2">
-              {list.map((e) => (
-                <div key={e.id} className="rounded-[10px] border border-border bg-surface p-3">
-                  <div className="flex justify-between">
-                    <div>
-                      <h4 className="font-semibold">{e.titre}</h4>
-                      <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
-                      {e.description && <p className="mt-1 text-sm">{e.description}</p>}
+            <h3 className="mb-3 flex items-center gap-2 font-bold"><Calendar className="icon-gold h-5 w-5" />Événements ({list.length})</h3>
+            <div className="space-y-3">
+              {list.map((e) => {
+                const img = e.affiche_url ? urls[e.affiche_url] : null;
+                return (
+                  <div key={e.id} className="overflow-hidden rounded-[10px] border border-border bg-surface">
+                    {img && <img src={img} alt={`Affiche de ${e.titre}`} loading="lazy" className="h-36 w-full object-cover" />}
+                    <div className="flex justify-between p-3">
+                      <div>
+                        <h4 className="font-semibold">{e.titre}</h4>
+                        <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
+                        {e.description && <p className="mt-1 text-sm">{e.description}</p>}
+                      </div>
+                      <button onClick={async () => { await supabase.from("evenements").delete().eq("id", e.id); load(); }}
+                        className="text-xs text-destructive underline">Suppr.</button>
                     </div>
-                    <button onClick={async () => { await supabase.from("evenements").delete().eq("id", e.id); load(); }}
-                      className="text-xs text-destructive underline">Suppr.</button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
             </div>
           </div>
@@ -664,7 +726,14 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
               <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className="w-full input-soft" />
             </div>
-            <button className="btn-forest w-full">Ajouter</button>
+            <div>
+              <label className="mb-1 flex items-center gap-2 text-sm"><ImagePlus className="icon-terracotta h-4 w-4" />Affiche (image)</label>
+              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full text-sm" />
+              {file && <p className="mt-1 truncate text-xs text-muted-foreground">{file.name}</p>}
+            </div>
+            {err && <p className="text-xs text-destructive">{err}</p>}
+            <button className="btn-forest w-full" disabled={busy}>{busy ? "Envoi…" : "Ajouter"}</button>
           </form>
         </div>
       )}
@@ -672,13 +741,14 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Emploi du temps --------------
-const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+// -------------- Emploi du temps (grille hebdomadaire) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null; enseignant: string | null }[]>([]);
-  const [form, setForm] = useState({ jour_semaine: "1", heure_debut: "08:00", heure_fin: "10:00", matiere: "", salle: "", enseignant: "" });
+  const [list, setList] = useState<Creneau[]>([]);
+  const [cell, setCell] = useState<{ jour: number; slot: string } | null>(null);
+  const [form, setForm] = useState({ matiere: "", enseignant: "", salle: "", duree: "2" });
+  const [busy, setBusy] = useState(false);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -687,62 +757,103 @@ function EDTPanel({ etabId }: { etabId: string }) {
   }
   useEffect(() => { load(); }, [niveauId]);
 
-  async function add(e: React.FormEvent) {
-    e.preventDefault(); if (!niveauId) return;
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    if (!niveauId || !cell || !form.matiere.trim() || busy) return;
+    setBusy(true);
     await supabase.from("emplois_du_temps").insert({
-      niveau_id: niveauId, jour_semaine: Number(form.jour_semaine),
-      heure_debut: form.heure_debut, heure_fin: form.heure_fin,
-      matiere: form.matiere.trim(), salle: form.salle.trim() || null, enseignant: form.enseignant.trim() || null,
+      niveau_id: niveauId,
+      jour_semaine: cell.jour,
+      heure_debut: cell.slot,
+      heure_fin: addMinutes(cell.slot, (Number(form.duree) || 1) * SLOT_MINUTES),
+      matiere: form.matiere.trim(),
+      salle: form.salle.trim() || null,
+      enseignant: form.enseignant.trim() || null,
     });
-    setForm({ ...form, matiere: "", salle: "", enseignant: "" }); load();
+    setForm({ matiere: "", enseignant: "", salle: "", duree: "2" });
+    setCell(null);
+    await load();
+    setBusy(false);
   }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-soft p-6">
-            <h3 className="mb-3 font-bold">Emploi du temps</h3>
-            {JOURS.map((j, i) => {
-              const items = list.filter((x) => x.jour_semaine === i + 1);
-              if (!items.length) return null;
-              return (
-                <div key={j} className="mb-4">
-                  <h4 className="mb-1 text-sm font-bold text-primary">{j}</h4>
-                  <div className="space-y-1">
-                    {items.map((x) => (
-                      <div key={x.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                        <span>{x.heure_debut.slice(0, 5)}–{x.heure_fin.slice(0, 5)} · <strong>{x.matiere}</strong>{x.salle ? ` · ${x.salle}` : ""}{x.enseignant ? ` · ${x.enseignant}` : ""}</span>
-                        <button onClick={async () => { await supabase.from("emplois_du_temps").delete().eq("id", x.id); load(); }}
-                          className="text-xs text-destructive underline">Suppr.</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun créneau.</p>}
+        <div className="card-soft overflow-hidden p-0">
+          <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+            <Clock className="icon-teal h-5 w-5" />
+            <h3 className="font-bold">Grille hebdomadaire</h3>
+            <span className="text-xs text-muted-foreground">Cliquez sur une case libre pour ajouter un cours</span>
           </div>
-          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
-            <h3 className="font-bold">Ajouter un créneau</h3>
-            <div>
-              <label className="mb-1 block text-sm">Jour</label>
-              <select value={form.jour_semaine} onChange={(e) => setForm({ ...form, jour_semaine: e.target.value })}
-                className="w-full input-soft">
-                {JOURS.map((j, i) => <option key={j} value={i + 1}>{j}</option>)}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <SmInput label="Début" type="time" v={form.heure_debut} on={(v) => setForm({ ...form, heure_debut: v })} />
-              <SmInput label="Fin" type="time" v={form.heure_fin} on={(v) => setForm({ ...form, heure_fin: v })} />
-            </div>
-            <SmInput label="Matière" v={form.matiere} on={(v) => setForm({ ...form, matiere: v })} />
-            <SmInput label="Salle" v={form.salle} on={(v) => setForm({ ...form, salle: v })} />
-            <SmInput label="Enseignant" v={form.enseignant} on={(v) => setForm({ ...form, enseignant: v })} />
-            <button className="btn-forest w-full">Ajouter</button>
-          </form>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] border-collapse text-xs">
+              <thead>
+                <tr>
+                  <th className="w-16 border-b border-border p-2 text-left font-medium text-muted-foreground">Heure</th>
+                  {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+                    <th key={j} className="border-b border-l border-border p-2 font-semibold">{JOURS_LONGS[j - 1]}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {SLOTS.map((slot) => (
+                  <tr key={slot}>
+                    <td className="border-b border-border p-1.5 align-top font-mono text-[11px] text-muted-foreground">{slot}</td>
+                    {[1, 2, 3, 4, 5, 6, 7].map((j) => {
+                      const c = creneauAt(list, j, slot);
+                      if (c) {
+                        return (
+                          <td key={j} rowSpan={spanOf(c)} className="border-b border-l border-border p-1 align-top">
+                            <div className="group relative h-full rounded-[10px] bg-primary-soft p-2 leading-tight">
+                              <p className="font-semibold text-primary">{c.matiere}</p>
+                              {c.enseignant && <p className="text-[11px] text-muted-foreground">{c.enseignant}</p>}
+                              {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
+                              <button onClick={async () => { await supabase.from("emplois_du_temps").delete().eq("id", c.id); load(); }}
+                                className="mt-1 text-[10px] text-destructive underline">Suppr.</button>
+                            </div>
+                          </td>
+                        );
+                      }
+                      if (isCovered(list, j, slot)) return null;
+                      const active = cell?.jour === j && cell?.slot === slot;
+                      return (
+                        <td key={j} className="border-b border-l border-border p-1 align-top">
+                          <button onClick={() => setCell(active ? null : { jour: j, slot })}
+                            className={`flex h-8 w-full items-center justify-center rounded-[8px] transition ${active ? "bg-accent" : "hover:bg-muted"}`}
+                            aria-label={`Ajouter un cours ${JOURS_LONGS[j - 1]} à ${slot}`}>
+                            <Plus className={`h-3.5 w-3.5 ${active ? "text-accent-foreground" : "text-muted-foreground opacity-0 group-hover:opacity-100"}`} />
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {cell && (
+            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-5">
+              <div className="sm:col-span-5 text-sm font-semibold text-primary">
+                {JOURS_LONGS[cell.jour - 1]} · {cell.slot}
+              </div>
+              <SmInput label="Matière" v={form.matiere} on={(v) => setForm({ ...form, matiere: v })} />
+              <SmInput label="Professeur" v={form.enseignant} on={(v) => setForm({ ...form, enseignant: v })} />
+              <SmInput label="Salle" v={form.salle} on={(v) => setForm({ ...form, salle: v })} />
+              <div>
+                <label className="mb-1 block text-sm">Durée</label>
+                <select value={form.duree} onChange={(e) => setForm({ ...form, duree: e.target.value })} className="w-full input-soft">
+                  {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n * SLOT_MINUTES} min</option>)}
+                </select>
+              </div>
+              <div className="flex items-end gap-2">
+                <button className="btn-forest flex-1" disabled={busy}>Ajouter</button>
+                <button type="button" onClick={() => setCell(null)} className="btn-bf-outline">Annuler</button>
+              </div>
+            </form>
+          )}
         </div>
       )}
     </div>

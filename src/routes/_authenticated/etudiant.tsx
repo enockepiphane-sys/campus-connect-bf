@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { setupPushNotifications } from "@/lib/push-notifications";
+import { SLOTS, JOURS_COURTS, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle } from "lucide-react";
@@ -117,20 +119,23 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       ]);
       const rows = (notes as { valeur: number; matiere_id: string }[]) ?? [];
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
-      let mats: { id: string; nom: string; coefficient: number }[] = [];
+      let mats: { id: string; nom: string; coefficient: number; credits: number }[] = [];
       if (ids.length) {
-        const { data } = await supabase.from("matieres").select("id,nom,coefficient").in("id", ids);
+        const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").in("id", ids);
         mats = (data as never) ?? [];
       }
       const byMat = new Map<string, number[]>();
       rows.forEach((n) => byMat.set(n.matiere_id, [...(byMat.get(n.matiere_id) ?? []), Number(n.valeur)]));
 
-      let totalPts = 0, totalCoef = 0, credits = 0;
+      let totalPts = 0, totalCoef = 0, credits = 0, totalCredits = 0;
       byMat.forEach((vals, mid) => {
-        const coef = Number(mats.find((m) => m.id === mid)?.coefficient ?? 1);
+        const mat = mats.find((m) => m.id === mid);
+        const coef = Number(mat?.coefficient ?? 1);
+        const cred = Number(mat?.credits ?? 0);
         const moy = vals.reduce((s, v) => s + v, 0) / vals.length;
         totalPts += moy * coef; totalCoef += coef;
-        if (moy >= 10) credits += coef;
+        totalCredits += cred;
+        if (moy >= 10) credits += cred;
       });
 
       const list = (edt as { jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null }[]) ?? [];
@@ -151,8 +156,8 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
         },
         {
           label: "Crédits validés",
-          value: totalCoef ? String(credits) : "—",
-          sub: totalCoef ? `sur ${totalCoef}` : "aucune matière",
+          value: String(credits),
+          sub: totalCredits ? `sur ${totalCredits}` : "aucune matière",
           icon: Award, color: "icon-gold",
         },
         {
@@ -164,6 +169,7 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       ]);
     })();
   }, [niveauId]);
+
 
   if (!stats.length) return null;
 
@@ -187,12 +193,13 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
   );
 }
 
-type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean };
+type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number };
 
 function Annonces({ niveauId }: { niveauId: string }) {
   const [list, setList] = useState<AnnonceRow[]>([]);
   useEffect(() => {
-    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
 
@@ -228,7 +235,7 @@ function Annonces({ niveauId }: { niveauId: string }) {
             <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
             <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
             <LikeButton annonceId={a.id} />
-            {a.comments_enabled && <Commentaires annonceId={a.id} />}
+            {a.comments_enabled && <Commentaires annonceId={a.id} maxComments={a.max_comments} />}
           </article>
         );
       })}
@@ -274,7 +281,7 @@ function LikeButton({ annonceId }: { annonceId: string }) {
   );
 }
 
-function Commentaires({ annonceId }: { annonceId: string }) {
+function Commentaires({ annonceId, maxComments }: { annonceId: string; maxComments: number }) {
   const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");
@@ -309,17 +316,26 @@ function Commentaires({ annonceId }: { annonceId: string }) {
     setBusy(false);
   }
 
+  const limitReached = maxComments != null && list.length >= maxComments;
+
   return (
     <div className="mt-4 border-t border-border pt-4">
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <MessageCircle className="icon-teal h-4 w-4" />
-        Commentaires ({list.length})
+        Commentaires ({list.length}{maxComments ? ` / ${maxComments}` : ""})
       </div>
-      <form onSubmit={publier} className="mb-3 flex gap-2">
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
-          className="input-soft flex-1" maxLength={2000} />
-        <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
-      </form>
+      {limitReached ? (
+        <p className="mb-3 rounded-[10px] border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Limite de commentaires atteinte
+        </p>
+      ) : (
+        <form onSubmit={publier} className="mb-3 flex gap-2">
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
+            className="input-soft flex-1" maxLength={2000} />
+          <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
+        </form>
+      )}
+
       <div className="space-y-2">
         {list.map((c) => (
           <div key={c.id} className="rounded-[10px] border border-border bg-surface p-2 text-sm">
@@ -338,52 +354,104 @@ function Commentaires({ annonceId }: { annonceId: string }) {
 
 
 function EDT({ niveauId }: { niveauId: string }) {
-  const [list, setList] = useState<{ jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null; enseignant: string | null }[]>([]);
+  const [list, setList] = useState<Creneau[]>([]);
   useEffect(() => {
     supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut")
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
+
+  const jours = [1, 2, 3, 4, 5, 6, 7].filter((j) => list.some((c) => c.jour_semaine === j));
+  const joursAffiches = jours.length ? jours : [1, 2, 3, 4, 5];
+
   return (
-    <div className="card-soft p-6">
-      {[1, 2, 3, 4, 5, 6, 7].map((j) => {
-        const items = list.filter((x) => x.jour_semaine === j);
-        if (!items.length) return null;
-        return (
-          <div key={j} className="mb-4">
-            <h3 className="mb-2 text-sm font-bold text-primary">{JOURS[j]}</h3>
-            <div className="space-y-1">
-              {items.map((x, idx) => (
-                <div key={idx} className="rounded-[10px] border border-border bg-surface p-2 text-sm">
-                  <span className="font-mono text-xs text-muted-foreground">{x.heure_debut.slice(0, 5)}–{x.heure_fin.slice(0, 5)}</span>
-                  {" · "}<strong>{x.matiere}</strong>
-                  {x.salle && <span className="text-muted-foreground"> · {x.salle}</span>}
-                  {x.enseignant && <span className="text-muted-foreground"> · {x.enseignant}</span>}
-                </div>
+    <div className="card-soft overflow-hidden p-0">
+      <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+        <Clock className="icon-teal h-5 w-5" />
+        <h2 className="font-bold">Emploi du temps</h2>
+      </div>
+      {list.length === 0 ? (
+        <p className="px-5 py-10 text-center text-sm text-muted-foreground">Aucun cours planifié.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse text-xs">
+            <thead>
+              <tr>
+                <th className="w-16 border-b border-border p-2 text-left font-medium text-muted-foreground">Heure</th>
+                {joursAffiches.map((j) => (
+                  <th key={j} className="border-b border-l border-border p-2 font-semibold">{JOURS_COURTS[j - 1]}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {SLOTS.map((slot) => (
+                <tr key={slot}>
+                  <td className="border-b border-border p-1.5 align-top font-mono text-[11px] text-muted-foreground">{slot}</td>
+                  {joursAffiches.map((j) => {
+                    const c = creneauAt(list, j, slot);
+                    if (c) {
+                      return (
+                        <td key={j} rowSpan={spanOf(c)} className="border-b border-l border-border p-1 align-top">
+                          <div className="h-full rounded-[10px] bg-primary-soft p-2 leading-tight">
+                            <p className="font-semibold text-primary">{c.matiere}</p>
+                            {c.enseignant && <p className="text-[11px] text-muted-foreground">{c.enseignant}</p>}
+                            {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
+                            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
+                              {c.heure_debut.slice(0, 5)}–{c.heure_fin.slice(0, 5)}
+                            </p>
+                          </div>
+                        </td>
+                      );
+                    }
+                    if (isCovered(list, j, slot)) return null;
+                    return <td key={j} className="border-b border-l border-border p-1" />;
+                  })}
+                </tr>
               ))}
-            </div>
-          </div>
-        );
-      })}
-      {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun cours planifié.</p>}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
 
 function Evenements({ niveauId }: { niveauId: string }) {
-  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null }[]>([]);
+  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null; affiche_url: string | null }[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
   useEffect(() => {
-    supabase.from("evenements").select("*").eq("niveau_id", niveauId).order("date_evenement")
-      .then(({ data }) => setList((data as never) ?? []));
+    (async () => {
+      const { data } = await supabase.from("evenements").select("*").eq("niveau_id", niveauId).order("date_evenement");
+      const rows = (data as never as typeof list) ?? [];
+      setList(rows);
+      setUrls(await afficheUrls(rows.map((e) => e.affiche_url)));
+    })();
   }, [niveauId]);
+
   return (
-    <div className="space-y-3">
-      {list.map((e) => (
-        <article key={e.id} className="card-soft p-5">
-          <h3 className="font-bold">{e.titre}</h3>
-          <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
-          {e.description && <p className="mt-2 text-sm">{e.description}</p>}
-        </article>
-      ))}
+    <div className="space-y-4">
+      {list.map((e) => {
+        const img = e.affiche_url ? urls[e.affiche_url] : null;
+        return (
+          <article key={e.id} className="card-soft overflow-hidden p-0">
+            {img && (
+              <img src={img} alt={`Affiche de l'événement ${e.titre}`} loading="lazy"
+                className="h-48 w-full object-cover sm:h-60" />
+            )}
+            <div className="p-5">
+              <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-0.5 text-[11px] font-medium text-accent-foreground">
+                <Calendar className="h-3 w-3" />
+                {new Date(e.date_evenement).toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" })}
+              </span>
+              <h3 className="mt-2 text-lg font-bold">{e.titre}</h3>
+              <p className="text-xs text-muted-foreground">
+                {new Date(e.date_evenement).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                {e.lieu ? ` · ${e.lieu}` : ""}
+              </p>
+              {e.description && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{e.description}</p>}
+            </div>
+          </article>
+        );
+      })}
       {list.length === 0 && (
         <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
           <Calendar className="icon-gold h-8 w-8 opacity-60" />
@@ -393,6 +461,7 @@ function Evenements({ niveauId }: { niveauId: string }) {
     </div>
   );
 }
+
 
 function Notes() {
   const [list, setList] = useState<{ id: string; valeur: number; type_evaluation: string; commentaire: string | null; matiere_id: string; created_at: string }[]>([]);

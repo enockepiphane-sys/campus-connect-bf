@@ -356,7 +356,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 
   useEffect(() => {
     if (!niveauId) { setMatieres([]); setEtudiants([]); return; }
-    supabase.from("matieres").select("id,nom,coefficient").eq("niveau_id", niveauId).order("nom")
+    supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom")
       .then(({ data }) => setMatieres((data as never) ?? []));
     supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true)
       .then(({ data }) => setEtudiants(((data ?? []).filter((e) => e.user_id)) as never));

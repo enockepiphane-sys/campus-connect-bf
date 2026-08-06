@@ -5,6 +5,8 @@ import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { parseCSV } from "@/lib/csv";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
+import { SLOTS, SLOT_MINUTES, JOURS_LONGS, addMinutes, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,

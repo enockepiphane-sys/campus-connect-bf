@@ -588,6 +588,14 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
               Autoriser les commentaires
             </label>
+            {form.comments_enabled && (
+              <div>
+                <label className="mb-1 block text-sm">Nombre maximum de commentaires</label>
+                <input type="number" min="1" value={form.max_comments}
+                  onChange={(e) => setForm({ ...form, max_comments: e.target.value })}
+                  className="input-soft w-full" />
+              </div>
+            )}
             <button className="btn-forest w-full">Publier</button>
           </form>
         </div>

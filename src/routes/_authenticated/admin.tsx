@@ -419,19 +419,23 @@ function MatieresPanel({ etabId }: { etabId: string }) {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="card-soft p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
-            <form onSubmit={addMat} className="mb-3 flex gap-2">
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                className="flex-1 input-soft" />
+                className="input-soft" />
               <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="w-20 input-soft" title="Coefficient" />
+                className="input-soft" title="Coefficient" placeholder="Coef" />
+              <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
+                className="input-soft" title="Crédits" placeholder="Crédits" />
               <button className="btn-forest">+</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
                 <li key={m.id}>
                   <button onClick={() => setSelMat(m.id)}
-                    className={`w-full rounded border p-2 text-left text-sm ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface"}`}>
-                    <span className="font-semibold">{m.nom}</span> <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>
+                    className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
+                    <span className="font-semibold">{m.nom}</span>{" "}
+                    <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>{" "}
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{m.credits} crédit{m.credits > 1 ? "s" : ""}</span>
                   </button>
                 </li>
               ))}

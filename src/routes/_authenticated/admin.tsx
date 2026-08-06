@@ -371,9 +371,9 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   async function addMat(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !nMat.nom.trim()) return;
-    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), coefficient: Number(nMat.coefficient) || 1 });
-    setNMat({ nom: "", coefficient: "1" });
-    const { data } = await supabase.from("matieres").select("id,nom,coefficient").eq("niveau_id", niveauId).order("nom");
+    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), coefficient: Number(nMat.coefficient) || 1, credits: Number(nMat.credits) || 0 });
+    setNMat({ nom: "", coefficient: "1", credits: "1" });
+    const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom");
     setMatieres((data as never) ?? []);
   }
 

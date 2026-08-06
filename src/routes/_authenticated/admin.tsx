@@ -478,13 +478,21 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean }[]>([]);
-  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false });
+  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number }[]>([]);
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" });
 
   async function load() {
-    if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled").eq("niveau_id", niveauId).order("created_at", { ascending: false });
-    setList((data as never) ?? []);
+    if (!niveauId) { setList([]); setLikes({}); return; }
+    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false });
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    if (rows.length) {
+      const { data: lk } = await supabase.from("announcement_likes").select("announcement_id").in("announcement_id", rows.map((a) => a.id));
+      const counts: Record<string, number> = {};
+      ((lk as { announcement_id: string }[]) ?? []).forEach((l) => { counts[l.announcement_id] = (counts[l.announcement_id] ?? 0) + 1; });
+      setLikes(counts);
+    } else setLikes({});
   }
   useEffect(() => { load(); }, [niveauId]);
 
@@ -497,14 +505,20 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
       contenu: form.contenu.trim(),
       is_urgent: form.is_urgent,
       comments_enabled: form.comments_enabled,
+      max_comments: Math.max(1, Number(form.max_comments) || 10),
       created_by: u.user?.id,
     });
-    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false }); load();
+    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" }); load();
   }
 
   async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
     const patch = field === "is_urgent" ? { is_urgent: value } : { comments_enabled: value };
     await supabase.from("annonces").update(patch).eq("id", id);
+    load();
+  }
+
+  async function setMaxComments(id: string, value: number) {
+    await supabase.from("annonces").update({ max_comments: Math.max(1, value) }).eq("id", id);
     load();
   }
 

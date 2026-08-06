@@ -347,8 +347,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [matieres, setMatieres] = useState<{ id: string; nom: string; coefficient: number }[]>([]);
-  const [nMat, setNMat] = useState({ nom: "", coefficient: "1" });
+  const [matieres, setMatieres] = useState<{ id: string; nom: string; coefficient: number; credits: number }[]>([]);
+  const [nMat, setNMat] = useState({ nom: "", coefficient: "1", credits: "1" });
   const [selMat, setSelMat] = useState<string>("");
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);

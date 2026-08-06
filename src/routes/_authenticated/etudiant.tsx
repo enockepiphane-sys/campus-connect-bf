@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { setupPushNotifications } from "@/lib/push-notifications";
+import { SLOTS, JOURS_COURTS, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle } from "lucide-react";

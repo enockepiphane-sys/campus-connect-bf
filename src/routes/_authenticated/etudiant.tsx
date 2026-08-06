@@ -279,7 +279,7 @@ function LikeButton({ annonceId }: { annonceId: string }) {
   );
 }
 
-function Commentaires({ annonceId }: { annonceId: string }) {
+function Commentaires({ annonceId, maxComments }: { annonceId: string; maxComments: number }) {
   const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
   const [text, setText] = useState("");

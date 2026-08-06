@@ -117,20 +117,23 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       ]);
       const rows = (notes as { valeur: number; matiere_id: string }[]) ?? [];
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
-      let mats: { id: string; nom: string; coefficient: number }[] = [];
+      let mats: { id: string; nom: string; coefficient: number; credits: number }[] = [];
       if (ids.length) {
-        const { data } = await supabase.from("matieres").select("id,nom,coefficient").in("id", ids);
+        const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").in("id", ids);
         mats = (data as never) ?? [];
       }
       const byMat = new Map<string, number[]>();
       rows.forEach((n) => byMat.set(n.matiere_id, [...(byMat.get(n.matiere_id) ?? []), Number(n.valeur)]));
 
-      let totalPts = 0, totalCoef = 0, credits = 0;
+      let totalPts = 0, totalCoef = 0, credits = 0, totalCredits = 0;
       byMat.forEach((vals, mid) => {
-        const coef = Number(mats.find((m) => m.id === mid)?.coefficient ?? 1);
+        const mat = mats.find((m) => m.id === mid);
+        const coef = Number(mat?.coefficient ?? 1);
+        const cred = Number(mat?.credits ?? 0);
         const moy = vals.reduce((s, v) => s + v, 0) / vals.length;
         totalPts += moy * coef; totalCoef += coef;
-        if (moy >= 10) credits += coef;
+        totalCredits += cred;
+        if (moy >= 10) credits += cred;
       });
 
       const list = (edt as { jour_semaine: number; heure_debut: string; heure_fin: string; matiere: string; salle: string | null }[]) ?? [];
@@ -151,8 +154,8 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
         },
         {
           label: "Crédits validés",
-          value: totalCoef ? String(credits) : "—",
-          sub: totalCoef ? `sur ${totalCoef}` : "aucune matière",
+          value: String(credits),
+          sub: totalCredits ? `sur ${totalCredits}` : "aucune matière",
           icon: Award, color: "icon-gold",
         },
         {
@@ -164,6 +167,7 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       ]);
     })();
   }, [niveauId]);
+
 
   if (!stats.length) return null;
 

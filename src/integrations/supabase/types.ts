@@ -170,6 +170,56 @@ export type Database = {
           },
         ]
       }
+      cours_emploi_temps: {
+        Row: {
+          bloc: string
+          created_at: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour_semaine: number
+          matiere: string
+          niveau_id: string
+          professeur: string | null
+          salle: string | null
+          updated_at: string
+        }
+        Insert: {
+          bloc: string
+          created_at?: string
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour_semaine: number
+          matiere: string
+          niveau_id: string
+          professeur?: string | null
+          salle?: string | null
+          updated_at?: string
+        }
+        Update: {
+          bloc?: string
+          created_at?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour_semaine?: number
+          matiere?: string
+          niveau_id?: string
+          professeur?: string | null
+          salle?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cours_emploi_temps_niveau_id_fkey"
+            columns: ["niveau_id"]
+            isOneToOne: false
+            referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandes_partenariat: {
         Row: {
           created_at: string
@@ -229,53 +279,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      emplois_du_temps: {
-        Row: {
-          created_at: string
-          enseignant: string | null
-          heure_debut: string
-          heure_fin: string
-          id: string
-          jour_semaine: number
-          matiere: string
-          niveau_id: string
-          salle: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          enseignant?: string | null
-          heure_debut: string
-          heure_fin: string
-          id?: string
-          jour_semaine: number
-          matiere: string
-          niveau_id: string
-          salle?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          enseignant?: string | null
-          heure_debut?: string
-          heure_fin?: string
-          id?: string
-          jour_semaine?: number
-          matiere?: string
-          niveau_id?: string
-          salle?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "emplois_du_temps_niveau_id_fkey"
-            columns: ["niveau_id"]
-            isOneToOne: false
-            referencedRelation: "niveaux"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       etablissements: {
         Row: {

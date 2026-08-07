@@ -5,7 +5,8 @@ import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { parseCSV } from "@/lib/csv";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
-import { SLOTS, SLOT_MINUTES, JOURS_LONGS, addMinutes, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
+import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -52,7 +53,7 @@ function Dashboard() {
   const current = sections.find((s) => s.k === tab);
 
   return (
-    <div className="bg-app min-h-screen text-foreground">
+    <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -108,7 +109,7 @@ function Dashboard() {
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
         {tab === "structure" && <StructurePanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}
@@ -355,6 +356,8 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [saisie, setSaisie] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!niveauId) { setMatieres([]); setEtudiants([]); return; }

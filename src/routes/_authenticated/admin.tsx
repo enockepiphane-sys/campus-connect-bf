@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
-import { parseCSV } from "@/lib/csv";
+
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";

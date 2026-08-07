@@ -355,63 +355,56 @@ function Commentaires({ annonceId, maxComments }: { annonceId: string; maxCommen
 
 
 function EDT({ niveauId }: { niveauId: string }) {
-  const [list, setList] = useState<Creneau[]>([]);
+  const [list, setList] = useState<Cours[]>([]);
   useEffect(() => {
-    supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut")
+    supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut")
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
 
-  const jours = [1, 2, 3, 4, 5, 6, 7].filter((j) => list.some((c) => c.jour_semaine === j));
-  const joursAffiches = jours.length ? jours : [1, 2, 3, 4, 5];
+  const jours = JOURS.filter((j) => list.some((c) => c.jour_semaine === j));
+
+  if (list.length === 0) {
+    return (
+      <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
+        <Clock className="icon-teal h-8 w-8 opacity-60" />
+        <p className="text-sm text-muted-foreground">Aucun cours planifié.</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="card-soft overflow-hidden p-0">
-      <div className="flex items-center gap-2 border-b border-border px-5 py-4">
-        <Clock className="icon-teal h-5 w-5" />
-        <h2 className="font-bold">Emploi du temps</h2>
-      </div>
-      {list.length === 0 ? (
-        <p className="px-5 py-10 text-center text-sm text-muted-foreground">Aucun cours planifié.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] border-collapse text-xs">
-            <thead>
-              <tr>
-                <th className="w-16 border-b border-border p-2 text-left font-medium text-muted-foreground">Heure</th>
-                {joursAffiches.map((j) => (
-                  <th key={j} className="border-b border-l border-border p-2 font-semibold">{JOURS_COURTS[j - 1]}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {SLOTS.map((slot) => (
-                <tr key={slot}>
-                  <td className="border-b border-border p-1.5 align-top font-mono text-[11px] text-muted-foreground">{slot}</td>
-                  {joursAffiches.map((j) => {
-                    const c = creneauAt(list, j, slot);
-                    if (c) {
-                      return (
-                        <td key={j} rowSpan={spanOf(c)} className="border-b border-l border-border p-1 align-top">
-                          <div className="h-full rounded-[10px] bg-primary-soft p-2 leading-tight">
-                            <p className="font-semibold text-primary">{c.matiere}</p>
-                            {c.enseignant && <p className="text-[11px] text-muted-foreground">{c.enseignant}</p>}
-                            {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
-                            <p className="mt-1 font-mono text-[10px] text-muted-foreground">
-                              {c.heure_debut.slice(0, 5)}–{c.heure_fin.slice(0, 5)}
-                            </p>
-                          </div>
-                        </td>
-                      );
-                    }
-                    if (isCovered(list, j, slot)) return null;
-                    return <td key={j} className="border-b border-l border-border p-1" />;
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+    <div className="space-y-4">
+      {jours.map((j) => (
+        <section key={j} className="card-soft min-w-0 p-5">
+          <h2 className="mb-3 flex items-center gap-2 font-bold">
+            <Clock className="icon-teal h-5 w-5" />{JOURS_LONGS[j - 1]}
+          </h2>
+          <div className="space-y-4">
+            {BLOCS.map((b) => {
+              const cours = coursOf(list, j, b.key);
+              if (!cours.length) return null;
+              return (
+                <div key={b.key}>
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {b.label} <span className="font-mono normal-case">({b.plage})</span>
+                  </p>
+                  <div className="space-y-2">
+                    {cours.map((c) => (
+                      <div key={c.id} className="rounded-[10px] bg-primary-soft p-3">
+                        <p className="font-mono text-[11px] text-muted-foreground">{hhmm(c.heure_debut)} – {hhmm(c.heure_fin)}</p>
+                        <p className="font-semibold text-primary">{c.matiere}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {c.professeur ?? ""}{c.professeur && c.salle ? " · " : ""}{c.salle ?? ""}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
     </div>
   );
 }

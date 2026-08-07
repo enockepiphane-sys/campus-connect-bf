@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { setupPushNotifications } from "@/lib/push-notifications";
-import { SLOTS, JOURS_COURTS, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Cours } from "@/lib/edt";
+import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";

@@ -382,61 +382,78 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     setMatieres((data as never) ?? []);
   }
 
-  async function importNotes(file: File) {
-    setMsg(null);
-    if (!selMat) { setMsg("Sélectionnez une matière"); return; }
-    const text = await file.text();
-    const { rows } = parseCSV(text);
-    // colonnes attendues : email, valeur, type_evaluation, commentaire
-    const emailMap = new Map(etudiants.map((e) => [e.email.toLowerCase(), e.user_id]));
-    const payload: { etudiant_user_id: string; matiere_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[] = [];
-    let skipped = 0;
-    for (const r of rows) {
-      const uid = emailMap.get((r.email ?? "").trim().toLowerCase());
-      const val = Number((r.valeur ?? "").replace(",", "."));
-      if (!uid || Number.isNaN(val)) { skipped++; continue; }
-      payload.push({
-        etudiant_user_id: uid, matiere_id: selMat, valeur: val,
-        type_evaluation: r.type_evaluation?.trim() || "devoir",
-        commentaire: r.commentaire?.trim() || null,
-      });
-    }
-    if (!payload.length) { setMsg(`Aucune ligne valide (ignorées: ${skipped})`); return; }
-    const { error } = await supabase.from("notes").insert(payload);
-    if (error) setMsg(error.message);
-    else {
-      setMsg(`${payload.length} note(s) importée(s), ${skipped} ignorée(s).`);
-      const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
-      setNotes((data as never) ?? []);
-    }
+  const noteOf = (uid: string) => notes.find((n) => n.etudiant_user_id === uid);
+
+  async function reloadNotes() {
+    if (!selMat) return;
+    const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
+    setNotes((data as never) ?? []);
   }
 
-  const etuName = (uid: string) => etudiants.find((e) => e.user_id === uid)?.nom_complet ?? uid.slice(0, 8);
+  /** Enregistre (crée ou met à jour) la note d'un étudiant pour la matière sélectionnée. */
+  async function saveNote(uid: string): Promise<string | null> {
+    const raw = saisie[uid];
+    if (raw === undefined || raw.trim() === "") return null;
+    const val = Number(raw.replace(",", "."));
+    if (Number.isNaN(val) || val < 0 || val > 20) return "Note invalide (0 à 20)";
+    const existing = noteOf(uid);
+    const payload = { valeur: val, commentaire: appreciation(val) };
+    if (existing) {
+      const { error } = await supabase.from("notes").update(payload).eq("id", existing.id);
+      return error?.message ?? null;
+    }
+    const { error } = await supabase.from("notes").insert({
+      etudiant_user_id: uid, matiere_id: selMat, type_evaluation: "evaluation", ...payload,
+    });
+    return error?.message ?? null;
+  }
+
+  async function saveOne(uid: string) {
+    setSaving(true); setMsg(null);
+    const err = await saveNote(uid);
+    await reloadNotes();
+    setMsg(err ?? "Note enregistrée.");
+    setSaving(false);
+  }
+
+  async function saveAll() {
+    setSaving(true); setMsg(null);
+    let n = 0; let firstErr: string | null = null;
+    for (const e of etudiants) {
+      const before = saisie[e.user_id];
+      if (before === undefined || before.trim() === "") continue;
+      const err = await saveNote(e.user_id);
+      if (err) firstErr ??= err; else n++;
+    }
+    await reloadNotes();
+    setMsg(firstErr ?? `${n} note(s) enregistrée(s).`);
+    setSaving(false);
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div className="card-soft p-6">
         <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
 
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="card-soft p-6">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+          <div className="card-soft min-w-0 p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
-            <form onSubmit={addMat} className="mb-3 grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_5rem_auto]">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                className="input-soft" />
+                className="input-soft col-span-2 min-w-0 sm:col-span-1" />
               <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="input-soft" title="Coefficient" placeholder="Coef" />
+                className="input-soft min-w-0" title="Coefficient" placeholder="Coef" />
               <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
-                className="input-soft" title="Crédits" placeholder="Crédits" />
-              <button className="btn-forest">+</button>
+                className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
+              <button className="btn-forest col-span-2 sm:col-span-1">+</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
                 <li key={m.id}>
-                  <button onClick={() => setSelMat(m.id)}
+                  <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
                     className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
                     <span className="font-semibold">{m.nom}</span>{" "}
                     <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>{" "}
@@ -444,32 +461,52 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                   </button>
                 </li>
               ))}
+              {matieres.length === 0 && <p className="text-sm text-muted-foreground">Aucune matière.</p>}
             </ul>
           </div>
 
-          <div className="card-soft p-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold">Notes {selMat ? `(${notes.length})` : ""}</h3>
-              {selMat && (
-                <label className="btn-bf-outline cursor-pointer text-sm">
-                  <Upload className="icon-tinted h-4 w-4" />Import CSV
-                  <input hidden type="file" accept=".csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importNotes(f); e.target.value = ""; }} />
-                </label>
+          <div className="card-soft min-w-0 p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold">Saisie des notes</h3>
+              {selMat && etudiants.length > 0 && (
+                <button onClick={saveAll} disabled={saving} className="btn-forest">Enregistrer toutes les notes</button>
               )}
             </div>
-            {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
+            {msg && <div className="mb-3 rounded-[10px] bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             {!selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
-            {selMat && (
-              <div className="space-y-1">
-                {notes.map((n) => (
-                  <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                    <span>{etuName(n.etudiant_user_id)} — <strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span></span>
-                    <button onClick={async () => { await supabase.from("notes").delete().eq("id", n.id); setNotes((l) => l.filter((x) => x.id !== n.id)); }}
-                      className="text-xs text-destructive underline">Suppr.</button>
-                  </div>
-                ))}
-                {notes.length === 0 && <p className="text-sm text-muted-foreground">Aucune note.</p>}
-                <p className="mt-3 text-xs text-muted-foreground">CSV attendu : <code>email, valeur, type_evaluation, commentaire</code>. Seuls les étudiants inscrits sont pris en compte.</p>
+            {selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
+            {selMat && etudiants.length > 0 && (
+              <div className="space-y-2">
+                {etudiants.map((e) => {
+                  const existing = noteOf(e.user_id);
+                  const value = saisie[e.user_id] ?? (existing ? String(existing.valeur) : "");
+                  const num = Number(String(value).replace(",", "."));
+                  const appr = value !== "" && !Number.isNaN(num) ? appreciation(num) : null;
+                  return (
+                    <div key={e.user_id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{e.nom_complet}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {e.email}{appr ? ` · ${appr}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <input type="number" min="0" max="20" step="0.25" value={value} placeholder="/20"
+                          onChange={(ev) => setSaisie({ ...saisie, [e.user_id]: ev.target.value })}
+                          className="input-soft w-20" />
+                        <button onClick={() => saveOne(e.user_id)} disabled={saving} className="btn-forest">OK</button>
+                        {existing && (
+                          <button
+                            onClick={async () => { await supabase.from("notes").delete().eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes(); }}
+                            className="text-xs text-destructive underline">Suppr.</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  L'appréciation est générée automatiquement selon le barème (0–5 Très insuffisant … 18–20 Excellent).
+                </p>
               </div>
             )}
           </div>

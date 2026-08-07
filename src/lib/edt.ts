@@ -1,54 +1,41 @@
-/** Créneaux horaires de la grille hebdomadaire (07:30 → 18:00, par 30 min). */
-export const SLOTS: string[] = (() => {
-  const out: string[] = [];
-  for (let m = 7 * 60 + 30; m < 18 * 60; m += 30) {
-    out.push(`${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
-  }
-  return out;
-})();
+/** Emploi du temps : format « papier » — jours × blocs (matin / après-midi). */
 
-export const SLOT_MINUTES = 30;
+export type Bloc = "matin" | "apres_midi";
 
-export const JOURS_COURTS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
-export const JOURS_LONGS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+export const BLOCS: { key: Bloc; label: string; plage: string; defaultDebut: string; defaultFin: string }[] = [
+  { key: "matin", label: "Matin", plage: "07:30 – 12:30", defaultDebut: "07:30", defaultFin: "09:30" },
+  { key: "apres_midi", label: "Après-midi", plage: "14:00 – 17:00", defaultDebut: "14:00", defaultFin: "16:00" },
+];
 
-export function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.slice(0, 5).split(":").map(Number);
-  return h * 60 + m;
-}
+/** Jours travaillés : Lundi (1) → Samedi (6). */
+export const JOURS = [1, 2, 3, 4, 5, 6];
+export const JOURS_COURTS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
+export const JOURS_LONGS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
-export function addMinutes(hhmm: string, delta: number): string {
-  const t = toMinutes(hhmm) + delta;
-  return `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
-}
-
-export type Creneau = {
+export type Cours = {
   id: string;
+  niveau_id: string;
   jour_semaine: number;
+  bloc: Bloc;
   heure_debut: string;
   heure_fin: string;
   matiere: string;
+  professeur: string | null;
   salle: string | null;
-  enseignant: string | null;
 };
 
-/** Créneau couvrant ce jour/heure de départ, s'il existe. */
-export function creneauAt(list: Creneau[], jour: number, slot: string): Creneau | undefined {
-  return list.find((c) => c.jour_semaine === jour && c.heure_debut.slice(0, 5) === slot);
+export function hhmm(t: string): string {
+  return t.slice(0, 5);
 }
 
-/** Créneau occupant (mais ne commençant pas à) ce jour/heure. */
-export function isCovered(list: Creneau[], jour: number, slot: string): boolean {
-  const t = toMinutes(slot);
-  return list.some(
-    (c) =>
-      c.jour_semaine === jour &&
-      toMinutes(c.heure_debut) < t &&
-      toMinutes(c.heure_fin) > t,
-  );
+export function toMinutes(t: string): number {
+  const [h, m] = hhmm(t).split(":").map(Number);
+  return h * 60 + m;
 }
 
-/** Nombre de lignes couvertes par un créneau. */
-export function spanOf(c: Creneau): number {
-  return Math.max(1, Math.round((toMinutes(c.heure_fin) - toMinutes(c.heure_debut)) / SLOT_MINUTES));
+/** Cours d'un jour + bloc, triés par heure de début. */
+export function coursOf(list: Cours[], jour: number, bloc: Bloc): Cours[] {
+  return list
+    .filter((c) => c.jour_semaine === jour && c.bloc === bloc)
+    .sort((a, b) => toMinutes(a.heure_debut) - toMinutes(b.heure_debut));
 }

@@ -2,10 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
-import { parseCSV } from "@/lib/csv";
+
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
-import { SLOTS, SLOT_MINUTES, JOURS_LONGS, addMinutes, creneauAt, isCovered, spanOf, type Creneau } from "@/lib/edt";
+import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
+import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -52,7 +53,7 @@ function Dashboard() {
   const current = sections.find((s) => s.k === tab);
 
   return (
-    <div className="bg-app min-h-screen text-foreground">
+    <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
@@ -108,7 +109,7 @@ function Dashboard() {
         </div>
       )}
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
         {tab === "structure" && <StructurePanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}
@@ -355,6 +356,8 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [saisie, setSaisie] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!niveauId) { setMatieres([]); setEtudiants([]); return; }
@@ -379,61 +382,78 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     setMatieres((data as never) ?? []);
   }
 
-  async function importNotes(file: File) {
-    setMsg(null);
-    if (!selMat) { setMsg("Sélectionnez une matière"); return; }
-    const text = await file.text();
-    const { rows } = parseCSV(text);
-    // colonnes attendues : email, valeur, type_evaluation, commentaire
-    const emailMap = new Map(etudiants.map((e) => [e.email.toLowerCase(), e.user_id]));
-    const payload: { etudiant_user_id: string; matiere_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[] = [];
-    let skipped = 0;
-    for (const r of rows) {
-      const uid = emailMap.get((r.email ?? "").trim().toLowerCase());
-      const val = Number((r.valeur ?? "").replace(",", "."));
-      if (!uid || Number.isNaN(val)) { skipped++; continue; }
-      payload.push({
-        etudiant_user_id: uid, matiere_id: selMat, valeur: val,
-        type_evaluation: r.type_evaluation?.trim() || "devoir",
-        commentaire: r.commentaire?.trim() || null,
-      });
-    }
-    if (!payload.length) { setMsg(`Aucune ligne valide (ignorées: ${skipped})`); return; }
-    const { error } = await supabase.from("notes").insert(payload);
-    if (error) setMsg(error.message);
-    else {
-      setMsg(`${payload.length} note(s) importée(s), ${skipped} ignorée(s).`);
-      const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
-      setNotes((data as never) ?? []);
-    }
+  const noteOf = (uid: string) => notes.find((n) => n.etudiant_user_id === uid);
+
+  async function reloadNotes() {
+    if (!selMat) return;
+    const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
+    setNotes((data as never) ?? []);
   }
 
-  const etuName = (uid: string) => etudiants.find((e) => e.user_id === uid)?.nom_complet ?? uid.slice(0, 8);
+  /** Enregistre (crée ou met à jour) la note d'un étudiant pour la matière sélectionnée. */
+  async function saveNote(uid: string): Promise<string | null> {
+    const raw = saisie[uid];
+    if (raw === undefined || raw.trim() === "") return null;
+    const val = Number(raw.replace(",", "."));
+    if (Number.isNaN(val) || val < 0 || val > 20) return "Note invalide (0 à 20)";
+    const existing = noteOf(uid);
+    const payload = { valeur: val, commentaire: appreciation(val) };
+    if (existing) {
+      const { error } = await supabase.from("notes").update(payload).eq("id", existing.id);
+      return error?.message ?? null;
+    }
+    const { error } = await supabase.from("notes").insert({
+      etudiant_user_id: uid, matiere_id: selMat, type_evaluation: "evaluation", ...payload,
+    });
+    return error?.message ?? null;
+  }
+
+  async function saveOne(uid: string) {
+    setSaving(true); setMsg(null);
+    const err = await saveNote(uid);
+    await reloadNotes();
+    setMsg(err ?? "Note enregistrée.");
+    setSaving(false);
+  }
+
+  async function saveAll() {
+    setSaving(true); setMsg(null);
+    let n = 0; let firstErr: string | null = null;
+    for (const e of etudiants) {
+      const before = saisie[e.user_id];
+      if (before === undefined || before.trim() === "") continue;
+      const err = await saveNote(e.user_id);
+      if (err) firstErr ??= err; else n++;
+    }
+    await reloadNotes();
+    setMsg(firstErr ?? `${n} note(s) enregistrée(s).`);
+    setSaving(false);
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div className="card-soft p-6">
         <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
 
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="card-soft p-6">
+        <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+          <div className="card-soft min-w-0 p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
-            <form onSubmit={addMat} className="mb-3 grid grid-cols-[1fr_5rem_5rem_auto] gap-2">
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_5rem_auto]">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                className="input-soft" />
+                className="input-soft col-span-2 min-w-0 sm:col-span-1" />
               <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="input-soft" title="Coefficient" placeholder="Coef" />
+                className="input-soft min-w-0" title="Coefficient" placeholder="Coef" />
               <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
-                className="input-soft" title="Crédits" placeholder="Crédits" />
-              <button className="btn-forest">+</button>
+                className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
+              <button className="btn-forest col-span-2 sm:col-span-1">+</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
                 <li key={m.id}>
-                  <button onClick={() => setSelMat(m.id)}
+                  <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
                     className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
                     <span className="font-semibold">{m.nom}</span>{" "}
                     <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>{" "}
@@ -441,32 +461,52 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                   </button>
                 </li>
               ))}
+              {matieres.length === 0 && <p className="text-sm text-muted-foreground">Aucune matière.</p>}
             </ul>
           </div>
 
-          <div className="card-soft p-6">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold">Notes {selMat ? `(${notes.length})` : ""}</h3>
-              {selMat && (
-                <label className="btn-bf-outline cursor-pointer text-sm">
-                  <Upload className="icon-tinted h-4 w-4" />Import CSV
-                  <input hidden type="file" accept=".csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importNotes(f); e.target.value = ""; }} />
-                </label>
+          <div className="card-soft min-w-0 p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold">Saisie des notes</h3>
+              {selMat && etudiants.length > 0 && (
+                <button onClick={saveAll} disabled={saving} className="btn-forest">Enregistrer toutes les notes</button>
               )}
             </div>
-            {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
+            {msg && <div className="mb-3 rounded-[10px] bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             {!selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
-            {selMat && (
-              <div className="space-y-1">
-                {notes.map((n) => (
-                  <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                    <span>{etuName(n.etudiant_user_id)} — <strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span></span>
-                    <button onClick={async () => { await supabase.from("notes").delete().eq("id", n.id); setNotes((l) => l.filter((x) => x.id !== n.id)); }}
-                      className="text-xs text-destructive underline">Suppr.</button>
-                  </div>
-                ))}
-                {notes.length === 0 && <p className="text-sm text-muted-foreground">Aucune note.</p>}
-                <p className="mt-3 text-xs text-muted-foreground">CSV attendu : <code>email, valeur, type_evaluation, commentaire</code>. Seuls les étudiants inscrits sont pris en compte.</p>
+            {selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
+            {selMat && etudiants.length > 0 && (
+              <div className="space-y-2">
+                {etudiants.map((e) => {
+                  const existing = noteOf(e.user_id);
+                  const value = saisie[e.user_id] ?? (existing ? String(existing.valeur) : "");
+                  const num = Number(String(value).replace(",", "."));
+                  const appr = value !== "" && !Number.isNaN(num) ? appreciation(num) : null;
+                  return (
+                    <div key={e.user_id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{e.nom_complet}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {e.email}{appr ? ` · ${appr}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <input type="number" min="0" max="20" step="0.25" value={value} placeholder="/20"
+                          onChange={(ev) => setSaisie({ ...saisie, [e.user_id]: ev.target.value })}
+                          className="input-soft w-20" />
+                        <button onClick={() => saveOne(e.user_id)} disabled={saving} className="btn-forest">OK</button>
+                        {existing && (
+                          <button
+                            onClick={async () => { await supabase.from("notes").delete().eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes(); }}
+                            className="text-xs text-destructive underline">Suppr.</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  L'appréciation est générée automatiquement selon le barème (0–5 Très insuffisant … 18–20 Excellent).
+                </p>
               </div>
             )}
           </div>
@@ -741,116 +781,133 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Emploi du temps (grille hebdomadaire) --------------
+// -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<Creneau[]>([]);
-  const [cell, setCell] = useState<{ jour: number; slot: string } | null>(null);
-  const [form, setForm] = useState({ matiere: "", enseignant: "", salle: "", duree: "2" });
+  const [list, setList] = useState<Cours[]>([]);
+  const [cell, setCell] = useState<{ jour: number; bloc: Bloc } | null>(null);
+  const [form, setForm] = useState({ heure_debut: "", heure_fin: "", matiere: "", professeur: "", salle: "" });
+  const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut");
+    const { data } = await supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId)
+      .order("jour_semaine").order("heure_debut");
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
+
+  function openAdd(jour: number, bloc: Bloc) {
+    const b = BLOCS.find((x) => x.key === bloc)!;
+    setEditId(null);
+    setCell({ jour, bloc });
+    setForm({ heure_debut: b.defaultDebut, heure_fin: b.defaultFin, matiere: "", professeur: "", salle: "" });
+  }
+
+  function openEdit(c: Cours) {
+    setEditId(c.id);
+    setCell({ jour: c.jour_semaine, bloc: c.bloc });
+    setForm({
+      heure_debut: hhmm(c.heure_debut), heure_fin: hhmm(c.heure_fin),
+      matiere: c.matiere, professeur: c.professeur ?? "", salle: c.salle ?? "",
+    });
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !cell || !form.matiere.trim() || busy) return;
     setBusy(true);
-    await supabase.from("emplois_du_temps").insert({
-      niveau_id: niveauId,
-      jour_semaine: cell.jour,
-      heure_debut: cell.slot,
-      heure_fin: addMinutes(cell.slot, (Number(form.duree) || 1) * SLOT_MINUTES),
-      matiere: form.matiere.trim(),
-      salle: form.salle.trim() || null,
-      enseignant: form.enseignant.trim() || null,
-    });
-    setForm({ matiere: "", enseignant: "", salle: "", duree: "2" });
-    setCell(null);
+    const payload = {
+      niveau_id: niveauId, jour_semaine: cell.jour, bloc: cell.bloc,
+      heure_debut: form.heure_debut, heure_fin: form.heure_fin,
+      matiere: form.matiere.trim(), professeur: form.professeur.trim() || null, salle: form.salle.trim() || null,
+    };
+    if (editId) await supabase.from("cours_emploi_temps").update(payload).eq("id", editId);
+    else await supabase.from("cours_emploi_temps").insert(payload);
+    setCell(null); setEditId(null);
     await load();
     setBusy(false);
   }
 
+  async function del(id: string) {
+    await supabase.from("cours_emploi_temps").delete().eq("id", id);
+    if (editId === id) { setCell(null); setEditId(null); }
+    await load();
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="card-soft overflow-hidden p-0">
-          <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+        <div className="card-soft min-w-0 overflow-hidden p-0">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-4">
             <Clock className="icon-teal h-5 w-5" />
-            <h3 className="font-bold">Grille hebdomadaire</h3>
-            <span className="text-xs text-muted-foreground">Cliquez sur une case libre pour ajouter un cours</span>
+            <h3 className="font-bold">Emploi du temps</h3>
+            <span className="text-xs text-muted-foreground">Matin et après-midi — plusieurs cours possibles par bloc</span>
           </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] border-collapse text-xs">
+            <table className="w-full min-w-[900px] border-collapse text-xs">
               <thead>
                 <tr>
-                  <th className="w-16 border-b border-border p-2 text-left font-medium text-muted-foreground">Heure</th>
-                  {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+                  <th className="w-28 border-b border-border p-2 text-left font-medium text-muted-foreground">Bloc</th>
+                  {JOURS.map((j) => (
                     <th key={j} className="border-b border-l border-border p-2 font-semibold">{JOURS_LONGS[j - 1]}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {SLOTS.map((slot) => (
-                  <tr key={slot}>
-                    <td className="border-b border-border p-1.5 align-top font-mono text-[11px] text-muted-foreground">{slot}</td>
-                    {[1, 2, 3, 4, 5, 6, 7].map((j) => {
-                      const c = creneauAt(list, j, slot);
-                      if (c) {
-                        return (
-                          <td key={j} rowSpan={spanOf(c)} className="border-b border-l border-border p-1 align-top">
-                            <div className="group relative h-full rounded-[10px] bg-primary-soft p-2 leading-tight">
+                {BLOCS.map((b) => (
+                  <tr key={b.key}>
+                    <td className="border-b border-border p-2 align-top">
+                      <p className="font-semibold">{b.label}</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">{b.plage}</p>
+                    </td>
+                    {JOURS.map((j) => (
+                      <td key={j} className="border-b border-l border-border p-1.5 align-top">
+                        <div className="space-y-1.5">
+                          {coursOf(list, j, b.key).map((c) => (
+                            <div key={c.id} className="rounded-[10px] bg-primary-soft p-2 leading-tight">
+                              <p className="font-mono text-[10px] text-muted-foreground">{hhmm(c.heure_debut)}–{hhmm(c.heure_fin)}</p>
                               <p className="font-semibold text-primary">{c.matiere}</p>
-                              {c.enseignant && <p className="text-[11px] text-muted-foreground">{c.enseignant}</p>}
+                              {c.professeur && <p className="text-[11px] text-muted-foreground">{c.professeur}</p>}
                               {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
-                              <button onClick={async () => { await supabase.from("emplois_du_temps").delete().eq("id", c.id); load(); }}
-                                className="mt-1 text-[10px] text-destructive underline">Suppr.</button>
+                              <div className="mt-1 flex gap-2">
+                                <button onClick={() => openEdit(c)} className="text-[10px] text-primary underline">Modifier</button>
+                                <button onClick={() => del(c.id)} className="text-[10px] text-destructive underline">Suppr.</button>
+                              </div>
                             </div>
-                          </td>
-                        );
-                      }
-                      if (isCovered(list, j, slot)) return null;
-                      const active = cell?.jour === j && cell?.slot === slot;
-                      return (
-                        <td key={j} className="border-b border-l border-border p-1 align-top">
-                          <button onClick={() => setCell(active ? null : { jour: j, slot })}
-                            className={`flex h-8 w-full items-center justify-center rounded-[8px] transition ${active ? "bg-accent" : "hover:bg-muted"}`}
-                            aria-label={`Ajouter un cours ${JOURS_LONGS[j - 1]} à ${slot}`}>
-                            <Plus className={`h-3.5 w-3.5 ${active ? "text-accent-foreground" : "text-muted-foreground opacity-0 group-hover:opacity-100"}`} />
+                          ))}
+                          <button onClick={() => openAdd(j, b.key)}
+                            className="flex w-full items-center justify-center gap-1 rounded-[8px] border border-dashed border-border py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted">
+                            <Plus className="h-3 w-3" />Ajouter un cours
                           </button>
-                        </td>
-                      );
-                    })}
+                        </div>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
           {cell && (
-            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-5">
-              <div className="sm:col-span-5 text-sm font-semibold text-primary">
-                {JOURS_LONGS[cell.jour - 1]} · {cell.slot}
+            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="text-sm font-semibold text-primary sm:col-span-3 lg:col-span-6">
+                {JOURS_LONGS[cell.jour - 1]} · {BLOCS.find((b) => b.key === cell.bloc)?.label} {editId ? "· modification" : ""}
               </div>
+              <SmInput label="Heure de début" type="time" v={form.heure_debut} on={(v) => setForm({ ...form, heure_debut: v })} />
+              <SmInput label="Heure de fin" type="time" v={form.heure_fin} on={(v) => setForm({ ...form, heure_fin: v })} />
               <SmInput label="Matière" v={form.matiere} on={(v) => setForm({ ...form, matiere: v })} />
-              <SmInput label="Professeur" v={form.enseignant} on={(v) => setForm({ ...form, enseignant: v })} />
+              <SmInput label="Professeur" v={form.professeur} on={(v) => setForm({ ...form, professeur: v })} />
               <SmInput label="Salle" v={form.salle} on={(v) => setForm({ ...form, salle: v })} />
-              <div>
-                <label className="mb-1 block text-sm">Durée</label>
-                <select value={form.duree} onChange={(e) => setForm({ ...form, duree: e.target.value })} className="w-full input-soft">
-                  {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n * SLOT_MINUTES} min</option>)}
-                </select>
-              </div>
               <div className="flex items-end gap-2">
-                <button className="btn-forest flex-1" disabled={busy}>Ajouter</button>
-                <button type="button" onClick={() => setCell(null)} className="btn-bf-outline">Annuler</button>
+                <button className="btn-forest flex-1" disabled={busy}>{editId ? "Enregistrer" : "Ajouter"}</button>
+                <button type="button" onClick={() => { setCell(null); setEditId(null); }} className="btn-bf-outline">Annuler</button>
               </div>
             </form>
           )}

@@ -781,116 +781,133 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Emploi du temps (grille hebdomadaire) --------------
+// -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<Creneau[]>([]);
-  const [cell, setCell] = useState<{ jour: number; slot: string } | null>(null);
-  const [form, setForm] = useState({ matiere: "", enseignant: "", salle: "", duree: "2" });
+  const [list, setList] = useState<Cours[]>([]);
+  const [cell, setCell] = useState<{ jour: number; bloc: Bloc } | null>(null);
+  const [form, setForm] = useState({ heure_debut: "", heure_fin: "", matiere: "", professeur: "", salle: "" });
+  const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut");
+    const { data } = await supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId)
+      .order("jour_semaine").order("heure_debut");
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
+
+  function openAdd(jour: number, bloc: Bloc) {
+    const b = BLOCS.find((x) => x.key === bloc)!;
+    setEditId(null);
+    setCell({ jour, bloc });
+    setForm({ heure_debut: b.defaultDebut, heure_fin: b.defaultFin, matiere: "", professeur: "", salle: "" });
+  }
+
+  function openEdit(c: Cours) {
+    setEditId(c.id);
+    setCell({ jour: c.jour_semaine, bloc: c.bloc });
+    setForm({
+      heure_debut: hhmm(c.heure_debut), heure_fin: hhmm(c.heure_fin),
+      matiere: c.matiere, professeur: c.professeur ?? "", salle: c.salle ?? "",
+    });
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !cell || !form.matiere.trim() || busy) return;
     setBusy(true);
-    await supabase.from("emplois_du_temps").insert({
-      niveau_id: niveauId,
-      jour_semaine: cell.jour,
-      heure_debut: cell.slot,
-      heure_fin: addMinutes(cell.slot, (Number(form.duree) || 1) * SLOT_MINUTES),
-      matiere: form.matiere.trim(),
-      salle: form.salle.trim() || null,
-      enseignant: form.enseignant.trim() || null,
-    });
-    setForm({ matiere: "", enseignant: "", salle: "", duree: "2" });
-    setCell(null);
+    const payload = {
+      niveau_id: niveauId, jour_semaine: cell.jour, bloc: cell.bloc,
+      heure_debut: form.heure_debut, heure_fin: form.heure_fin,
+      matiere: form.matiere.trim(), professeur: form.professeur.trim() || null, salle: form.salle.trim() || null,
+    };
+    if (editId) await supabase.from("cours_emploi_temps").update(payload).eq("id", editId);
+    else await supabase.from("cours_emploi_temps").insert(payload);
+    setCell(null); setEditId(null);
     await load();
     setBusy(false);
   }
 
+  async function del(id: string) {
+    await supabase.from("cours_emploi_temps").delete().eq("id", id);
+    if (editId === id) { setCell(null); setEditId(null); }
+    await load();
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div className="card-soft p-6">
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="card-soft overflow-hidden p-0">
-          <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+        <div className="card-soft min-w-0 overflow-hidden p-0">
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-4">
             <Clock className="icon-teal h-5 w-5" />
-            <h3 className="font-bold">Grille hebdomadaire</h3>
-            <span className="text-xs text-muted-foreground">Cliquez sur une case libre pour ajouter un cours</span>
+            <h3 className="font-bold">Emploi du temps</h3>
+            <span className="text-xs text-muted-foreground">Matin et après-midi — plusieurs cours possibles par bloc</span>
           </div>
+
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[820px] border-collapse text-xs">
+            <table className="w-full min-w-[900px] border-collapse text-xs">
               <thead>
                 <tr>
-                  <th className="w-16 border-b border-border p-2 text-left font-medium text-muted-foreground">Heure</th>
-                  {[1, 2, 3, 4, 5, 6, 7].map((j) => (
+                  <th className="w-28 border-b border-border p-2 text-left font-medium text-muted-foreground">Bloc</th>
+                  {JOURS.map((j) => (
                     <th key={j} className="border-b border-l border-border p-2 font-semibold">{JOURS_LONGS[j - 1]}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {SLOTS.map((slot) => (
-                  <tr key={slot}>
-                    <td className="border-b border-border p-1.5 align-top font-mono text-[11px] text-muted-foreground">{slot}</td>
-                    {[1, 2, 3, 4, 5, 6, 7].map((j) => {
-                      const c = creneauAt(list, j, slot);
-                      if (c) {
-                        return (
-                          <td key={j} rowSpan={spanOf(c)} className="border-b border-l border-border p-1 align-top">
-                            <div className="group relative h-full rounded-[10px] bg-primary-soft p-2 leading-tight">
+                {BLOCS.map((b) => (
+                  <tr key={b.key}>
+                    <td className="border-b border-border p-2 align-top">
+                      <p className="font-semibold">{b.label}</p>
+                      <p className="font-mono text-[10px] text-muted-foreground">{b.plage}</p>
+                    </td>
+                    {JOURS.map((j) => (
+                      <td key={j} className="border-b border-l border-border p-1.5 align-top">
+                        <div className="space-y-1.5">
+                          {coursOf(list, j, b.key).map((c) => (
+                            <div key={c.id} className="rounded-[10px] bg-primary-soft p-2 leading-tight">
+                              <p className="font-mono text-[10px] text-muted-foreground">{hhmm(c.heure_debut)}–{hhmm(c.heure_fin)}</p>
                               <p className="font-semibold text-primary">{c.matiere}</p>
-                              {c.enseignant && <p className="text-[11px] text-muted-foreground">{c.enseignant}</p>}
+                              {c.professeur && <p className="text-[11px] text-muted-foreground">{c.professeur}</p>}
                               {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
-                              <button onClick={async () => { await supabase.from("emplois_du_temps").delete().eq("id", c.id); load(); }}
-                                className="mt-1 text-[10px] text-destructive underline">Suppr.</button>
+                              <div className="mt-1 flex gap-2">
+                                <button onClick={() => openEdit(c)} className="text-[10px] text-primary underline">Modifier</button>
+                                <button onClick={() => del(c.id)} className="text-[10px] text-destructive underline">Suppr.</button>
+                              </div>
                             </div>
-                          </td>
-                        );
-                      }
-                      if (isCovered(list, j, slot)) return null;
-                      const active = cell?.jour === j && cell?.slot === slot;
-                      return (
-                        <td key={j} className="border-b border-l border-border p-1 align-top">
-                          <button onClick={() => setCell(active ? null : { jour: j, slot })}
-                            className={`flex h-8 w-full items-center justify-center rounded-[8px] transition ${active ? "bg-accent" : "hover:bg-muted"}`}
-                            aria-label={`Ajouter un cours ${JOURS_LONGS[j - 1]} à ${slot}`}>
-                            <Plus className={`h-3.5 w-3.5 ${active ? "text-accent-foreground" : "text-muted-foreground opacity-0 group-hover:opacity-100"}`} />
+                          ))}
+                          <button onClick={() => openAdd(j, b.key)}
+                            className="flex w-full items-center justify-center gap-1 rounded-[8px] border border-dashed border-border py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted">
+                            <Plus className="h-3 w-3" />Ajouter un cours
                           </button>
-                        </td>
-                      );
-                    })}
+                        </div>
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+
           {cell && (
-            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-5">
-              <div className="sm:col-span-5 text-sm font-semibold text-primary">
-                {JOURS_LONGS[cell.jour - 1]} · {cell.slot}
+            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-3 lg:grid-cols-6">
+              <div className="text-sm font-semibold text-primary sm:col-span-3 lg:col-span-6">
+                {JOURS_LONGS[cell.jour - 1]} · {BLOCS.find((b) => b.key === cell.bloc)?.label} {editId ? "· modification" : ""}
               </div>
+              <SmInput label="Heure de début" type="time" v={form.heure_debut} on={(v) => setForm({ ...form, heure_debut: v })} />
+              <SmInput label="Heure de fin" type="time" v={form.heure_fin} on={(v) => setForm({ ...form, heure_fin: v })} />
               <SmInput label="Matière" v={form.matiere} on={(v) => setForm({ ...form, matiere: v })} />
-              <SmInput label="Professeur" v={form.enseignant} on={(v) => setForm({ ...form, enseignant: v })} />
+              <SmInput label="Professeur" v={form.professeur} on={(v) => setForm({ ...form, professeur: v })} />
               <SmInput label="Salle" v={form.salle} on={(v) => setForm({ ...form, salle: v })} />
-              <div>
-                <label className="mb-1 block text-sm">Durée</label>
-                <select value={form.duree} onChange={(e) => setForm({ ...form, duree: e.target.value })} className="w-full input-soft">
-                  {[1, 2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n * SLOT_MINUTES} min</option>)}
-                </select>
-              </div>
               <div className="flex items-end gap-2">
-                <button className="btn-forest flex-1" disabled={busy}>Ajouter</button>
-                <button type="button" onClick={() => setCell(null)} className="btn-bf-outline">Annuler</button>
+                <button className="btn-forest flex-1" disabled={busy}>{editId ? "Enregistrer" : "Ajouter"}</button>
+                <button type="button" onClick={() => { setCell(null); setEditId(null); }} className="btn-bf-outline">Annuler</button>
               </div>
             </form>
           )}

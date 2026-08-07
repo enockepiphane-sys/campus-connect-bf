@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,
 });
 
-const JOURS = ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
 
 function Dashboard() {
   const [ok, setOk] = useState<boolean | null>(null);

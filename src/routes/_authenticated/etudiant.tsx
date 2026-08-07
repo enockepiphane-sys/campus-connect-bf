@@ -60,7 +60,7 @@ function Dashboard() {
   ] as const;
 
   return (
-    <div className="bg-app min-h-screen text-foreground">
+    <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
@@ -493,7 +493,7 @@ function Notes() {
             <div className="space-y-1">
               {notes.map((n) => (
                 <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                  <span><strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span>{n.commentaire ? ` — ${n.commentaire}` : ""}</span>
+                  <span><strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span> <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{appreciation(Number(n.valeur))}</span></span>
                   <span className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
                 </div>
               ))}

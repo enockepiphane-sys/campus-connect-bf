@@ -116,7 +116,7 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
     (async () => {
       const [{ data: notes }, { data: edt }] = await Promise.all([
         supabase.from("notes").select("valeur,matiere_id"),
-        supabase.from("emplois_du_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut"),
+        supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut"),
       ]);
       const rows = (notes as { valeur: number; matiere_id: string }[]) ?? [];
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
@@ -164,7 +164,7 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
         {
           label: "Prochain cours",
           value: next ? next.matiere : "—",
-          sub: next ? `${JOURS[next.jour_semaine]} ${next.heure_debut.slice(0, 5)}${next.salle ? ` · ${next.salle}` : ""}` : "aucun cours planifié",
+          sub: next ? `${JOURS_LONGS[next.jour_semaine - 1]} ${hhmm(next.heure_debut)}${next.salle ? ` · ${next.salle}` : ""}` : "aucun cours planifié",
           icon: Clock, color: "icon-teal",
         },
       ]);

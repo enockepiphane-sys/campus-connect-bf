@@ -16,7 +16,12 @@ export function humanizeResendError(err: unknown): string {
   return msg;
 }
 
-/** Renvoie l'email de confirmation d'inscription (méthode dédiée Supabase). */
+/**
+ * Renvoie l'email de confirmation d'inscription (méthode dédiée Supabase).
+ * L'expéditeur est défini uniquement par Supabase (Auth > SMTP + sender),
+ * pas par le front-end. Pour Resend, configurez SMTP + sender dans Supabase
+ * et vérifiez le domaine/adresse côté Resend.
+ */
 export async function resendSignupEmail(email: string, emailRedirectTo: string) {
   const { error } = await supabase.auth.resend({
     type: "signup",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { parseCSV } from "@/lib/csv";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { warnIfSupabaseProjectMismatch } from "@/integrations/supabase/project-binding";
 
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
@@ -16,7 +17,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     if (init?.headers) {
       new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     }
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get("Authorization") === `Bearer ${supabaseKey}`) {
+    if (
+      isNewSupabaseApiKey(supabaseKey) &&
+      headers.get("Authorization") === `Bearer ${supabaseKey}`
+    ) {
       headers.delete("Authorization");
     }
     headers.set("apikey", supabaseKey);
@@ -44,9 +48,17 @@ export const Route = createFileRoute("/api/admin/import-csv")({
           process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
           process.env.SUPABASE_ANON_KEY ||
           process.env.VITE_SUPABASE_ANON_KEY;
+        const EXPECTED_SUPABASE_PROJECT_ID =
+          process.env.EXPECTED_SUPABASE_PROJECT_ID || process.env.VITE_EXPECTED_SUPABASE_PROJECT_ID;
         if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
           return Response.json({ error: "missing_supabase_env" }, { status: 500 });
         }
+
+        warnIfSupabaseProjectMismatch({
+          source: "api.admin.import-csv",
+          supabaseUrl: SUPABASE_URL,
+          expectedProjectRef: EXPECTED_SUPABASE_PROJECT_ID,
+        });
 
         const authHeader = request.headers.get("authorization");
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -60,7 +72,10 @@ export const Route = createFileRoute("/api/admin/import-csv")({
         const body = await request.json().catch(() => null);
         const parsed = requestBody.safeParse(body);
         if (!parsed.success) {
-          return Response.json({ error: "invalid_body", details: parsed.error.format() }, { status: 400 });
+          return Response.json(
+            { error: "invalid_body", details: parsed.error.format() },
+            { status: 400 },
+          );
         }
         const { csvText, niveauId } = parsed.data;
 
@@ -124,7 +139,10 @@ export const Route = createFileRoute("/api/admin/import-csv")({
           .insert(payload);
 
         if (insertError) {
-          return Response.json({ error: "insert_failed", message: insertError.message }, { status: 500 });
+          return Response.json(
+            { error: "insert_failed", message: insertError.message },
+            { status: 500 },
+          );
         }
 
         return Response.json({ imported: payload.length });

@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
-import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site-url";
 import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
 
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/etudiant/inscription")({
 });
 
 function Page() {
-  const navigate = useNavigate();
   const [etabs, setEtabs] = useState<Etab[]>([]);
   const [filieres, setFilieres] = useState<Filiere[]>([]);
   const [niveaux, setNiveaux] = useState<Niveau[]>([]);
@@ -24,7 +22,6 @@ function Page() {
   const [filiereId, setFiliereId] = useState("");
   const [niveauId, setNiveauId] = useState("");
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "", password: "", password2: "" });
-  const [preId, setPreId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,9 +52,8 @@ function Page() {
     setBusy(false);
     if (error) { setError(error.message); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-inscrit pour ce niveau. Contactez votre administration."); return; }
-    const row = data[0] as { pre_inscription_id: string; deja_inscrit: boolean };
+    const row = data[0] as { deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet étudiant est déjà inscrit. Utilisez la page de connexion."); return; }
-    setPreId(row.pre_inscription_id);
     setStep(5);
   }
 
@@ -83,14 +79,10 @@ function Page() {
       setBusy(false); return;
     }
     if (se) { setError(se.message); setBusy(false); return; }
-    if (data.session && preId) {
-      const { error: fe } = await supabase.rpc("finaliser_inscription_etudiant", { _pre_inscription_id: preId });
-      if (fe) { setError(fe.message); setBusy(false); return; }
-      const role = await resolveUserRole();
-      navigate({ to: dashboardPathForRole(role) });
-      return;
+    if (data.session) {
+      await supabase.auth.signOut();
     }
-    setInfo("Compte créé. Confirmez votre email puis connectez-vous.");
+    setInfo("Compte créé. Confirmez votre email puis connectez-vous — votre rôle sera activé automatiquement.");
     setBusy(false);
   }
 

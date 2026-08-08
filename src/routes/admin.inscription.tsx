@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
-import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 import { getSiteUrl } from "@/lib/site-url";
 import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
 
@@ -13,12 +12,10 @@ export const Route = createFileRoute("/admin/inscription")({
 });
 
 function Page() {
-  const navigate = useNavigate();
   const [etabs, setEtabs] = useState<Etab[]>([]);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [etabId, setEtabId] = useState("");
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "", password: "", password2: "" });
-  const [preAuthId, setPreAuthId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,9 +37,8 @@ function Page() {
     setBusy(false);
     if (error) { setError(error.message); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."); return; }
-    const row = data[0] as { pre_autorisation_id: string; deja_inscrit: boolean };
+    const row = data[0] as { deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet administrateur est déjà inscrit. Utilisez la page de connexion."); return; }
-    setPreAuthId(row.pre_autorisation_id);
     setStep(3);
   }
 
@@ -68,12 +64,8 @@ function Page() {
       setBusy(false); return;
     }
     if (se) { setError(se.message); setBusy(false); return; }
-    if (data.session && preAuthId) {
-      const { error: fe } = await supabase.rpc("finaliser_inscription_admin", { _pre_autorisation_id: preAuthId });
-      if (fe) { setError(fe.message); setBusy(false); return; }
-      const role = await resolveUserRole();
-      navigate({ to: dashboardPathForRole(role) });
-      return;
+    if (data.session) {
+      await supabase.auth.signOut();
     }
     setInfo("Compte créé. Confirmez votre email puis connectez-vous — votre rôle sera activé automatiquement.");
     setBusy(false);

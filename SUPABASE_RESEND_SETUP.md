@@ -8,7 +8,7 @@ Définissez ces variables d'environnement dans l'environnement de déploiement:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY` (ou `VITE_SUPABASE_PUBLISHABLE_KEY` côté client)
-- `EXPECTED_SUPABASE_PROJECT_ID` (project ref Supabase attendu, ex: `pfvedlgkeeynjsigalus`)
+- `EXPECTED_SUPABASE_PROJECT_ID` (project ref Supabase attendu, ex: `etahlugfsoxsaxcmelzq`)
 
 Le code loggue un warning si l'URL Supabase pointe vers un autre project ref que `EXPECTED_SUPABASE_PROJECT_ID`.
 

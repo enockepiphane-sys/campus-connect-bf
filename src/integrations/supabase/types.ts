@@ -681,9 +681,17 @@ export type Database = {
         Args: { _pre_autorisation_id: string }
         Returns: undefined
       }
+      finaliser_inscription_admin_par_email: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       finaliser_inscription_etudiant: {
         Args: { _pre_inscription_id: string }
         Returns: undefined
+      }
+      finaliser_inscription_etudiant_par_email: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       finaliser_inscription_super_admin: {
         Args: { _super_admin_id: string }

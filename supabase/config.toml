@@ -1,1 +1,7 @@
 project_id = "etahlugfsoxsaxcmelzq"
+
+[functions.resend-email]
+# Emails transactionnels (confirmation, notifications). verify_jwt = false
+# permet l'appel sans session utilisateur ; sécurisez via un secret partagé
+# ou l'appel depuis un contexte de confiance si besoin.
+verify_jwt = false

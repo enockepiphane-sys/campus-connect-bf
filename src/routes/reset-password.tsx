@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ResetPasswordFlow } from "@/components/ResetPasswordFlow";
 
-export const Route = createFileRoute("/reinitialiser-mot-de-passe")({
+export const Route = createFileRoute("/reset-password")({
   component: Page,
   ssr: false,
 });

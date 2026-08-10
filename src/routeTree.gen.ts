@@ -18,6 +18,7 @@ import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenai
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
@@ -74,6 +75,11 @@ const PolitiqueConfidentialiteRoute =
 const ReinitialiserMotDePasseRoute = ReinitialiserMotDePasseRouteImport.update({
   id: '/reinitialiser-mot-de-passe',
   path: '/reinitialiser-mot-de-passe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SuperAdminAccesRoute = SuperAdminAccesRouteImport.update({
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/super-admin-acces': typeof SuperAdminAccesRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/reset-password'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/reset-password'
     | '/super-admin-acces'
     | '/admin'
     | '/etudiant'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/fonctionnalites'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
+    | '/reset-password'
     | '/super-admin-acces'
     | '/_authenticated/admin'
     | '/_authenticated/etudiant'
@@ -287,6 +299,7 @@ export interface RootRouteChildren {
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SuperAdminAccesRoute: typeof SuperAdminAccesRoute
   AdminConnexionRoute: typeof AdminConnexionRoute
   AdminInscriptionRoute: typeof AdminInscriptionRoute
@@ -361,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/reinitialiser-mot-de-passe'
       fullPath: '/reinitialiser-mot-de-passe'
       preLoaderRoute: typeof ReinitialiserMotDePasseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/super-admin-acces': {
@@ -475,6 +495,7 @@ const rootRouteChildren: RootRouteChildren = {
   FonctionnalitesRoute: FonctionnalitesRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SuperAdminAccesRoute: SuperAdminAccesRoute,
   AdminConnexionRoute: AdminConnexionRoute,
   AdminInscriptionRoute: AdminInscriptionRoute,

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
@@ -7,6 +7,7 @@ import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import graduateHero from "@/assets/graduate-hero.png";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveUserRole } from "@/lib/auth";
 import { z } from "zod";
 
 export const Route = createFileRoute("/")({
@@ -38,6 +39,27 @@ const partnerSchema = z.object({
 });
 
 function Home() {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+    const type = hashParams.get("type") ?? url.searchParams.get("type");
+    const isEmailConfirmation = type === "signup" || type === "email_change";
+    if (!isEmailConfirmation) return;
+
+    let cancelled = false;
+    void (async () => {
+      const role = await resolveUserRole().catch(() => null);
+      if (cancelled) return;
+      const target = role === "admin" ? "/admin/connexion?confirmed=1" : "/etudiant/connexion?confirmed=1";
+      window.location.replace(target);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="bg-paper min-h-screen text-foreground">
       {/* Header */}

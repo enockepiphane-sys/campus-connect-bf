@@ -19,8 +19,14 @@ export function AdminConnexionPage() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const hash = window.location.hash;
-    if (hash && /type=(signup|email_change)/.test(hash)) {
+    const url = new URL(window.location.href);
+    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
+    const type = hashParams.get("type") ?? url.searchParams.get("type");
+    const isEmailConfirmation =
+      type === "signup" ||
+      type === "email_change" ||
+      url.searchParams.get("confirmed") === "1";
+    if (isEmailConfirmation) {
       supabase.auth.signOut().finally(() => {
         setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");
         history.replaceState(null, "", window.location.pathname);

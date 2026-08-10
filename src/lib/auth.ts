@@ -48,6 +48,8 @@ export async function resolveUserRole(): Promise<UserRole> {
     });
     return "admin";
   }
+  const { data: autoFinalizedAdmin } = await supabase.rpc("finaliser_inscription_admin_par_email", {});
+  if (autoFinalizedAdmin) return "admin";
 
   // 3) auto-finalisation étudiant
   const { data: preEtu } = await supabase
@@ -61,6 +63,8 @@ export async function resolveUserRole(): Promise<UserRole> {
     });
     return "etudiant";
   }
+  const { data: autoFinalizedEtu } = await supabase.rpc("finaliser_inscription_etudiant_par_email", {});
+  if (autoFinalizedEtu) return "etudiant";
 
   return null;
 }

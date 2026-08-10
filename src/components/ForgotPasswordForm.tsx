@@ -15,7 +15,13 @@ export function ForgotPasswordForm({ backTo }: { backTo: string }) {
     setInfo(null);
     setBusy(true);
     try {
-      const redirectTo = `${getSiteUrl()}/reinitialiser-mot-de-passe`;
+      // On redirige vers l'origine réellement utilisée par l'utilisateur
+      // (campuslink-bf.app, campuslink-bf.vercel.app, preview, localhost…)
+      // afin que le lien de réinitialisation revienne sur le bon domaine.
+      // Fallback sur l'URL de prod en cas de rendu côté serveur.
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : getSiteUrl();
+      const redirectTo = `${origin}/reset-password`;
       const { error: re } = await withTimeout(
         supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo }),
         10000,

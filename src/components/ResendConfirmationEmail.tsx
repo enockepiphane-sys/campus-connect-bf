@@ -144,11 +144,17 @@ export function ResendConfirmationEmail({
   }, [left]);
 
   async function onClick() {
-    setError(null); setOk(null); setBusy(true);
+    setError(null);
+    setOk(null);
+    setBusy(true);
     const clickId = crypto.randomUUID();
     console.info("[resend-confirmation] button clicked", { clickId, email });
     try {
-      console.info("[resend-confirmation] calling resendSignupEmail", { clickId, email, emailRedirectTo });
+      console.info("[resend-confirmation] calling resendSignupEmail", {
+        clickId,
+        email,
+        emailRedirectTo,
+      });
       const result = await resendSignupEmail(email, emailRedirectTo);
       console.info("[resend-confirmation] resendSignupEmail returned", {
         clickId,
@@ -174,7 +180,9 @@ export function ResendConfirmationEmail({
         return;
       }
       setLeft(COOLDOWN_SECONDS);
-      setOk("Email renvoyé. Si vous ne recevez rien, utilisez le lien déjà reçu et réessayez après le délai de sécurité.");
+      setOk(
+        "Email renvoyé. Si vous ne recevez rien, utilisez le lien déjà reçu et réessayez après le délai de sécurité.",
+      );
     } catch (err) {
       console.error("[resend-confirmation] unexpected onClick exception", err);
       setError("Une erreur est survenue, réessayez.");

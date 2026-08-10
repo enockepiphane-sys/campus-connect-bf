@@ -3,12 +3,10 @@ project_id = "etahlugfsoxsaxcmelzq"
 [auth]
 site_url = "https://campuslink-bf.app"
 additional_redirect_urls = [
-  "https://campuslink-bf.app/etudiant/connexion",
-  "https://campuslink-bf.app/admin/connexion",
-  "http://localhost:3000/etudiant/connexion",
-  "http://localhost:3000/admin/connexion",
-  "http://localhost:5173/etudiant/connexion",
-  "http://localhost:5173/admin/connexion"
+  "https://campuslink-bf.app/**",
+  "https://campuslinkbf.app/**",
+  "http://localhost:3000/**",
+  "http://localhost:5173/**"
 ]
 
 [functions.resend-email]

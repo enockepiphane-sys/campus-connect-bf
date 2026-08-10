@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/auth-timeout";
 
 const COOLDOWN_SECONDS = 60;
+const RESEND_TIMEOUT_MS = 15000;
 
 /** Message lisible pour les erreurs de renvoi d'email de confirmation. */
 export function humanizeResendError(err: unknown): string {
@@ -23,12 +25,48 @@ export function humanizeResendError(err: unknown): string {
  * et vérifiez le domaine/adresse côté Resend.
  */
 export async function resendSignupEmail(email: string, emailRedirectTo: string) {
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email: email.trim(),
-    options: { emailRedirectTo },
+  const requestId = crypto.randomUUID();
+  const trimmedEmail = email.trim();
+  console.info("[resend-confirmation] start", {
+    requestId,
+    email: trimmedEmail,
+    emailRedirectTo,
+    flow: "supabase.auth.resend",
+    senderSource: "Supabase Auth SMTP sender (Auth > Email > From email)",
   });
-  return { error: error ? humanizeResendError(error) : null };
+
+  try {
+    const { error } = await withTimeout(
+      supabase.auth.resend({
+        type: "signup",
+        email: trimmedEmail,
+        options: { emailRedirectTo },
+      }),
+      RESEND_TIMEOUT_MS,
+      "le renvoi de l'email de confirmation",
+    );
+
+    if (error) {
+      const humanized = humanizeResendError(error);
+      console.error("[resend-confirmation] supabase.auth.resend failed", {
+        requestId,
+        error,
+        humanized,
+      });
+      return { error: humanized };
+    }
+
+    console.info("[resend-confirmation] success", { requestId });
+    return { error: null };
+  } catch (err) {
+    const humanized = humanizeResendError(err);
+    console.error("[resend-confirmation] exception", {
+      requestId,
+      error: err,
+      humanized,
+    });
+    return { error: humanized };
+  }
 }
 
 /**
@@ -57,11 +95,21 @@ export function ResendConfirmationEmail({
 
   async function onClick() {
     setError(null); setOk(null); setBusy(true);
-    const { error: re } = await resendSignupEmail(email, emailRedirectTo);
-    setBusy(false);
-    setLeft(COOLDOWN_SECONDS);
-    if (re) { setError(re); return; }
-    setOk("Un nouvel email de confirmation vient d'être envoyé.");
+    console.info("[resend-confirmation] button clicked", { email });
+    try {
+      const { error: re } = await resendSignupEmail(email, emailRedirectTo);
+      if (re) {
+        setError(`Une erreur est survenue, réessayez. (${re})`);
+        return;
+      }
+      setLeft(COOLDOWN_SECONDS);
+      setOk("Email renvoyé.");
+    } catch (err) {
+      console.error("[resend-confirmation] unexpected onClick exception", err);
+      setError("Une erreur est survenue, réessayez.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   const disabled = busy || left > 0;

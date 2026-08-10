@@ -4,6 +4,7 @@ project_id = "etahlugfsoxsaxcmelzq"
 site_url = "https://campuslink-bf.app"
 additional_redirect_urls = [
   "https://campuslink-bf.app/**",
+  "https://www.campuslink-bf.app/**",
   "https://campuslinkbf.app/**",
   "http://localhost:3000/**",
   "http://localhost:5173/**"

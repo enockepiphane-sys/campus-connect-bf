@@ -2,7 +2,7 @@
  * URL de base utilisée pour les redirections email (emailRedirectTo).
  * Priorité : domaine actif côté navigateur -> variables d'env -> fallback prod.
  */
-const FALLBACK_PRODUCTION_SITE_URL = "https://campuslink-bf.app";
+const FALLBACK_PRODUCTION_SITE_URL = "https://www.campuslink-bf.app";
 
 function normalize(url: string): string {
   return url.replace(/\/+$/, "");

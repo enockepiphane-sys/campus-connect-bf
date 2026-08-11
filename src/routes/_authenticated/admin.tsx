@@ -628,7 +628,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
               <input type="checkbox" checked={form.is_urgent} onChange={(e) => setForm({ ...form, is_urgent: e.target.checked })} />
               Marquer comme urgent
             </label>
-            <label className="flex items-center gap-2 text-sm">
+            {/* <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
               Autoriser les commentaires
             </label>
@@ -639,7 +639,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                   onChange={(e) => setForm({ ...form, max_comments: e.target.value })}
                   className="input-soft w-full" />
               </div>
-            )}
+            )} */}
             <button className="btn-forest w-full">Publier</button>
           </form>
         </div>

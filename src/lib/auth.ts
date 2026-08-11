@@ -57,4 +57,11 @@ export async function resolveUserRole(): Promise<UserRole> {
 export function dashboardPathForRole(role: UserRole): string {
   if (role === "super_admin") return "/super-admin";
   if (role === "admin") return "/admin";
-  if
+  if (role === "etudiant") return "/etudiant";
+  return "/";
+}
+
+export async function signOutAndGoHome() {
+  await supabase.auth.signOut();
+  window.location.href = "/";
+     }

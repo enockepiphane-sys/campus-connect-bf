@@ -5,16 +5,6 @@ import { PageShell } from "@/components/PageShell";
 import { humanizeAuthError, withTimeout } from "@/lib/auth-timeout";
 import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
 
-/**
- * Flux de définition d'un nouveau mot de passe après clic sur le lien
- * de réinitialisation reçu par email.
- *
- * Le lien envoyé par email contient désormais `?token_hash=...&type=recovery`
- * (au lieu de l'ancien `#access_token=...` dans le hash). On échange ce
- * token_hash contre une vraie session via `verifyOtp`. Ce flux évite le bug
- * où un scanner de sécurité (antivirus, Gmail, etc.) "consomme" le lien en
- * le pré-chargeant avant que l'utilisateur ne clique dessus.
- */
 export function ResetPasswordFlow() {
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
@@ -22,13 +12,12 @@ export function ResetPasswordFlow() {
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
     (async () => {
-      // 1) Nouveau format de lien : ?token_hash=...&type=recovery
       const params = new URLSearchParams(window.location.search);
       const tokenHash = params.get("token_hash");
       const type = params.get("type");
@@ -48,8 +37,6 @@ export function ResetPasswordFlow() {
         return;
       }
 
-      // 2) Compatibilité avec l'ancien format (#access_token=...) au cas où
-      //    un ancien email n'ayant pas encore expiré serait encore utilisé.
       const { data } = await supabase.auth.getSession();
       if (data.session) setValidSession(true);
       setReady(true);
@@ -64,7 +51,7 @@ export function ResetPasswordFlow() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e) {
     e.preventDefault();
     setError(null);
     setInfo(null);
@@ -153,5 +140,4 @@ export function ResetPasswordFlow() {
       )}
     </PageShell>
   );
-             }
-        
+  }

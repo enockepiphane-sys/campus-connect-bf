@@ -610,7 +610,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                     )}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
-                  {a.comments_enabled && <AdminComments annonceId={a.id} />}
+                  {/*{a.comments_enabled && <AdminComments annonceId={a.id} />}*/}
                 </article>
               ))}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}

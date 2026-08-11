@@ -677,6 +677,16 @@ export type Database = {
     Functions: {
       etablissement_of_admin: { Args: { _user_id: string }; Returns: string }
       etablissement_of_niveau: { Args: { _niveau_id: string }; Returns: string }
+      get_announcement_comments: {
+        Args: { p_announcement_id: string }
+        Returns: {
+          author_name: string | null
+          content: string
+          created_at: string
+          id: string
+          user_id: string
+        }[]
+      }
       finaliser_inscription_admin: {
         Args: { _pre_autorisation_id: string }
         Returns: undefined

@@ -2,9 +2,9 @@
 
 export type Bloc = "matin" | "apres_midi";
 
-export const BLOCS: { key: Bloc; label: string; plage: string; defaultDebut: string; defaultFin: string }[] = [
-  { key: "matin", label: "Matin", plage: "07:30 – 12:30", defaultDebut: "07:30", defaultFin: "09:30" },
-  { key: "apres_midi", label: "Après-midi", plage: "14:00 – 17:00", defaultDebut: "14:00", defaultFin: "16:00" },
+export const BLOCS: { key: Bloc; label: string; defaultDebut: string; defaultFin: string }[] = [
+  { key: "matin", label: "Matin", defaultDebut: "07:30", defaultFin: "09:30" },
+  { key: "apres_midi", label: "Après-midi", defaultDebut: "14:00", defaultFin: "16:00" },
 ];
 
 /** Jours travaillés : Lundi (1) → Samedi (6). */

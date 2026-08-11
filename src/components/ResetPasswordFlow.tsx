@@ -9,11 +9,11 @@ import { resolveUserRole, dashboardPathForRole } from "@/lib/auth";
  * Flux de définition d'un nouveau mot de passe après clic sur le lien
  * de réinitialisation reçu par email.
  *
- * Supabase place le token de récupération dans l'URL (hash
- * `#access_token=…&type=recovery`) et, grâce à `detectSessionInUrl` (activé
- * par défaut dans supabase-js), établit automatiquement une session de type
- * "recovery". On attend donc soit l'événement `PASSWORD_RECOVERY`, soit une
- * session déjà présente, avant d'afficher le formulaire.
+ * Le lien envoyé par email contient désormais `?token_hash=...&type=recovery`
+ * (au lieu de l'ancien `#access_token=...` dans le hash). On échange ce
+ * token_hash contre une vraie session via `verifyOtp`. Ce flux évite le bug
+ * où un scanner de sécurité (antivirus, Gmail, etc.) "consomme" le lien en
+ * le pré-chargeant avant que l'utilisateur ne clique dessus.
  */
 export function ResetPasswordFlow() {
   const navigate = useNavigate();
@@ -27,22 +27,41 @@ export function ResetPasswordFlow() {
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    let sub: { unsubscribe: () => void } | null = null;
-
     (async () => {
+      // 1) Nouveau format de lien : ?token_hash=...&type=recovery
+      const params = new URLSearchParams(window.location.search);
+      const tokenHash = params.get("token_hash");
+      const type = params.get("type");
+
+      if (tokenHash && type === "recovery") {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+        if (verifyError) {
+          setError(humanizeAuthError(verifyError));
+          setReady(true);
+          return;
+        }
+        setValidSession(true);
+        setReady(true);
+        return;
+      }
+
+      // 2) Compatibilité avec l'ancien format (#access_token=...) au cas où
+      //    un ancien email n'ayant pas encore expiré serait encore utilisé.
       const { data } = await supabase.auth.getSession();
       if (data.session) setValidSession(true);
       setReady(true);
     })();
 
-    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY" || (event === "SIGNED_IN" && session)) {
         setValidSession(true);
         setReady(true);
       }
     });
-    sub = data.subscription;
-    return () => sub?.unsubscribe();
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   async function onSubmit(e: React.FormEvent) {
@@ -134,4 +153,5 @@ export function ResetPasswordFlow() {
       )}
     </PageShell>
   );
-}
+             }
+        

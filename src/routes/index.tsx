@@ -104,13 +104,13 @@ function Home() {
               Faso : notes, annonces, emplois du temps et événements dans un espace sécurisé.
             </p>
           </div>
-          <div className="relative mx-auto flex items-end justify-center px-2 sm:px-0">
+          <div className="relative mx-auto flex w-full max-w-[560px] items-end justify-center overflow-visible px-1 sm:px-0">
             <img
               src={graduateHero}
               alt="Jeune diplômé universitaire africain présentant fièrement l'application CampusLink"
               width={1024}
               height={1536}
-              className="relative z-0 max-h-[240px] w-auto sm:max-h-[300px] md:max-h-[420px] -mr-6 sm:-mr-10 md:-mr-24"
+              className="relative z-0 h-auto w-[34vw] min-w-[110px] max-w-[170px] -mr-2 sm:w-[180px] sm:max-w-none sm:-mr-6 md:w-[240px] md:max-w-none md:-mr-14 lg:-mr-20"
             />
             <div className="relative z-10">
               <PhoneMockup />

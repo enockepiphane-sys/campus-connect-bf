@@ -34,7 +34,7 @@ export async function resolveUserRole(): Promise<UserRole> {
   const preAdmin = preAdminRows && preAdminRows.length > 0 ? preAdminRows[0] : null;
   if (preAdmin) {
     await supabase.rpc("finaliser_inscription_admin", {
-      _pre_autorisation_id: preAdmin.id,
+      _pre_autorisation_id: preAdmin.pre_autorisation_id,
     });
     return "admin";
   }
@@ -46,7 +46,7 @@ export async function resolveUserRole(): Promise<UserRole> {
   const preEtu = preEtuRows && preEtuRows.length > 0 ? preEtuRows[0] : null;
   if (preEtu) {
     await supabase.rpc("finaliser_inscription_etudiant", {
-      _pre_inscription_id: preEtu.id,
+      _pre_inscription_id: preEtu.pre_inscription_id,
     });
     return "etudiant";
   }
@@ -64,4 +64,4 @@ export function dashboardPathForRole(role: UserRole): string {
 export async function signOutAndGoHome() {
   await supabase.auth.signOut();
   window.location.href = "/";
-     }
+}

@@ -27,11 +27,11 @@ export async function resolveUserRole(): Promise<UserRole> {
   const email = (user.email ?? "").trim().toLowerCase();
   if (!email) return null;
 
-  const { data: preAdmin } = await supabase
-    .from("admins_pre_autorises")
-    .select("id")
-    .ilike("email", email)
-    .maybeSingle();
+  const { data: preAdminRows } = await supabase.rpc(
+    "trouver_pre_autorisation_admin_par_email",
+    { _email: email },
+  );
+  const preAdmin = preAdminRows && preAdminRows.length > 0 ? preAdminRows[0] : null;
   if (preAdmin) {
     await supabase.rpc("finaliser_inscription_admin", {
       _pre_autorisation_id: preAdmin.id,
@@ -39,11 +39,11 @@ export async function resolveUserRole(): Promise<UserRole> {
     return "admin";
   }
 
-  const { data: preEtu } = await supabase
-    .from("etudiants_pre_inscrits")
-    .select("id")
-    .ilike("email", email)
-    .maybeSingle();
+  const { data: preEtuRows } = await supabase.rpc(
+    "trouver_pre_inscription_etudiant_par_email",
+    { _email: email },
+  );
+  const preEtu = preEtuRows && preEtuRows.length > 0 ? preEtuRows[0] : null;
   if (preEtu) {
     await supabase.rpc("finaliser_inscription_etudiant", {
       _pre_inscription_id: preEtu.id,
@@ -57,11 +57,4 @@ export async function resolveUserRole(): Promise<UserRole> {
 export function dashboardPathForRole(role: UserRole): string {
   if (role === "super_admin") return "/super-admin";
   if (role === "admin") return "/admin";
-  if (role === "etudiant") return "/etudiant";
-  return "/";
-}
-
-export async function signOutAndGoHome() {
-  await supabase.auth.signOut();
-  window.location.href = "/";
-}
+  if

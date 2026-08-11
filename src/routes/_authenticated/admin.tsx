@@ -596,7 +596,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                       <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
                       Marquer comme urgent
                     </label>
-                    <label className="flex items-center gap-1.5">
+    {/* <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
                       Autoriser les commentaires
                     </label>
@@ -607,7 +607,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                           onBlur={(e) => { const v = Number(e.target.value); if (v && v !== a.max_comments) setMaxComments(a.id, v); }}
                           className="input-soft w-20 py-1" />
                       </label>
-                    )}
+                    )} */}
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
                   {/*{a.comments_enabled && <AdminComments annonceId={a.id} />}*/}

@@ -2,18 +2,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type UserRole = "super_admin" | "admin" | "etudiant" | null;
 
-/**
- * Résout le rôle de l'utilisateur courant. Auto-finalise :
- *  - si email présent dans admins_pre_autorises (non lié) → appelle finaliser_inscription_admin
- *  - si email présent dans etudiants_pre_inscrits (non lié) → appelle finaliser_inscription_etudiant
- * Renvoie le rôle après finalisation.
- */
 export async function resolveUserRole(): Promise<UserRole> {
   const { data: userData } = await supabase.auth.getUser();
   const user = userData.user;
   if (!user) return null;
 
-  // 1) rôle existant ?
   const { data: roles } = await supabase
     .from("user_roles")
     .select("role")
@@ -24,8 +17,6 @@ export async function resolveUserRole(): Promise<UserRole> {
     if (roles.some((r) => r.role === "etudiant")) return "etudiant";
   }
 
-  // 1bis) super admin ? (les super admins sont référencés dans super_admins,
-  // pas nécessairement dans user_roles)
   const { data: superAdmin } = await supabase
     .from("super_admins")
     .select("id")
@@ -36,11 +27,10 @@ export async function resolveUserRole(): Promise<UserRole> {
   const email = (user.email ?? "").trim().toLowerCase();
   if (!email) return null;
 
-  // 2) auto-finalisation admin
   const { data: preAdmin } = await supabase
     .from("admins_pre_autorises")
     .select("id")
-    .eq("user_id", user.id)
+    .ilike("email", email)
     .maybeSingle();
   if (preAdmin) {
     await supabase.rpc("finaliser_inscription_admin", {
@@ -49,11 +39,10 @@ export async function resolveUserRole(): Promise<UserRole> {
     return "admin";
   }
 
-  // 3) auto-finalisation étudiant
   const { data: preEtu } = await supabase
     .from("etudiants_pre_inscrits")
     .select("id")
-    .eq("user_id", user.id)
+    .ilike("email", email)
     .maybeSingle();
   if (preEtu) {
     await supabase.rpc("finaliser_inscription_etudiant", {

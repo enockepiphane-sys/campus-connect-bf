@@ -13,13 +13,34 @@ function Page() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
+  const [error, setError] = useState(null);
+  const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
 
-  // Détecte le retour d'un lien de confirmation d'inscription (hash Supabase).
+  // Détecte le retour d'un lien de confirmation d'inscription.
+  // Nouveau format : ?token_hash=...&type=signup (flow PKCE)
+  // Ancien format (compatibilité) : #access_token=...&type=signup
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get("token_hash");
+    const type = params.get("type");
+
+    if (tokenHash && (type === "signup" || type === "email_change")) {
+      supabase.auth.verifyOtp({ token_hash: tokenHash, type: type }).then(({ error: verifyError }) => {
+        if (verifyError) {
+          setError(humanizeAuthError(verifyError));
+        } else {
+          setInfo("Votre compte a été confirmé, connectez-vous pour continuer.");
+        }
+        supabase.auth.signOut().finally(() => {
+          history.replaceState(null, "", window.location.pathname);
+        });
+      });
+      return;
+    }
+
     const hash = window.location.hash;
     if (hash && /type=(signup|email_change)/.test(hash)) {
       supabase.auth.signOut().finally(() => {
@@ -29,7 +50,7 @@ function Page() {
     }
   }, []);
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e) {
     e.preventDefault(); setError(null); setBusy(true);
     try {
       const { error: le } = await withTimeout(

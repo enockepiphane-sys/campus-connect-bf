@@ -120,21 +120,20 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       ]);
       const rows = (notes as { valeur: number; matiere_id: string }[]) ?? [];
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
-      let mats: { id: string; nom: string; coefficient: number; credits: number }[] = [];
+      let mats: { id: string; nom: string; credits: number }[] = [];
       if (ids.length) {
-        const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").in("id", ids);
+        const { data } = await supabase.from("matieres").select("id,nom,credits").in("id", ids);
         mats = (data as never) ?? [];
       }
       const byMat = new Map<string, number[]>();
       rows.forEach((n) => byMat.set(n.matiere_id, [...(byMat.get(n.matiere_id) ?? []), Number(n.valeur)]));
 
-      let totalPts = 0, totalCoef = 0, credits = 0, totalCredits = 0;
+      let totalPts = 0, totalCreditsWeight = 0, credits = 0, totalCredits = 0;
       byMat.forEach((vals, mid) => {
         const mat = mats.find((m) => m.id === mid);
-        const coef = Number(mat?.coefficient ?? 1);
         const cred = Number(mat?.credits ?? 0);
         const moy = vals.reduce((s, v) => s + v, 0) / vals.length;
-        totalPts += moy * coef; totalCoef += coef;
+        totalPts += moy * cred; totalCreditsWeight += cred;
         totalCredits += cred;
         if (moy >= 10) credits += cred;
       });
@@ -151,8 +150,8 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
       setStats([
         {
           label: "Moyenne générale",
-          value: totalCoef ? (totalPts / totalCoef).toFixed(2) : "—",
-          sub: totalCoef ? "sur 20" : "aucune note",
+          value: totalCreditsWeight ? (totalPts / totalCreditsWeight).toFixed(2) : "—",
+          sub: totalCreditsWeight ? "sur 20" : "aucune note",
           icon: TrendingUp, color: "icon-green",
         },
         {
@@ -283,29 +282,25 @@ function LikeButton({ annonceId }: { annonceId: string }) {
 }
 
 function Commentaires({ annonceId, maxComments }: { annonceId: string; maxComments: number }) {
-  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string; author_name: string | null }[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("announcement_comments")
-      .select("id,content,created_at,user_id").eq("announcement_id", annonceId)
-      .order("created_at", { ascending: false });
-    const rows = (data as never as typeof list) ?? [];
-    setList(rows);
-    const ids = Array.from(new Set(rows.map((c) => c.user_id)));
-    if (ids.length) {
-      const { data: etus } = await supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet").in("user_id", ids);
-      const m: Record<string, string> = {};
-      (etus ?? []).forEach((e) => { if (e.user_id) m[e.user_id] = e.nom_complet; });
-      setNames(m);
-    }
+    const [{ data }, { data: u }] = await Promise.all([
+      supabase.rpc("get_announcement_comments", { p_announcement_id: annonceId }),
+      supabase.auth.getUser(),
+    ]);
+    setList((data as never as typeof list) ?? []);
+    setCurrentUserId(u.user?.id ?? "");
   }
   useEffect(() => { load(); }, [annonceId]);
 
   async function publier(e: React.FormEvent) {
     e.preventDefault();
+    setErrorMsg(null);
     const content = text.trim();
     if (!content || busy) return;
     setBusy(true);
@@ -313,11 +308,13 @@ function Commentaires({ annonceId, maxComments }: { annonceId: string; maxCommen
     if (u.user) {
       const { error } = await supabase.from("announcement_comments").insert({ announcement_id: annonceId, user_id: u.user.id, content });
       if (!error) { setText(""); await load(); }
+      else setErrorMsg(error.message);
     }
     setBusy(false);
   }
 
   const limitReached = maxComments != null && list.length >= maxComments;
+  const hasCommented = !!currentUserId && list.some((c) => c.user_id === currentUserId);
 
   return (
     <div className="mt-4 border-t border-border pt-4">
@@ -325,23 +322,30 @@ function Commentaires({ annonceId, maxComments }: { annonceId: string; maxCommen
         <MessageCircle className="icon-teal h-4 w-4" />
         Commentaires ({list.length}{maxComments ? ` / ${maxComments}` : ""})
       </div>
-      {limitReached ? (
+      {limitReached && (
         <p className="mb-3 rounded-[10px] border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
           Limite de commentaires atteinte
         </p>
-      ) : (
+      )}
+      {!limitReached && hasCommented && (
+        <p className="mb-3 rounded-[10px] border border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Vous avez déjà commenté cette annonce.
+        </p>
+      )}
+      {!limitReached && !hasCommented && (
         <form onSubmit={publier} className="mb-3 flex gap-2">
           <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Écrire un commentaire…"
             className="input-soft flex-1" maxLength={2000} />
           <button className="btn-forest shrink-0" disabled={busy}>Publier</button>
         </form>
       )}
+      {errorMsg && <p className="mb-2 text-xs text-destructive">{errorMsg}</p>}
 
       <div className="space-y-2">
         {list.map((c) => (
           <div key={c.id} className="rounded-[10px] border border-border bg-surface p-2 text-sm">
             <div className="flex items-center gap-2">
-              <span className="font-medium">{names[c.user_id] ?? "Étudiant"}</span>
+              <span className="font-medium">{c.user_id === currentUserId ? "Moi" : (c.author_name ?? "Étudiant")}</span>
               <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
             </div>
             <p className="whitespace-pre-wrap">{c.content}</p>
@@ -459,7 +463,7 @@ function Evenements({ niveauId }: { niveauId: string }) {
 
 function Notes() {
   const [list, setList] = useState<{ id: string; valeur: number; type_evaluation: string; commentaire: string | null; matiere_id: string; created_at: string }[]>([]);
-  const [matieres, setMatieres] = useState<Record<string, { nom: string; coefficient: number }>>({});
+  const [matieres, setMatieres] = useState<Record<string, { nom: string; credits: number }>>({});
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("notes").select("*").order("created_at", { ascending: false });
@@ -467,9 +471,9 @@ function Notes() {
       setList(rows);
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
       if (ids.length) {
-        const { data: mats } = await supabase.from("matieres").select("id,nom,coefficient").in("id", ids);
-        const m: Record<string, { nom: string; coefficient: number }> = {};
-        (mats ?? []).forEach((x) => { m[x.id] = { nom: x.nom, coefficient: Number(x.coefficient) }; });
+        const { data: mats } = await supabase.from("matieres").select("id,nom,credits").in("id", ids);
+        const m: Record<string, { nom: string; credits: number }> = {};
+        (mats ?? []).forEach((x) => { m[x.id] = { nom: x.nom, credits: Number(x.credits) }; });
         setMatieres(m);
       }
     })();
@@ -488,7 +492,7 @@ function Notes() {
           <div key={mid} className="card-soft p-5">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="font-bold">{mat?.nom ?? "Matière"}</h3>
-              <div className="text-sm">Moyenne : <strong className="text-primary">{moy.toFixed(2)}</strong> {mat && <span className="text-xs text-muted-foreground">· coef {mat.coefficient}</span>}</div>
+              <div className="text-sm">Moyenne : <strong className="text-primary">{moy.toFixed(2)}</strong> {mat && <span className="text-xs text-muted-foreground">· {mat.credits} crédit{mat.credits > 1 ? "s" : ""}</span>}</div>
             </div>
             <div className="space-y-1">
               {notes.map((n) => (

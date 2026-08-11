@@ -161,25 +161,25 @@ function StructurePanel({ etabId }: { etabId: string }) {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="card-soft p-6">
+    <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+      <div className="card-soft min-w-0 p-6">
         <h2 className="mb-3 font-bold">Filières</h2>
-        <form onSubmit={addFil} className="mb-3 flex gap-2">
+        <form onSubmit={addFil} className="mb-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
           <input value={nfil} onChange={(e) => setNfil(e.target.value)} placeholder="Nom de la filière"
-            className="flex-1 input-soft" />
-          <button className="btn-forest">Ajouter</button>
+            className="input-soft min-w-0 w-full" />
+          <button className="btn-forest w-full sm:w-auto">Ajouter</button>
         </form>
         <ul className="space-y-2">
           {filieres.map((f) => (
-            <li key={f.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-              <span>{f.nom}</span>
+            <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+              <span className="truncate">{f.nom}</span>
               <button onClick={() => delFil(f.id)} className="text-xs text-destructive underline">Suppr.</button>
             </li>
           ))}
         </ul>
       </div>
 
-      <div className="card-soft p-6">
+      <div className="card-soft min-w-0 p-6">
         <h2 className="mb-3 font-bold">Niveaux</h2>
         <form onSubmit={addNiv} className="mb-3 space-y-2">
           <select value={nniv.filiere_id} onChange={(e) => setNniv({ ...nniv, filiere_id: e.target.value })}
@@ -187,12 +187,12 @@ function StructurePanel({ etabId }: { etabId: string }) {
             <option value="">— Filière —</option>
             {filieres.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
           </select>
-          <div className="flex gap-2">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
             <input value={nniv.nom} onChange={(e) => setNniv({ ...nniv, nom: e.target.value })} placeholder="Nom (ex: L1)"
-              className="flex-1 input-soft" />
+              className="input-soft min-w-0 w-full" />
             <input type="number" value={nniv.ordre} onChange={(e) => setNniv({ ...nniv, ordre: e.target.value })}
-              className="w-20 input-soft" />
-            <button className="btn-forest">Ajouter</button>
+              className="input-soft min-w-0 w-full" />
+            <button className="btn-forest w-full sm:w-auto">Ajouter</button>
           </div>
         </form>
         <ul className="space-y-2">
@@ -201,8 +201,8 @@ function StructurePanel({ etabId }: { etabId: string }) {
               <div className="mb-1 text-xs font-bold text-muted-foreground">{f.nom}</div>
               <div className="space-y-1">
                 {niveaux.filter((n) => n.filiere_id === f.id).map((n) => (
-                  <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                    <span>{n.ordre}. {n.nom}</span>
+                  <div key={n.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+                    <span className="truncate">{n.ordre}. {n.nom}</span>
                     <button onClick={() => delNiv(n.id)} className="text-xs text-destructive underline">Suppr.</button>
                   </div>
                 ))}
@@ -350,8 +350,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [matieres, setMatieres] = useState<{ id: string; nom: string; coefficient: number; credits: number }[]>([]);
-  const [nMat, setNMat] = useState({ nom: "", coefficient: "1", credits: "1" });
+  const [matieres, setMatieres] = useState<{ id: string; nom: string; credits: number }[]>([]);
+  const [nMat, setNMat] = useState({ nom: "", credits: "1" });
   const [selMat, setSelMat] = useState<string>("");
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);
@@ -360,11 +360,15 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (!niveauId) { setMatieres([]); setEtudiants([]); return; }
-    supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom")
-      .then(({ data }) => setMatieres((data as never) ?? []));
-    supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true)
-      .then(({ data }) => setEtudiants(((data ?? []).filter((e) => e.user_id)) as never));
+    if (!niveauId) { setMatieres([]); setEtudiants([]); setSelMat(""); setNotes([]); setSaisie({}); return; }
+    setSelMat(""); setNotes([]); setSaisie({}); setMsg(null);
+    Promise.all([
+      supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom"),
+      supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true),
+    ]).then(([{ data: mats }, { data: etus }]) => {
+      setMatieres((mats as never) ?? []);
+      setEtudiants(((etus ?? []).filter((e) => e.user_id)) as never);
+    });
   }, [niveauId]);
 
   useEffect(() => {
@@ -376,9 +380,9 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   async function addMat(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !nMat.nom.trim()) return;
-    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), coefficient: Number(nMat.coefficient) || 1, credits: Number(nMat.credits) || 0 });
-    setNMat({ nom: "", coefficient: "1", credits: "1" });
-    const { data } = await supabase.from("matieres").select("id,nom,coefficient,credits").eq("niveau_id", niveauId).order("nom");
+    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), credits: Number(nMat.credits) || 0 });
+    setNMat({ nom: "", credits: "1" });
+    const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom");
     setMatieres((data as never) ?? []);
   }
 
@@ -441,14 +445,12 @@ function MatieresPanel({ etabId }: { etabId: string }) {
         <div className="grid min-w-0 gap-6 lg:grid-cols-2">
           <div className="card-soft min-w-0 p-6">
             <h3 className="mb-3 font-bold">Matières</h3>
-            <form onSubmit={addMat} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[1fr_5rem_5rem_auto]">
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
               <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
                 className="input-soft col-span-2 min-w-0 sm:col-span-1" />
-              <input type="number" step="0.1" value={nMat.coefficient} onChange={(e) => setNMat({ ...nMat, coefficient: e.target.value })}
-                className="input-soft min-w-0" title="Coefficient" placeholder="Coef" />
               <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
                 className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
-              <button className="btn-forest col-span-2 sm:col-span-1">+</button>
+              <button className="btn-forest col-span-2 sm:col-span-1">Ajouter</button>
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
@@ -456,7 +458,6 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                   <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
                     className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
                     <span className="font-semibold">{m.nom}</span>{" "}
-                    <span className="text-xs text-muted-foreground">· coef {m.coefficient}</span>{" "}
                     <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{m.credits} crédit{m.credits > 1 ? "s" : ""}</span>
                   </button>
                 </li>
@@ -468,14 +469,15 @@ function MatieresPanel({ etabId }: { etabId: string }) {
           <div className="card-soft min-w-0 p-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold">Saisie des notes</h3>
-              {selMat && etudiants.length > 0 && (
+              {matieres.length > 0 && selMat && etudiants.length > 0 && (
                 <button onClick={saveAll} disabled={saving} className="btn-forest">Enregistrer toutes les notes</button>
               )}
             </div>
             {msg && <div className="mb-3 rounded-[10px] bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
-            {!selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
-            {selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
-            {selMat && etudiants.length > 0 && (
+            {matieres.length === 0 && <p className="text-sm text-muted-foreground">Créez d'abord une matière pour saisir des notes.</p>}
+            {matieres.length > 0 && !selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
+            {matieres.length > 0 && selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
+            {matieres.length > 0 && selMat && etudiants.length > 0 && (
               <div className="space-y-2">
                 {etudiants.map((e) => {
                   const existing = noteOf(e.user_id);
@@ -647,22 +649,11 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
 }
 
 function AdminComments({ annonceId }: { annonceId: string }) {
-  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string }[]>([]);
-  const [names, setNames] = useState<Record<string, string>>({});
+  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string; author_name: string | null }[]>([]);
 
   async function load() {
-    const { data } = await supabase.from("announcement_comments")
-      .select("id,content,created_at,user_id").eq("announcement_id", annonceId)
-      .order("created_at", { ascending: false });
-    const rows = (data as never as typeof list) ?? [];
-    setList(rows);
-    const ids = Array.from(new Set(rows.map((c) => c.user_id)));
-    if (ids.length) {
-      const { data: etus } = await supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet").in("user_id", ids);
-      const m: Record<string, string> = {};
-      (etus ?? []).forEach((e) => { if (e.user_id) m[e.user_id] = e.nom_complet; });
-      setNames(m);
-    }
+    const { data } = await supabase.rpc("get_announcement_comments", { p_announcement_id: annonceId });
+    setList((data as never as typeof list) ?? []);
   }
   useEffect(() => { load(); }, [annonceId]);
 
@@ -672,7 +663,7 @@ function AdminComments({ annonceId }: { annonceId: string }) {
       {list.map((c) => (
         <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
           <div>
-            <span className="font-medium">{names[c.user_id] ?? "Étudiant"}</span>{" "}
+            <span className="font-medium">{c.author_name ?? "Étudiant"}</span>{" "}
             <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
             <p className="whitespace-pre-wrap">{c.content}</p>
           </div>
@@ -865,7 +856,6 @@ function EDTPanel({ etabId }: { etabId: string }) {
                   <tr key={b.key}>
                     <td className="border-b border-border p-2 align-top">
                       <p className="font-semibold">{b.label}</p>
-                      <p className="font-mono text-[10px] text-muted-foreground">{b.plage}</p>
                     </td>
                     {JOURS.map((j) => (
                       <td key={j} className="border-b border-l border-border p-1.5 align-top">

@@ -1,23 +1,11 @@
 /**
- * URL de base utilisée pour les redirections email (emailRedirectTo).
- * Priorité : domaine actif côté navigateur -> variables d'env -> fallback prod.
+ * URL de production utilisée pour les redirections email (emailRedirectTo).
+ * Supabase Auth exige une URL absolue et elle doit figurer dans les
+ * Redirect URLs autorisées du backend.
  */
-const FALLBACK_PRODUCTION_SITE_URL = "https://www.campuslink-bf.app";
-
-function normalize(url: string): string {
-  return url.replace(/\/+$/, "");
-}
+export const PRODUCTION_SITE_URL =
+  "https://campuslink-bf.vercel.app";
 
 export function getSiteUrl(): string {
-  if (typeof window !== "undefined" && window.location?.origin) {
-    return normalize(window.location.origin);
-  }
-
-  const envSiteUrl =
-    import.meta.env.VITE_SITE_URL ||
-    process.env.SITE_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-
-  return normalize(envSiteUrl || FALLBACK_PRODUCTION_SITE_URL);
+  return PRODUCTION_SITE_URL;
 }

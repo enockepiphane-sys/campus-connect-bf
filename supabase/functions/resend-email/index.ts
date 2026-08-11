@@ -49,7 +49,6 @@ function isFromOnVerifiedDomain(from: string): boolean {
 }
 
 Deno.serve(async (req: Request) => {
-  const requestId = crypto.randomUUID();
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -87,17 +86,10 @@ Deno.serve(async (req: Request) => {
 
   // "from" : priorité au secret RESEND_FROM, sinon adresse par défaut du domaine.
   const from = (Deno.env.get("RESEND_FROM") || DEFAULT_FROM).trim();
-  console.info("[resend-email] request received", {
-    requestId,
-    method: req.method,
-    toCount: Array.isArray(to) ? to.length : 1,
-    subject,
-    from,
-  });
 
   if (!isFromOnVerifiedDomain(from)) {
     console.error(
-      `[resend-email] [${requestId}] "from" (${from}) hors du domaine vérifié ${VERIFIED_DOMAIN}.`,
+      `[resend-email] "from" (${from}) hors du domaine vérifié ${VERIFIED_DOMAIN}.`,
     );
     return json(
       {
@@ -117,11 +109,6 @@ Deno.serve(async (req: Request) => {
   if (replyTo) body.reply_to = replyTo;
 
   try {
-    console.info("[resend-email] calling Resend API", {
-      requestId,
-      endpoint: RESEND_ENDPOINT,
-      from,
-    });
     const res = await fetch(RESEND_ENDPOINT, {
       method: "POST",
       headers: {
@@ -133,21 +120,13 @@ Deno.serve(async (req: Request) => {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      console.error("[resend-email] Resend API error", {
-        requestId,
-        status: res.status,
-        data,
-      });
+      console.error("[resend-email] Erreur Resend:", res.status, data);
       return json({ error: "Échec de l'envoi de l'email.", details: data }, 502);
     }
 
-    console.info("[resend-email] email sent", {
-      requestId,
-      resendId: data?.id ?? null,
-    });
     return json({ ok: true, id: data?.id ?? null });
   } catch (err) {
-    console.error("[resend-email] Exception:", { requestId, err });
+    console.error("[resend-email] Exception:", err);
     return json({ error: "Erreur réseau lors de l'appel à Resend." }, 502);
   }
 });

@@ -1,15 +1,5 @@
 project_id = "etahlugfsoxsaxcmelzq"
 
-[auth]
-site_url = "https://campuslink-bf.app"
-additional_redirect_urls = [
-  "https://campuslink-bf.app/**",
-  "https://www.campuslink-bf.app/**",
-  "https://campuslinkbf.app/**",
-  "http://localhost:3000/**",
-  "http://localhost:5173/**"
-]
-
 [functions.resend-email]
 # Emails transactionnels (confirmation, notifications). verify_jwt = false
 # permet l'appel sans session utilisateur ; sécurisez via un secret partagé

@@ -16,7 +16,7 @@ export function ForgotPasswordForm({ backTo }: { backTo: string }) {
     setBusy(true);
     try {
       // On redirige vers l'origine réellement utilisée par l'utilisateur
-      // (campuslink-bf.app, preview, localhost…)
+      // (campuslink-bf.app, campuslink-bf.vercel.app, preview, localhost…)
       // afin que le lien de réinitialisation revienne sur le bon domaine.
       // Fallback sur l'URL de prod en cas de rendu côté serveur.
       const origin =

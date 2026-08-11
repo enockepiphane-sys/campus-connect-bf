@@ -1,22 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import {
-  GraduationCap,
-  LogIn,
-  UserPlus,
-  Mail,
-  Building2,
-  Phone,
-  MessageSquare,
-  Send,
-} from "lucide-react";
+import { useState } from "react";
+import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import graduateHero from "@/assets/graduate-hero.png";
 import { supabase } from "@/integrations/supabase/client";
-import { resolveUserRole } from "@/lib/auth";
 import { z } from "zod";
 
 export const Route = createFileRoute("/")({
@@ -31,7 +21,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "CampusLink — Campus du Burkina Faso" },
       {
         property: "og:description",
-        content: "La plateforme dédiée aux universités et étudiants du Burkina Faso.",
+        content:
+          "La plateforme dédiée aux universités et étudiants du Burkina Faso.",
       },
     ],
   }),
@@ -47,28 +38,6 @@ const partnerSchema = z.object({
 });
 
 function Home() {
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    const hashParams = new URLSearchParams(url.hash.startsWith("#") ? url.hash.slice(1) : url.hash);
-    const type = hashParams.get("type") ?? url.searchParams.get("type");
-    const isEmailConfirmation = type === "signup" || type === "email_change";
-    if (!isEmailConfirmation) return;
-
-    let cancelled = false;
-    void (async () => {
-      const role = await resolveUserRole().catch(() => null);
-      if (cancelled) return;
-      const target =
-        role === "admin" ? "/admin/connexion?confirmed=1" : "/etudiant/connexion?confirmed=1";
-      window.location.replace(target);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   return (
     <div className="bg-paper min-h-screen text-foreground">
       {/* Header */}
@@ -100,8 +69,9 @@ function Home() {
               <span className="text-gradient-bf">simplement connectée.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground md:mx-0">
-              CampusLink relie les universités, leurs administrateurs et leurs étudiants du Burkina
-              Faso : notes, annonces, emplois du temps et événements dans un espace sécurisé.
+              CampusLink relie les universités, leurs administrateurs et leurs
+              étudiants du Burkina Faso : notes, annonces, emplois du temps et
+              événements dans un espace sécurisé.
             </p>
           </div>
           <div className="relative mx-auto flex items-end justify-center px-2 sm:px-0">
@@ -127,8 +97,12 @@ function Home() {
                 <GraduationCap className="h-7 w-7" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Espace Étudiant</h2>
-                <p className="text-sm text-muted-foreground">Notes, annonces, emploi du temps</p>
+                <h2 className="text-2xl font-bold text-foreground">
+                  Espace Étudiant
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Notes, annonces, emploi du temps
+                </p>
               </div>
             </div>
             <div className="flex flex-col gap-3">
@@ -143,6 +117,7 @@ function Home() {
             </div>
           </section>
         </div>
+
 
         {/* Devenir partenaire */}
         <PartnerSection />
@@ -192,8 +167,7 @@ function PartnerSection() {
           </div>
           <h2 className="text-2xl font-bold text-foreground">Devenir partenaire</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Votre établissement souhaite rejoindre CampusLink ? Envoyez-nous une demande, notre
-            équipe vous recontactera.
+            Votre établissement souhaite rejoindre CampusLink ? Envoyez-nous une demande, notre équipe vous recontactera.
           </p>
         </div>
 
@@ -209,30 +183,10 @@ function PartnerSection() {
         )}
 
         <form onSubmit={onSubmit} className="space-y-4">
-          <PartnerField
-            icon={<Building2 className="h-4 w-4" />}
-            label="Nom de l'établissement"
-            name="nom_etablissement"
-            required
-          />
-          <PartnerField
-            icon={<UserPlus className="h-4 w-4" />}
-            label="Nom du responsable"
-            name="nom_contact"
-            required
-          />
-          <PartnerField
-            icon={<Mail className="h-4 w-4" />}
-            label="Email professionnel"
-            name="email_contact"
-            type="email"
-            required
-          />
-          <PartnerField
-            icon={<Phone className="h-4 w-4" />}
-            label="Téléphone (facultatif)"
-            name="telephone_contact"
-          />
+          <PartnerField icon={<Building2 className="h-4 w-4" />} label="Nom de l'établissement" name="nom_etablissement" required />
+          <PartnerField icon={<UserPlus className="h-4 w-4" />} label="Nom du responsable" name="nom_contact" required />
+          <PartnerField icon={<Mail className="h-4 w-4" />} label="Email professionnel" name="email_contact" type="email" required />
+          <PartnerField icon={<Phone className="h-4 w-4" />} label="Téléphone (facultatif)" name="telephone_contact" />
           <div>
             <label className="mb-1 flex items-center gap-2 text-sm font-medium text-foreground/80">
               <MessageSquare className="h-4 w-4" />

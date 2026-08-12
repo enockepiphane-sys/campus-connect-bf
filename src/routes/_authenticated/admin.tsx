@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
@@ -22,7 +22,7 @@ function Dashboard() {
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
-  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt">("structure");
+  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique">("structure");
 
   useEffect(() => {
     (async () => {
@@ -49,6 +49,7 @@ function Dashboard() {
     { k: "annonces", l: "Annonces", i: Megaphone, c: "icon-terracotta" },
     { k: "evenements", l: "Événements", i: Calendar, c: "icon-gold" },
     { k: "edt", l: "Emploi du temps", i: Clock, c: "icon-teal" },
+    { k: "historique", l: "Historique", i: History, c: "icon-green" },
   ] as const;
   const current = sections.find((s) => s.k === tab);
 
@@ -116,6 +117,7 @@ function Dashboard() {
         {tab === "annonces" && <AnnoncesPanel etabId={etabId} />}
         {tab === "evenements" && <EvenementsPanel etabId={etabId} />}
         {tab === "edt" && <EDTPanel etabId={etabId} />}
+        {tab === "historique" && <HistoriquePanel etabId={etabId} />}
       </main>
     </div>
   );
@@ -261,7 +263,7 @@ function NiveauPicker({ items, value, onChange }: { items: { niveau_id: string; 
   );
 }
 
-// -------------- Étudiants --------------
+      // -------------- Étudiants --------------
 function EtudiantsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -374,8 +376,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       )}
     </div>
   );
-                                                       }
-          
+}
+
 // -------------- Matières & Notes --------------
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
@@ -571,7 +573,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Annonces --------------
+    // -------------- Annonces --------------
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -751,7 +753,7 @@ function AdminComments({ annonceId }: { annonceId: string }) {
   );
 }
 
-            
+
 // -------------- Événements --------------
 function EvenementsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
@@ -858,7 +860,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
+      // -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -1003,6 +1005,105 @@ function EDTPanel({ etabId }: { etabId: string }) {
   );
 }
 
+// -------------- Historique des actions --------------
+type AuditLog = {
+  id: string;
+  admin_email: string | null;
+  action: string;
+  table_name: string;
+  description: string | null;
+  created_at: string;
+};
+
+const TABLE_LABELS: Record<string, string> = {
+  filieres: "Filière",
+  niveaux: "Niveau",
+  etudiants_pre_inscrits: "Étudiant",
+  notes: "Note",
+  annonces: "Annonce",
+  announcement_comments: "Commentaire",
+  evenements: "Événement",
+  cours_emploi_temps: "Emploi du temps",
+};
+
+const ACTION_LABELS: Record<string, { l: string; c: string }> = {
+  suppression: { l: "Suppression", c: "text-destructive" },
+  modification: { l: "Modification", c: "text-primary" },
+  creation: { l: "Création", c: "icon-green" },
+};
+
+function HistoriquePanel({ etabId }: { etabId: string }) {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtreAction, setFiltreAction] = useState<string>("");
+
+  async function load() {
+    setLoading(true);
+    let query = supabase
+      .from("audit_logs")
+      .select("id,admin_email,action,table_name,description,created_at")
+      .eq("etablissement_id", etabId)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (filtreAction) query = query.eq("action", filtreAction);
+    const { data } = await query;
+    setLogs((data as AuditLog[]) ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, [etabId, filtreAction]);
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
+    });
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card-soft p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-bold">Historique des actions ({logs.length})</h2>
+          <select
+            value={filtreAction}
+            onChange={(e) => setFiltreAction(e.target.value)}
+            className="input-soft w-auto"
+          >
+            <option value="">Toutes les actions</option>
+            <option value="suppression">Suppressions</option>
+            <option value="modification">Modifications</option>
+          </select>
+        </div>
+
+        {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+        {!loading && logs.length === 0 && (
+          <p className="text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>
+        )}
+
+        <div className="space-y-2">
+          {logs.map((log) => {
+            const actionInfo = ACTION_LABELS[log.action] ?? { l: log.action, c: "text-muted-foreground" };
+            const tableLabel = TABLE_LABELS[log.table_name] ?? log.table_name;
+            return (
+              <div key={log.id} className="rounded-[10px] border border-border bg-surface p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold ${actionInfo.c}`}>{actionInfo.l}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tableLabel}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{formatDate(log.created_at)}</span>
+                </div>
+                <p className="mt-1">{log.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Par {log.admin_email ?? "administrateur inconnu"}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on: (v: string) => void; type?: string }) {
   return (
     <div>
@@ -1011,5 +1112,5 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
         className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
-                                                                                          }
-              
+      }
+                                

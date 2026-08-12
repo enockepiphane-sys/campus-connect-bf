@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2 } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
@@ -22,7 +22,7 @@ function Dashboard() {
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
-  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique">("structure");
+  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
 
   useEffect(() => {
     (async () => {
@@ -50,6 +50,7 @@ function Dashboard() {
     { k: "evenements", l: "Événements", i: Calendar, c: "icon-gold" },
     { k: "edt", l: "Emploi du temps", i: Clock, c: "icon-teal" },
     { k: "historique", l: "Historique", i: History, c: "icon-green" },
+    { k: "corbeille", l: "Corbeille", i: Trash2, c: "text-destructive" },
   ] as const;
   const current = sections.find((s) => s.k === tab);
 
@@ -118,6 +119,7 @@ function Dashboard() {
         {tab === "evenements" && <EvenementsPanel etabId={etabId} />}
         {tab === "edt" && <EDTPanel etabId={etabId} />}
         {tab === "historique" && <HistoriquePanel etabId={etabId} />}
+        {tab === "corbeille" && <CorbeillePanel etabId={etabId} />}
       </main>
     </div>
   );
@@ -127,8 +129,6 @@ function Dashboard() {
 function StructurePanel({ etabId }: { etabId: string }) {
   const [filieres, setFilieres] = useState<Filiere[]>([]);
   const [niveaux, setNiveaux] = useState<Niveau[]>([]);
-  const [corbeilleFil, setCorbeilleFil] = useState<Filiere[]>([]);
-  const [showCorbeille, setShowCorbeille] = useState(false);
   const [nfil, setNfil] = useState("");
   const [nniv, setNniv] = useState({ filiere_id: "", nom: "", ordre: "1" });
   const [filASupprimer, setFilASupprimer] = useState<Filiere | null>(null);
@@ -138,11 +138,9 @@ function StructurePanel({ etabId }: { etabId: string }) {
     setFilieres((f as Filiere[]) ?? []);
     const ids = (f ?? []).map((x) => x.id);
     if (ids.length) {
-      const { data: n } = await supabase.from("niveaux").select("id,nom,ordre,filiere_id").in("filiere_id", ids).order("ordre");
+      const { data: n } = await supabase.from("niveaux").select("id,nom,ordre,filiere_id").in("filiere_id", ids).is("deleted_at", null).order("ordre");
       setNiveaux((n as Niveau[]) ?? []);
     } else setNiveaux([]);
-    const { data: cf } = await supabase.from("filieres").select("id,nom").eq("etablissement_id", etabId).not("deleted_at", "is", null).order("nom");
-    setCorbeilleFil((cf as Filiere[]) ?? []);
   }
   useEffect(() => { load(); }, [etabId]);
 
@@ -168,52 +166,28 @@ function StructurePanel({ etabId }: { etabId: string }) {
     setFilASupprimer(null);
     load();
   }
-  async function restaurerFil(f: Filiere) {
-    await supabase.from("filieres").update({ deleted_at: null }).eq("id", f.id);
-    await supabase.rpc("enregistrer_audit", {
-      _etablissement_id: etabId,
-      _action: "restauration",
-      _table_name: "filieres",
-      _record_id: f.id,
-      _description: `Restauration de la filière "${f.nom}"`,
-      _ancienne_valeur: null,
-      _nouvelle_valeur: f,
-    });
-    load();
-  }
-  async function supprimerDefinitivementFil(f: Filiere) {
-    if (!confirm(`Supprimer définitivement "${f.nom}" ? Cette action est irréversible et ne peut pas être annulée.`)) return;
-    await supabase.rpc("enregistrer_audit", {
-      _etablissement_id: etabId,
-      _action: "suppression_definitive",
-      _table_name: "filieres",
-      _record_id: f.id,
-      _description: `Suppression définitive de la filière "${f.nom}"`,
-      _ancienne_valeur: f,
-      _nouvelle_valeur: null,
-    });
-    await supabase.from("filieres").delete().eq("id", f.id);
-    load();
-  }
   async function addNiv(e: React.FormEvent) {
     e.preventDefault();
     if (!nniv.filiere_id || !nniv.nom.trim()) return;
     await supabase.from("niveaux").insert({ filiere_id: nniv.filiere_id, nom: nniv.nom.trim(), ordre: Number(nniv.ordre) || 1 });
     setNniv({ filiere_id: nniv.filiere_id, nom: "", ordre: "1" }); load();
   }
-  async function delNiv(id: string) {
-    if (!confirm("Supprimer ce niveau ?")) return;
-    const n = niveaux.find((x) => x.id === id);
+  const [nivASupprimer, setNivASupprimer] = useState<Niveau | null>(null);
+  async function confirmerDelNiv() {
+    if (!nivASupprimer) return;
+    const n = nivASupprimer;
     await supabase.rpc("enregistrer_audit", {
       _etablissement_id: etabId,
       _action: "suppression",
       _table_name: "niveaux",
-      _record_id: id,
-      _description: `Suppression du niveau "${n?.nom ?? id}"`,
-      _ancienne_valeur: n ?? null,
+      _record_id: n.id,
+      _description: `Mise en corbeille du niveau "${n.nom}"`,
+      _ancienne_valeur: n,
       _nouvelle_valeur: null,
     });
-    await supabase.from("niveaux").delete().eq("id", id); load();
+    await supabase.from("niveaux").update({ deleted_at: new Date().toISOString() }).eq("id", n.id);
+    setNivASupprimer(null);
+    load();
   }
 
   return (
@@ -259,33 +233,13 @@ function StructurePanel({ etabId }: { etabId: string }) {
                 {niveaux.filter((n) => n.filiere_id === f.id).map((n) => (
                   <div key={n.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
                     <span className="truncate">{n.ordre}. {n.nom}</span>
-                    <button onClick={() => delNiv(n.id)} className="text-xs text-destructive underline">Suppr.</button>
+                    <button onClick={() => setNivASupprimer(n)} className="text-xs text-destructive underline">Suppr.</button>
                   </div>
                 ))}
               </div>
             </li>
           ))}
         </ul>
-      </div>
-
-      <div className="card-soft min-w-0 p-6 lg:col-span-2">
-        <button onClick={() => setShowCorbeille(!showCorbeille)} className="mb-3 flex items-center gap-2 font-bold text-muted-foreground">
-          🗑️ Corbeille des filières ({corbeilleFil.length}) {showCorbeille ? "▲" : "▼"}
-        </button>
-        {showCorbeille && (
-          <ul className="space-y-2">
-            {corbeilleFil.length === 0 && <p className="text-sm text-muted-foreground">Corbeille vide.</p>}
-            {corbeilleFil.map((f) => (
-              <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-muted p-2 text-sm">
-                <span className="truncate text-muted-foreground">{f.nom}</span>
-                <div className="flex shrink-0 gap-2">
-                  <button onClick={() => restaurerFil(f)} className="text-xs text-primary underline">Restaurer</button>
-                  <button onClick={() => supprimerDefinitivementFil(f)} className="text-xs text-destructive underline">Suppr. définitivement</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
 
       {filASupprimer && (
@@ -297,6 +251,15 @@ function StructurePanel({ etabId }: { etabId: string }) {
           onCancel={() => setFilASupprimer(null)}
         />
       )}
+      {nivASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer ce niveau ?"
+          message={`Ce niveau sera déplacé vers la corbeille : "${nivASupprimer.nom}".`}
+          motAttendu={nivASupprimer.nom}
+          onConfirm={confirmerDelNiv}
+          onCancel={() => setNivASupprimer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -306,10 +269,10 @@ function useNiveauxOfEtab(etabId: string) {
   const [items, setItems] = useState<{ niveau_id: string; label: string }[]>([]);
   useEffect(() => {
     (async () => {
-      const { data: fil } = await supabase.from("filieres").select("id,nom").eq("etablissement_id", etabId).order("nom");
+      const { data: fil } = await supabase.from("filieres").select("id,nom").eq("etablissement_id", etabId).is("deleted_at", null).order("nom");
       const ids = (fil ?? []).map((f) => f.id);
       if (!ids.length) { setItems([]); return; }
-      const { data: niv } = await supabase.from("niveaux").select("id,nom,ordre,filiere_id").in("filiere_id", ids).order("ordre");
+      const { data: niv } = await supabase.from("niveaux").select("id,nom,ordre,filiere_id").in("filiere_id", ids).is("deleted_at", null).order("ordre");
       const filMap = new Map((fil ?? []).map((f) => [f.id, f.nom]));
       setItems((niv ?? []).map((n) => ({ niveau_id: n.id, label: `${filMap.get(n.filiere_id) ?? ""} — ${n.nom}` })));
     })();
@@ -335,12 +298,13 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
     const { data } = await supabase.from("etudiants_pre_inscrits").select("id,nom_complet,email,date_naissance,inscrit")
-      .eq("niveau_id", niveauId).order("nom_complet");
+      .eq("niveau_id", niveauId).is("deleted_at", null).order("nom_complet");
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
@@ -383,18 +347,21 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     }
   }
 
-  async function del(id: string) {
-    const etu = list.find((x) => x.id === id);
+  async function confirmerDel() {
+    if (!etuASupprimer) return;
+    const etu = etuASupprimer;
     await supabase.rpc("enregistrer_audit", {
       _etablissement_id: etabId,
       _action: "suppression",
       _table_name: "etudiants_pre_inscrits",
-      _record_id: id,
-      _description: `Suppression de l'étudiant "${etu?.nom_complet ?? id}"`,
-      _ancienne_valeur: etu ?? null,
+      _record_id: etu.id,
+      _description: `Mise en corbeille de l'étudiant "${etu.nom_complet}"`,
+      _ancienne_valeur: etu,
       _nouvelle_valeur: null,
     });
-    await supabase.from("etudiants_pre_inscrits").delete().eq("id", id); load();
+    await supabase.from("etudiants_pre_inscrits").update({ deleted_at: new Date().toISOString() }).eq("id", etu.id);
+    setEtuASupprimer(null);
+    load();
   }
 
   return (
@@ -421,7 +388,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
                     <span className="font-semibold">{e.nom_complet}</span>
                     <span className="ml-2 text-xs text-muted-foreground">{e.email} · {e.date_naissance} · {e.inscrit ? "✓ inscrit" : "en attente"}</span>
                   </div>
-                  <button onClick={() => del(e.id)} className="text-xs text-destructive underline">Suppr.</button>
+                  <button onClick={() => setEtuASupprimer(e)} className="text-xs text-destructive underline">Suppr.</button>
                 </div>
               ))}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant.</p>}
@@ -437,6 +404,15 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
           </form>
         </div>
+      )}
+      {etuASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cet étudiant ?"
+          message={`Cet étudiant sera déplacé vers la corbeille : "${etuASupprimer.nom_complet}".`}
+          motAttendu="SUPPRIMER"
+          onConfirm={confirmerDel}
+          onCancel={() => setEtuASupprimer(null)}
+        />
       )}
     </div>
   );
@@ -459,8 +435,8 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     if (!niveauId) { setMatieres([]); setEtudiants([]); setSelMat(""); setNotes([]); setSaisie({}); return; }
     setSelMat(""); setNotes([]); setSaisie({}); setMsg(null);
     Promise.all([
-      supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom"),
-      supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true),
+      supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).is("deleted_at", null).order("nom"),
+      supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true).is("deleted_at", null),
     ]).then(([{ data: mats }, { data: etus }]) => {
       setMatieres((mats as never) ?? []);
       setEtudiants(((etus ?? []).filter((e) => e.user_id)) as never);
@@ -469,7 +445,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 
   useEffect(() => {
     if (!selMat) { setNotes([]); return; }
-    supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat)
+    supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat).is("deleted_at", null)
       .then(({ data }) => setNotes((data as never) ?? []));
   }, [selMat]);
 
@@ -478,7 +454,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     if (!niveauId || !nMat.nom.trim()) return;
     await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), credits: Number(nMat.credits) || 0 });
     setNMat({ nom: "", credits: "1" });
-    const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom");
+    const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).is("deleted_at", null).order("nom");
     setMatieres((data as never) ?? []);
   }
 
@@ -486,7 +462,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
 
   async function reloadNotes() {
     if (!selMat) return;
-    const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
+    const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat).is("deleted_at", null);
     setNotes((data as never) ?? []);
   }
 
@@ -608,16 +584,17 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                         {existing && (
                           <button
                             onClick={async () => {
+                              if (!confirm(`Supprimer la note de "${e.nom_complet}" ?`)) return;
                               await supabase.rpc("enregistrer_audit", {
                                 _etablissement_id: etabId,
                                 _action: "suppression",
                                 _table_name: "notes",
                                 _record_id: existing.id,
-                                _description: `Suppression de la note de "${e.nom_complet}"`,
+                                _description: `Mise en corbeille de la note de "${e.nom_complet}"`,
                                 _ancienne_valeur: existing,
                                 _nouvelle_valeur: null,
                               });
-                              await supabase.from("notes").delete().eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes();
+                              await supabase.from("notes").update({ deleted_at: new Date().toISOString() }).eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes();
                             }}
                             className="text-xs text-destructive underline">Suppr.</button>
                         )}
@@ -637,7 +614,293 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   );
 }
 
-    // -------------- Annonces --------------
+// -------------- Annonces --------------
+function AnnoncesPanel({ etabId }: { etabId: string }) {
+  const niveaux = useNiveauxOfEtab(etabId);
+  const [niveauId, setNiveauId] = useState("");
+  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number }[]>([]);
+  const [likes, setLikes] = useState<Record<string, number>>({});
+  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" });
+
+  async function load() {
+    if (!niveauId) { setList([]); setLikes({}); return; }
+    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false });
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    if (rows.length) {
+      const { data: lk } = await supabase.from("announcement_likes").select("announcement_id").in("announcement_id", rows.map((a) => a.id));
+      const counts: Record<string, number> = {};
+      ((lk as { announcement_id: string }[]) ?? []).forEach((l) => { counts[l.announcement_id] = (counts[l.announcement_id] ?? 0) + 1; });
+      setLikes(counts);
+    } else setLikes({});
+  }
+  useEffect(() => { load(); }, [niveauId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault(); if (!niveauId) return;
+    const { data: u } = await supabase.auth.getUser();
+    await supabase.from("annonces").insert({
+      niveau_id: niveauId,
+      titre: form.titre.trim(),
+      contenu: form.contenu.trim(),
+      is_urgent: form.is_urgent,
+      comments_enabled: form.comments_enabled,
+      max_comments: Math.max(1, Number(form.max_comments) || 10),
+      created_by: u.user?.id,
+    });
+    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" }); load();
+  }
+
+  async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
+    const patch = field === "is_urgent" ? { is_urgent: value } : { comments_enabled: value };
+    await supabase.from("annonces").update(patch).eq("id", id);
+    load();
+  }
+
+  async function setMaxComments(id: string, value: number) {
+    await supabase.from("annonces").update({ max_comments: Math.max(1, value) }).eq("id", id);
+    load();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card-soft p-6">
+        <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
+      </div>
+      {niveauId && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="card-soft p-6">
+            <h3 className="mb-3 font-bold">Annonces ({list.length})</h3>
+            <div className="space-y-3">
+              {list.map((a) => (
+                <article key={a.id} className="rounded-[10px] border border-border bg-surface p-4">
+                  <div className="flex justify-between">
+                    <h4 className="font-semibold">
+                      {a.is_urgent && <span className="mr-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">🚨 URGENT</span>}
+                      {a.titre}
+                    </h4>
+                    <button onClick={async () => {
+                      await supabase.rpc("enregistrer_audit", {
+                        _etablissement_id: etabId,
+                        _action: "suppression",
+                        _table_name: "annonces",
+                        _record_id: a.id,
+                        _description: `Suppression de l'annonce "${a.titre}"`,
+                        _ancienne_valeur: a,
+                        _nouvelle_valeur: null,
+                      });
+                      await supabase.from("annonces").delete().eq("id", a.id); load();
+                    }}
+                      className="text-xs text-destructive underline">Suppr.</button>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5">
+                      <Heart className="icon-terracotta h-3.5 w-3.5 fill-current" />
+                      <span className="font-semibold">{likes[a.id] ?? 0}</span> like{(likes[a.id] ?? 0) > 1 ? "s" : ""}
+                    </span>
+                    <label className="flex items-center gap-1.5">
+                      <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
+                      Marquer comme urgent
+                    </label>
+    {/* <label className="flex items-center gap-1.5">
+                      <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
+                      Autoriser les commentaires
+                    </label>
+                    {a.comments_enabled && (
+                      <label className="flex items-center gap-1.5">
+                        Nombre maximum de commentaires
+                        <input type="number" min="1" defaultValue={a.max_comments}
+                          onBlur={(e) => { const v = Number(e.target.value); if (v && v !== a.max_comments) setMaxComments(a.id, v); }}
+                          className="input-soft w-20 py-1" />
+                      </label>
+                    )} */}
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
+                  {/*{a.comments_enabled && <AdminComments annonceId={a.id} />}*/}
+                </article>
+              ))}
+              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}
+            </div>
+          </div>
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
+            <h3 className="font-bold">Nouvelle annonce</h3>
+            <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
+            <div>
+              <label className="mb-1 block text-sm">Contenu</label>
+              <textarea required rows={5} value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })}
+                className="w-full input-soft" />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.is_urgent} onChange={(e) => setForm({ ...form, is_urgent: e.target.checked })} />
+              Marquer comme urgent
+            </label>
+            {/* <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
+              Autoriser les commentaires
+            </label>
+            {form.comments_enabled && (
+              <div>
+                <label className="mb-1 block text-sm">Nombre maximum de commentaires</label>
+                <input type="number" min="1" value={form.max_comments}
+                  onChange={(e) => setForm({ ...form, max_comments: e.target.value })}
+                  className="input-soft w-full" />
+              </div>
+            )} */}
+            <button className="btn-forest w-full">Publier</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminComments({ annonceId }: { annonceId: string }) {
+  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string; author_name: string | null }[]>([]);
+
+  async function load() {
+    const { data } = await supabase.rpc("get_announcement_comments", { p_announcement_id: annonceId });
+    setList((data as never as typeof list) ?? []);
+  }
+  useEffect(() => { load(); }, [annonceId]);
+
+  if (!list.length) return <p className="mt-2 text-xs text-muted-foreground">Aucun commentaire.</p>;
+  return (
+    <div className="mt-3 space-y-2 border-t border-border pt-3">
+      {list.map((c) => (
+        <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
+          <div>
+            <span className="font-medium">{c.author_name ?? "Étudiant"}</span>{" "}
+            <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
+            <p className="whitespace-pre-wrap">{c.content}</p>
+          </div>
+          <button
+            onClick={async () => {
+              await supabase.rpc("enregistrer_audit", {
+                _etablissement_id: null,
+                _action: "suppression",
+                _table_name: "announcement_comments",
+                _record_id: c.id,
+                _description: `Suppression du commentaire de "${c.author_name ?? "Étudiant"}"`,
+                _ancienne_valeur: c,
+                _nouvelle_valeur: null,
+              });
+              await supabase.from("announcement_comments").delete().eq("id", c.id); load();
+            }}
+            className="shrink-0 text-xs text-destructive underline">Suppr.</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+
+// -------------- Événements --------------
+function EvenementsPanel({ etabId }: { etabId: string }) {
+  const niveaux = useNiveauxOfEtab(etabId);
+  const [niveauId, setNiveauId] = useState("");
+  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null; affiche_url: string | null }[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [form, setForm] = useState({ titre: "", description: "", date_evenement: "", lieu: "" });
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function load() {
+    if (!niveauId) { setList([]); setUrls({}); return; }
+    const { data } = await supabase.from("evenements").select("*").eq("niveau_id", niveauId).order("date_evenement");
+    const rows = (data as never as typeof list) ?? [];
+    setList(rows);
+    setUrls(await afficheUrls(rows.map((e) => e.affiche_url)));
+  }
+  useEffect(() => { load(); }, [niveauId]);
+
+  async function add(e: React.FormEvent) {
+    e.preventDefault(); if (!niveauId || busy) return;
+    setBusy(true); setErr("");
+    let affiche: string | null = null;
+    if (file) {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${niveauId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from(AFFICHES_BUCKET).upload(path, file, { contentType: file.type });
+      if (error) { setErr("Échec de l'envoi de l'affiche : " + error.message); setBusy(false); return; }
+      affiche = path;
+    }
+    const { error } = await supabase.from("evenements").insert({
+      niveau_id: niveauId, titre: form.titre.trim(), description: form.description.trim() || null,
+      date_evenement: form.date_evenement, lieu: form.lieu.trim() || null, affiche_url: affiche,
+    });
+    if (error) setErr(error.message);
+    else { setForm({ titre: "", description: "", date_evenement: "", lieu: "" }); setFile(null); await load(); }
+    setBusy(false);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card-soft p-6">
+        <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
+      </div>
+      {niveauId && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="card-soft p-6">
+            <h3 className="mb-3 flex items-center gap-2 font-bold"><Calendar className="icon-gold h-5 w-5" />Événements ({list.length})</h3>
+            <div className="space-y-3">
+              {list.map((e) => {
+                const img = e.affiche_url ? urls[e.affiche_url] : null;
+                return (
+                  <div key={e.id} className="overflow-hidden rounded-[10px] border border-border bg-surface">
+                    {img && <img src={img} alt={`Affiche de ${e.titre}`} loading="lazy" className="h-36 w-full object-cover" />}
+                    <div className="flex justify-between p-3">
+                      <div>
+                        <h4 className="font-semibold">{e.titre}</h4>
+                        <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
+                        {e.description && <p className="mt-1 text-sm">{e.description}</p>}
+                      </div>
+                      <button onClick={async () => {
+                        await supabase.rpc("enregistrer_audit", {
+                          _etablissement_id: etabId,
+                          _action: "suppression",
+                          _table_name: "evenements",
+                          _record_id: e.id,
+                          _description: `Suppression de l'événement "${e.titre}"`,
+                          _ancienne_valeur: e,
+                          _nouvelle_valeur: null,
+                        });
+                        await supabase.from("evenements").delete().eq("id", e.id); load();
+                      }}
+                        className="text-xs text-destructive underline">Suppr.</button>
+                    </div>
+                  </div>
+                );
+              })}
+              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
+            </div>
+          </div>
+          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
+            <h3 className="font-bold">Nouvel événement</h3>
+            <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
+            <SmInput label="Date & heure" type="datetime-local" v={form.date_evenement} on={(v) => setForm({ ...form, date_evenement: v })} />
+            <SmInput label="Lieu" v={form.lieu} on={(v) => setForm({ ...form, lieu: v })} />
+            <div>
+              <label className="mb-1 block text-sm">Description</label>
+              <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="w-full input-soft" />
+            </div>
+            <div>
+              <label className="mb-1 flex items-center gap-2 text-sm"><ImagePlus className="icon-terracotta h-4 w-4" />Affiche (image)</label>
+              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="w-full text-sm" />
+              {file && <p className="mt-1 truncate text-xs text-muted-foreground">{file.name}</p>}
+            </div>
+            {err && <p className="text-xs text-destructive">{err}</p>}
+            <button className="btn-forest w-full" disabled={busy}>{busy ? "Envoi…" : "Ajouter"}</button>
+          </form>
+        </div>
+      )}
+    </div>
+  );
+}
+// -------------- Annonces --------------
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -924,7 +1187,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-    // -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
+                    // -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -1069,7 +1332,117 @@ function EDTPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Historique des actions --------------
+// -------------- Corbeille (centralisée) --------------
+type ItemCorbeille = { id: string; label: string; sousLabel?: string; deleted_at: string; raw: Record<string, unknown> };
+
+function CorbeillePanel({ etabId }: { etabId: string }) {
+  const [tab, setTab] = useState<"filieres" | "niveaux" | "etudiants" | "notes">("filieres");
+  const [items, setItems] = useState<ItemCorbeille[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const TABLES: Record<string, { table: string; select: string; label: (r: any) => string; sousLabel?: (r: any) => string }> = {
+    filieres: { table: "filieres", select: "id,nom,deleted_at", label: (r) => r.nom },
+    niveaux: { table: "niveaux", select: "id,nom,ordre,deleted_at", label: (r) => r.nom },
+    etudiants: { table: "etudiants_pre_inscrits", select: "id,nom_complet,email,deleted_at", label: (r) => r.nom_complet, sousLabel: (r) => r.email },
+    notes: { table: "notes", select: "id,valeur,type_evaluation,deleted_at", label: (r) => `Note : ${r.valeur}/20`, sousLabel: (r) => r.type_evaluation },
+  };
+
+  async function load() {
+    setLoading(true);
+    const conf = TABLES[tab];
+    let query: any = supabase.from(conf.table).select(conf.select).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+    if (tab === "filieres" || tab === "niveaux" || tab === "etudiants") {
+      query = supabase.from(conf.table).select(conf.select).eq("etablissement_id", etabId).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+    }
+    const { data } = await query;
+    const rows = (data ?? []) as any[];
+    setItems(rows.map((r) => ({
+      id: r.id, label: conf.label(r), sousLabel: conf.sousLabel?.(r), deleted_at: r.deleted_at, raw: r,
+    })));
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, [tab, etabId]);
+
+  async function restaurer(item: ItemCorbeille) {
+    const conf = TABLES[tab];
+    await supabase.from(conf.table).update({ deleted_at: null }).eq("id", item.id);
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "restauration",
+      _table_name: conf.table,
+      _record_id: item.id,
+      _description: `Restauration : "${item.label}"`,
+      _ancienne_valeur: null,
+      _nouvelle_valeur: item.raw,
+    });
+    load();
+  }
+
+  async function supprimerDefinitivement(item: ItemCorbeille) {
+    if (!confirm(`Supprimer définitivement "${item.label}" ? Cette action est IRRÉVERSIBLE.`)) return;
+    const conf = TABLES[tab];
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression_definitive",
+      _table_name: conf.table,
+      _record_id: item.id,
+      _description: `Suppression définitive : "${item.label}"`,
+      _ancienne_valeur: item.raw,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from(conf.table).delete().eq("id", item.id);
+    load();
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  const onglets = [
+    { k: "filieres", l: "Filières" },
+    { k: "niveaux", l: "Niveaux" },
+    { k: "etudiants", l: "Étudiants" },
+    { k: "notes", l: "Notes" },
+  ] as const;
+
+  return (
+    <div className="card-soft p-6">
+      <h2 className="mb-4 font-bold">🗑️ Corbeille</h2>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {onglets.map((o) => (
+          <button
+            key={o.k}
+            onClick={() => setTab(o.k)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ${tab === o.k ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}
+          >
+            {o.l}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {!loading && items.length === 0 && <p className="text-sm text-muted-foreground">Corbeille vide.</p>}
+
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-muted p-3 text-sm">
+            <div>
+              <span className="font-semibold text-muted-foreground">{item.label}</span>
+              {item.sousLabel && <span className="ml-2 text-xs text-muted-foreground">{item.sousLabel}</span>}
+              <div className="text-xs text-muted-foreground">Supprimé le {formatDate(item.deleted_at)}</div>
+            </div>
+            <div className="flex shrink-0 gap-3">
+              <button onClick={() => restaurer(item)} className="text-xs font-semibold text-primary underline">Restaurer</button>
+              <button onClick={() => supprimerDefinitivement(item)} className="text-xs font-semibold text-destructive underline">Suppr. définitivement</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+        // -------------- Historique des actions --------------
 type AuditLog = {
   id: string;
   admin_email: string | null;
@@ -1202,7 +1575,7 @@ function ConfirmationSaisie({
             disabled={!ok}
             className="rounded-[10px] bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
-            Supprimer définitivement
+            Supprimer
           </button>
         </div>
       </div>
@@ -1218,5 +1591,6 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
         className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
-        }
-                                
+  }
+                                                             
+                                           

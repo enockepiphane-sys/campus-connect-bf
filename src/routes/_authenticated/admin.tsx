@@ -298,7 +298,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null);
+  const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null); const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   async function load() {
@@ -347,7 +347,19 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     }
   }
 
-  async function confirmerDel() {
+  async function confirmerDel() async function confirmerSuppressionTotale() {
+  const ids = list.map((e) => e.id);
+  if (!ids.length) { setConfirmerToutSupprimer(false); return; }
+  await supabase.rpc("enregistrer_audit", {
+    _etablissement_id: etabId, _action: "suppression",
+    _table_name: "etudiants_pre_inscrits", _record_id: null,
+    _description: `Mise en corbeille de tous les étudiants (${ids.length}) du niveau "${niv?.label ?? ""}"`,
+    _ancienne_valeur: { count: ids.length, ids }, _nouvelle_valeur: null,
+  });
+  await supabase.from("etudiants_pre_inscrits").update({ deleted_at: new Date().toISOString() }).in("id", ids);
+  setConfirmerToutSupprimer(false);
+  load();
+} {
     if (!etuASupprimer) return;
     const etu = etuASupprimer;
     await supabase.rpc("enregistrer_audit", {
@@ -378,14 +390,19 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
               <label className="btn-bf-outline cursor-pointer text-sm">
                 <Upload className="icon-tinted h-4 w-4" />Import CSV
                 <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-              </label>
-            </div>
+              </label> {list.length > 0 && (
+  <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
+    Supprimer tout
+  </button>
+)}
+    </div>
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             <div className="space-y-1">
               {list.map((e) => (
-                <div key={e.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
+                <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <div>
-                    <span className="font-semibold">{e.nom_complet}</span>
+                    <div className="min-w-0">
+  <span className="font-semibold">{e.nom_complet}</span>
                     <span className="ml-2 text-xs text-muted-foreground">{e.email} · {e.date_naissance} · {e.inscrit ? "✓ inscrit" : "en attente"}</span>
                   </div>
                   <button onClick={() => setEtuASupprimer(e)} className="text-xs text-destructive underline">Suppr.</button>
@@ -405,7 +422,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           </form>
         </div>
       )}
-      {etuASupprimer && (
+      {etuASupprimer const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false); && (
         <ConfirmationSaisie
           titre="Supprimer cet étudiant ?"
           message={`Cet étudiant sera déplacé vers la corbeille : "${etuASupprimer.nom_complet}".`}
@@ -413,7 +430,15 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           onConfirm={confirmerDel}
           onCancel={() => setEtuASupprimer(null)}
         />
-      )}
+      )} {confirmerToutSupprimer && (
+  <ConfirmationSaisie
+    titre="Supprimer tous les étudiants ?"
+    message={`Tous les étudiants de "${niv?.label ?? ""}" (${list.length}) seront déplacés vers la corbeille.`}
+    motAttendu="SUPPRIMER TOUT"
+    onConfirm={confirmerSuppressionTotale}
+    onCancel={() => setConfirmerToutSupprimer(false)}
+  />
+)}
     </div>
   );
 }

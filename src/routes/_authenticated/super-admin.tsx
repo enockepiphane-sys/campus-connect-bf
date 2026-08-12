@@ -3,7 +3,47 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Building2, UserPlus, Mail } from "lucide-react";
+import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History } from "lucide-react";
+
+// Mot magique requis pour confirmer une suppression sensible (établissement / admin pré-autorisé)
+const MOT_MAGIQUE_SUPPRESSION = "SUPPRIMER";
+
+// ============ Journal d'audit (historique des actions) ============
+type ActionType = "creation" | "modification" | "suppression";
+type CibleType = "etablissement" | "admin_pre_autorise" | "demande_partenariat";
+type Historique = {
+  id: string;
+  super_admin_email: string | null;
+  action: ActionType;
+  cible_type: CibleType;
+  cible_nom: string | null;
+  details: string | null;
+  created_at: string;
+};
+
+// Enregistre une action dans la table historique_actions. Ne bloque jamais l'action principale
+// même en cas d'échec de l'enregistrement (on log l'erreur en console seulement).
+async function logAction(action: ActionType, cible_type: CibleType, cible_nom: string, details?: string) {
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user = sessionData.session?.user;
+    let super_admin_id: string | null = null;
+    if (user) {
+      const { data: sa } = await supabase.from("super_admins").select("id").eq("user_id", user.id).maybeSingle();
+      super_admin_id = sa?.id ?? null;
+    }
+    await supabase.from("historique_actions").insert({
+      super_admin_id,
+      super_admin_email: user?.email ?? null,
+      action,
+      cible_type,
+      cible_nom,
+      details: details ?? null,
+    });
+  } catch (err) {
+    console.error("Erreur lors de l'enregistrement de l'historique :", err);
+  }
+}
 
 export const Route = createFileRoute("/_authenticated/super-admin")({
   component: Dashboard,
@@ -14,7 +54,7 @@ type PreAdmin = { id: string; nom_complet: string; email: string; date_naissance
 type Demande = { id: string; nom_etablissement: string; nom_contact: string; email_contact: string; telephone_contact: string | null; message: string | null; statut: string; created_at: string };
 
 function Dashboard() {
-  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes">("etabs");
+  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "historique">("etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -62,6 +102,7 @@ function Dashboard() {
             { k: "etabs", l: "Établissements", i: <Building2 className="icon-green h-4 w-4" /> },
             { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="icon-blue h-4 w-4" /> },
             { k: "demandes", l: "Demandes partenariat", i: <Mail className="icon-terracotta h-4 w-4" /> },
+            { k: "historique", l: "Historique", i: <History className="icon-blue h-4 w-4" /> },
           ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k as never)}
               className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
@@ -75,6 +116,7 @@ function Dashboard() {
         {tab === "etabs" && <EtablissementsPanel />}
         {tab === "preadmins" && <PreAdminsPanel />}
         {tab === "demandes" && <DemandesPanel />}
+        {tab === "historique" && <HistoriquePanel />}
       </main>
     </div>
   );
@@ -86,6 +128,7 @@ function EtablissementsPanel() {
   const [form, setForm] = useState<Partial<Etab>>({ statut: "actif" });
   const [editing, setEditing] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<Etab | null>(null);
 
   async function load() {
     const { data } = await supabase.from("etablissements").select("*").order("nom");
@@ -108,21 +151,31 @@ function EtablissementsPanel() {
     if (editing) {
       const { error } = await supabase.from("etablissements").update(payload).eq("id", editing);
       if (error) { setMsg(error.message); return; }
+      logAction("modification", "etablissement", payload.nom);
     } else {
       const { error } = await supabase.from("etablissements").insert(payload);
       if (error) { setMsg(error.message); return; }
+      logAction("creation", "etablissement", payload.nom);
     }
     setForm({ statut: "actif" }); setEditing(null); load();
   }
 
-  async function del(id: string) {
-    if (!confirm("Supprimer cet établissement ?")) return;
+  async function del(id: string, nom: string) {
     await supabase.from("etablissements").delete().eq("id", id);
+    logAction("suppression", "etablissement", nom);
     load();
   }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+      {toDelete && (
+        <ConfirmDeleteModal
+          title="Supprimer un établissement"
+          itemLabel={toDelete.nom}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => { const id = toDelete.id; const nom = toDelete.nom; setToDelete(null); del(id, nom); }}
+        />
+      )}
       <div className="card-glass rounded-xl p-6">
         <h2 className="mb-4 text-lg font-bold">Établissements ({list.length})</h2>
         {msg && <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">{msg}</div>}
@@ -135,7 +188,7 @@ function EtablissementsPanel() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => { setEditing(e.id); setForm(e); }} className="text-xs text-primary underline">Modifier</button>
-                <button onClick={() => del(e.id)} className="text-xs text-destructive underline">Suppr.</button>
+                <button onClick={() => setToDelete(e)} className="text-xs text-destructive underline">Suppr.</button>
               </div>
             </div>
           ))}
@@ -172,6 +225,7 @@ function PreAdminsPanel() {
   const [list, setList] = useState<PreAdmin[]>([]);
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [msg, setMsg] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<PreAdmin | null>(null);
 
   useEffect(() => {
     supabase.from("etablissements").select("*").order("nom").then(({ data }) => {
@@ -192,18 +246,28 @@ function PreAdminsPanel() {
       etablissement_id: selEtab, ...form, email: form.email.trim().toLowerCase(),
     });
     if (error) { setMsg(error.message); return; }
+    logAction("creation", "admin_pre_autorise", form.nom_complet, `Email : ${form.email.trim().toLowerCase()}`);
     setForm({ nom_complet: "", email: "", date_naissance: "" });
     const { data } = await supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).order("nom_complet");
     setList((data as PreAdmin[]) ?? []);
   }
 
-  async function del(id: string) {
+  async function del(id: string, nomComplet: string) {
     await supabase.from("admins_pre_autorises").delete().eq("id", id);
+    logAction("suppression", "admin_pre_autorise", nomComplet);
     setList((l) => l.filter((x) => x.id !== id));
   }
 
   return (
     <div className="space-y-6">
+      {toDelete && (
+        <ConfirmDeleteModal
+          title="Supprimer un administrateur pré-autorisé"
+          itemLabel={`${toDelete.nom_complet} (${toDelete.email})`}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => { const id = toDelete.id; const nom = toDelete.nom_complet; setToDelete(null); del(id, nom); }}
+        />
+      )}
       <div className="card-glass rounded-xl p-6">
         <label className="mb-2 block text-sm">Établissement</label>
         <select value={selEtab} onChange={(e) => setSelEtab(e.target.value)}
@@ -222,7 +286,7 @@ function PreAdminsPanel() {
                   <div className="font-semibold">{p.nom_complet}</div>
                   <div className="text-xs text-muted-foreground">{p.email} · né(e) le {p.date_naissance} · {p.inscrit ? "inscrit" : "en attente"}</div>
                 </div>
-                <button onClick={() => del(p.id)} className="text-xs text-destructive underline">Suppr.</button>
+                <button onClick={() => setToDelete(p)} className="text-xs text-destructive underline">Suppr.</button>
               </div>
             ))}
             {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun administrateur pré-autorisé.</p>}
@@ -249,8 +313,9 @@ function DemandesPanel() {
     supabase.from("demandes_partenariat").select("*").order("created_at", { ascending: false })
       .then(({ data }) => setList((data as Demande[]) ?? []));
   }, []);
-  async function setStatut(id: string, statut: string) {
+  async function setStatut(id: string, statut: string, nomEtablissement: string) {
     await supabase.from("demandes_partenariat").update({ statut }).eq("id", id);
+    logAction("modification", "demande_partenariat", nomEtablissement, `Nouveau statut : ${statut}`);
     setList((l) => l.map((d) => (d.id === id ? { ...d, statut } : d)));
   }
   return (
@@ -270,7 +335,7 @@ function DemandesPanel() {
                   Statut : <span className="font-semibold">{d.statut}</span> · reçu le {new Date(d.created_at).toLocaleDateString("fr-FR")}
                 </div>
               </div>
-              <select value={d.statut} onChange={(e) => setStatut(d.id, e.target.value)}
+              <select value={d.statut} onChange={(e) => setStatut(d.id, e.target.value, d.nom_etablissement)}
                 className="rounded border border-input bg-surface px-2 py-1 text-sm">
                 <option value="en_attente">en attente</option>
                 <option value="acceptee">acceptée</option>
@@ -280,6 +345,155 @@ function DemandesPanel() {
           </div>
         ))}
         {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune demande.</p>}
+      </div>
+    </div>
+  );
+}
+
+// ============ Historique des actions ============
+const ACTION_LABEL: Record<ActionType, string> = {
+  creation: "Création",
+  modification: "Modification",
+  suppression: "Suppression",
+};
+const ACTION_STYLE: Record<ActionType, string> = {
+  creation: "bg-green-500/10 text-green-600",
+  modification: "bg-blue-500/10 text-blue-600",
+  suppression: "bg-destructive/10 text-destructive",
+};
+const CIBLE_LABEL: Record<CibleType, string> = {
+  etablissement: "Établissement",
+  admin_pre_autorise: "Administrateur pré-autorisé",
+  demande_partenariat: "Demande de partenariat",
+};
+
+function HistoriquePanel() {
+  const [list, setList] = useState<Historique[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtreAction, setFiltreAction] = useState<ActionType | "toutes">("toutes");
+
+  async function load() {
+    setLoading(true);
+    const { data } = await supabase.from("historique_actions").select("*").order("created_at", { ascending: false }).limit(200);
+    setList((data as Historique[]) ?? []);
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  const filtered = filtreAction === "toutes" ? list : list.filter((h) => h.action === filtreAction);
+
+  return (
+    <div className="card-glass rounded-xl p-6">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-bold">Historique des actions ({filtered.length})</h2>
+        <div className="flex items-center gap-2">
+          <select value={filtreAction} onChange={(e) => setFiltreAction(e.target.value as never)}
+            className="rounded border border-input bg-surface px-2 py-1 text-sm">
+            <option value="toutes">Toutes les actions</option>
+            <option value="creation">Créations</option>
+            <option value="modification">Modifications</option>
+            <option value="suppression">Suppressions</option>
+          </select>
+          <button onClick={load} className="text-xs text-primary underline">Actualiser</button>
+        </div>
+      </div>
+
+      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+
+      {!loading && filtered.length === 0 && (
+        <p className="text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>
+      )}
+
+      <div className="space-y-2">
+        {filtered.map((h) => {
+          const d = new Date(h.created_at);
+          const dateStr = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+          const heureStr = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+          return (
+            <div key={h.id} className="flex items-start justify-between gap-3 rounded-lg border border-border bg-surface p-3">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ACTION_STYLE[h.action]}`}>
+                    {ACTION_LABEL[h.action]}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{CIBLE_LABEL[h.cible_type]}</span>
+                </div>
+                <div className="mt-1 font-semibold">{h.cible_nom ?? "—"}</div>
+                {h.details && <div className="text-xs text-muted-foreground">{h.details}</div>}
+                <div className="mt-1 text-xs text-muted-foreground">
+                  Par {h.super_admin_email ?? "super admin inconnu"}
+                </div>
+              </div>
+              <div className="shrink-0 text-right text-xs text-muted-foreground">
+                <div>{dateStr}</div>
+                <div>{heureStr}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ============ Modale de confirmation de suppression (mot magique) ============
+function ConfirmDeleteModal({
+  title,
+  itemLabel,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  itemLabel: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [saisie, setSaisie] = useState("");
+  const [erreur, setErreur] = useState<string | null>(null);
+
+  function handleConfirm() {
+    if (saisie.trim().toUpperCase() !== MOT_MAGIQUE_SUPPRESSION) {
+      setErreur(`Veuillez saisir exactement "${MOT_MAGIQUE_SUPPRESSION}" pour confirmer.`);
+      return;
+    }
+    onConfirm();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl border border-border bg-surface p-6 shadow-xl">
+        <div className="mb-3 flex items-center gap-2 text-destructive">
+          <ShieldAlert className="h-5 w-5" />
+          <h3 className="font-bold">{title}</h3>
+        </div>
+        <p className="mb-4 text-sm text-muted-foreground">
+          Cette action est <span className="font-semibold text-destructive">irréversible</span>. Vous êtes sur le point de supprimer :
+          <br />
+          <span className="font-semibold text-foreground">{itemLabel}</span>
+        </p>
+        <p className="mb-2 text-sm">
+          Pour confirmer, saisissez le mot <span className="font-mono font-bold">{MOT_MAGIQUE_SUPPRESSION}</span> ci-dessous :
+        </p>
+        <input
+          type="text"
+          value={saisie}
+          onChange={(e) => { setSaisie(e.target.value); setErreur(null); }}
+          className="mb-2 w-full rounded border border-input bg-surface px-3 py-2 outline-none focus:border-destructive"
+          placeholder={MOT_MAGIQUE_SUPPRESSION}
+          autoFocus
+        />
+        {erreur && <div className="mb-2 rounded bg-destructive/10 p-2 text-sm text-destructive">{erreur}</div>}
+        <div className="mt-4 flex gap-2">
+          <button type="button" onClick={onCancel} className="btn-bf-outline flex-1">Annuler</button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={saisie.trim().toUpperCase() !== MOT_MAGIQUE_SUPPRESSION}
+            className="flex-1 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-destructive-foreground transition disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Confirmer la suppression
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -418,7 +418,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Matières & Notes --------------
+                                                     // -------------- Matières & Notes --------------
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -614,293 +614,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   );
 }
 
-// -------------- Annonces --------------
-function AnnoncesPanel({ etabId }: { etabId: string }) {
-  const niveaux = useNiveauxOfEtab(etabId);
-  const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number }[]>([]);
-  const [likes, setLikes] = useState<Record<string, number>>({});
-  const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" });
-
-  async function load() {
-    if (!niveauId) { setList([]); setLikes({}); return; }
-    const { data } = await supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false });
-    const rows = (data as never as typeof list) ?? [];
-    setList(rows);
-    if (rows.length) {
-      const { data: lk } = await supabase.from("announcement_likes").select("announcement_id").in("announcement_id", rows.map((a) => a.id));
-      const counts: Record<string, number> = {};
-      ((lk as { announcement_id: string }[]) ?? []).forEach((l) => { counts[l.announcement_id] = (counts[l.announcement_id] ?? 0) + 1; });
-      setLikes(counts);
-    } else setLikes({});
-  }
-  useEffect(() => { load(); }, [niveauId]);
-
-  async function add(e: React.FormEvent) {
-    e.preventDefault(); if (!niveauId) return;
-    const { data: u } = await supabase.auth.getUser();
-    await supabase.from("annonces").insert({
-      niveau_id: niveauId,
-      titre: form.titre.trim(),
-      contenu: form.contenu.trim(),
-      is_urgent: form.is_urgent,
-      comments_enabled: form.comments_enabled,
-      max_comments: Math.max(1, Number(form.max_comments) || 10),
-      created_by: u.user?.id,
-    });
-    setForm({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" }); load();
-  }
-
-  async function toggle(id: string, field: "is_urgent" | "comments_enabled", value: boolean) {
-    const patch = field === "is_urgent" ? { is_urgent: value } : { comments_enabled: value };
-    await supabase.from("annonces").update(patch).eq("id", id);
-    load();
-  }
-
-  async function setMaxComments(id: string, value: number) {
-    await supabase.from("annonces").update({ max_comments: Math.max(1, value) }).eq("id", id);
-    load();
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="card-soft p-6">
-        <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
-      </div>
-      {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-soft p-6">
-            <h3 className="mb-3 font-bold">Annonces ({list.length})</h3>
-            <div className="space-y-3">
-              {list.map((a) => (
-                <article key={a.id} className="rounded-[10px] border border-border bg-surface p-4">
-                  <div className="flex justify-between">
-                    <h4 className="font-semibold">
-                      {a.is_urgent && <span className="mr-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">🚨 URGENT</span>}
-                      {a.titre}
-                    </h4>
-                    <button onClick={async () => {
-                      await supabase.rpc("enregistrer_audit", {
-                        _etablissement_id: etabId,
-                        _action: "suppression",
-                        _table_name: "annonces",
-                        _record_id: a.id,
-                        _description: `Suppression de l'annonce "${a.titre}"`,
-                        _ancienne_valeur: a,
-                        _nouvelle_valeur: null,
-                      });
-                      await supabase.from("annonces").delete().eq("id", a.id); load();
-                    }}
-                      className="text-xs text-destructive underline">Suppr.</button>
-                  </div>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5">
-                      <Heart className="icon-terracotta h-3.5 w-3.5 fill-current" />
-                      <span className="font-semibold">{likes[a.id] ?? 0}</span> like{(likes[a.id] ?? 0) > 1 ? "s" : ""}
-                    </span>
-                    <label className="flex items-center gap-1.5">
-                      <input type="checkbox" checked={a.is_urgent} onChange={(e) => toggle(a.id, "is_urgent", e.target.checked)} />
-                      Marquer comme urgent
-                    </label>
-    {/* <label className="flex items-center gap-1.5">
-                      <input type="checkbox" checked={a.comments_enabled} onChange={(e) => toggle(a.id, "comments_enabled", e.target.checked)} />
-                      Autoriser les commentaires
-                    </label>
-                    {a.comments_enabled && (
-                      <label className="flex items-center gap-1.5">
-                        Nombre maximum de commentaires
-                        <input type="number" min="1" defaultValue={a.max_comments}
-                          onBlur={(e) => { const v = Number(e.target.value); if (v && v !== a.max_comments) setMaxComments(a.id, v); }}
-                          className="input-soft w-20 py-1" />
-                      </label>
-                    )} */}
-                  </div>
-                  <p className="mt-2 text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("fr-FR")}</p>
-                  {/*{a.comments_enabled && <AdminComments annonceId={a.id} />}*/}
-                </article>
-              ))}
-              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}
-            </div>
-          </div>
-          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
-            <h3 className="font-bold">Nouvelle annonce</h3>
-            <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
-            <div>
-              <label className="mb-1 block text-sm">Contenu</label>
-              <textarea required rows={5} value={form.contenu} onChange={(e) => setForm({ ...form, contenu: e.target.value })}
-                className="w-full input-soft" />
-            </div>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.is_urgent} onChange={(e) => setForm({ ...form, is_urgent: e.target.checked })} />
-              Marquer comme urgent
-            </label>
-            {/* <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={form.comments_enabled} onChange={(e) => setForm({ ...form, comments_enabled: e.target.checked })} />
-              Autoriser les commentaires
-            </label>
-            {form.comments_enabled && (
-              <div>
-                <label className="mb-1 block text-sm">Nombre maximum de commentaires</label>
-                <input type="number" min="1" value={form.max_comments}
-                  onChange={(e) => setForm({ ...form, max_comments: e.target.value })}
-                  className="input-soft w-full" />
-              </div>
-            )} */}
-            <button className="btn-forest w-full">Publier</button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function AdminComments({ annonceId }: { annonceId: string }) {
-  const [list, setList] = useState<{ id: string; content: string; created_at: string; user_id: string; author_name: string | null }[]>([]);
-
-  async function load() {
-    const { data } = await supabase.rpc("get_announcement_comments", { p_announcement_id: annonceId });
-    setList((data as never as typeof list) ?? []);
-  }
-  useEffect(() => { load(); }, [annonceId]);
-
-  if (!list.length) return <p className="mt-2 text-xs text-muted-foreground">Aucun commentaire.</p>;
-  return (
-    <div className="mt-3 space-y-2 border-t border-border pt-3">
-      {list.map((c) => (
-        <div key={c.id} className="flex items-start justify-between gap-2 text-sm">
-          <div>
-            <span className="font-medium">{c.author_name ?? "Étudiant"}</span>{" "}
-            <span className="text-xs text-muted-foreground">{new Date(c.created_at).toLocaleString("fr-FR")}</span>
-            <p className="whitespace-pre-wrap">{c.content}</p>
-          </div>
-          <button
-            onClick={async () => {
-              await supabase.rpc("enregistrer_audit", {
-                _etablissement_id: null,
-                _action: "suppression",
-                _table_name: "announcement_comments",
-                _record_id: c.id,
-                _description: `Suppression du commentaire de "${c.author_name ?? "Étudiant"}"`,
-                _ancienne_valeur: c,
-                _nouvelle_valeur: null,
-              });
-              await supabase.from("announcement_comments").delete().eq("id", c.id); load();
-            }}
-            className="shrink-0 text-xs text-destructive underline">Suppr.</button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-
-// -------------- Événements --------------
-function EvenementsPanel({ etabId }: { etabId: string }) {
-  const niveaux = useNiveauxOfEtab(etabId);
-  const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null; affiche_url: string | null }[]>([]);
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const [form, setForm] = useState({ titre: "", description: "", date_evenement: "", lieu: "" });
-  const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState("");
-
-  async function load() {
-    if (!niveauId) { setList([]); setUrls({}); return; }
-    const { data } = await supabase.from("evenements").select("*").eq("niveau_id", niveauId).order("date_evenement");
-    const rows = (data as never as typeof list) ?? [];
-    setList(rows);
-    setUrls(await afficheUrls(rows.map((e) => e.affiche_url)));
-  }
-  useEffect(() => { load(); }, [niveauId]);
-
-  async function add(e: React.FormEvent) {
-    e.preventDefault(); if (!niveauId || busy) return;
-    setBusy(true); setErr("");
-    let affiche: string | null = null;
-    if (file) {
-      const ext = file.name.split(".").pop() ?? "jpg";
-      const path = `${niveauId}/${crypto.randomUUID()}.${ext}`;
-      const { error } = await supabase.storage.from(AFFICHES_BUCKET).upload(path, file, { contentType: file.type });
-      if (error) { setErr("Échec de l'envoi de l'affiche : " + error.message); setBusy(false); return; }
-      affiche = path;
-    }
-    const { error } = await supabase.from("evenements").insert({
-      niveau_id: niveauId, titre: form.titre.trim(), description: form.description.trim() || null,
-      date_evenement: form.date_evenement, lieu: form.lieu.trim() || null, affiche_url: affiche,
-    });
-    if (error) setErr(error.message);
-    else { setForm({ titre: "", description: "", date_evenement: "", lieu: "" }); setFile(null); await load(); }
-    setBusy(false);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="card-soft p-6">
-        <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
-      </div>
-      {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-soft p-6">
-            <h3 className="mb-3 flex items-center gap-2 font-bold"><Calendar className="icon-gold h-5 w-5" />Événements ({list.length})</h3>
-            <div className="space-y-3">
-              {list.map((e) => {
-                const img = e.affiche_url ? urls[e.affiche_url] : null;
-                return (
-                  <div key={e.id} className="overflow-hidden rounded-[10px] border border-border bg-surface">
-                    {img && <img src={img} alt={`Affiche de ${e.titre}`} loading="lazy" className="h-36 w-full object-cover" />}
-                    <div className="flex justify-between p-3">
-                      <div>
-                        <h4 className="font-semibold">{e.titre}</h4>
-                        <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
-                        {e.description && <p className="mt-1 text-sm">{e.description}</p>}
-                      </div>
-                      <button onClick={async () => {
-                        await supabase.rpc("enregistrer_audit", {
-                          _etablissement_id: etabId,
-                          _action: "suppression",
-                          _table_name: "evenements",
-                          _record_id: e.id,
-                          _description: `Suppression de l'événement "${e.titre}"`,
-                          _ancienne_valeur: e,
-                          _nouvelle_valeur: null,
-                        });
-                        await supabase.from("evenements").delete().eq("id", e.id); load();
-                      }}
-                        className="text-xs text-destructive underline">Suppr.</button>
-                    </div>
-                  </div>
-                );
-              })}
-              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
-            </div>
-          </div>
-          <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
-            <h3 className="font-bold">Nouvel événement</h3>
-            <SmInput label="Titre" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
-            <SmInput label="Date & heure" type="datetime-local" v={form.date_evenement} on={(v) => setForm({ ...form, date_evenement: v })} />
-            <SmInput label="Lieu" v={form.lieu} on={(v) => setForm({ ...form, lieu: v })} />
-            <div>
-              <label className="mb-1 block text-sm">Description</label>
-              <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full input-soft" />
-            </div>
-            <div>
-              <label className="mb-1 flex items-center gap-2 text-sm"><ImagePlus className="icon-terracotta h-4 w-4" />Affiche (image)</label>
-              <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="w-full text-sm" />
-              {file && <p className="mt-1 truncate text-xs text-muted-foreground">{file.name}</p>}
-            </div>
-            {err && <p className="text-xs text-destructive">{err}</p>}
-            <button className="btn-forest w-full" disabled={busy}>{busy ? "Envoi…" : "Ajouter"}</button>
-          </form>
-        </div>
-      )}
-    </div>
-  );
-}
-// -------------- Annonces --------------
+      // -------------- Annonces --------------
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -1187,7 +901,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   );
 }
 
-                    // -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
+                  // -------------- Emploi du temps (jours × blocs matin / après-midi) --------------
 function EDTPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -1442,7 +1156,7 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
   );
 }
 
-        // -------------- Historique des actions --------------
+          // -------------- Historique des actions --------------
 type AuditLog = {
   id: string;
   admin_email: string | null;
@@ -1591,6 +1305,5 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
         className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
-  }
-                                                             
-                                           
+}
+

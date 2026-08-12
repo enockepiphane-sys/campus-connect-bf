@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, RotateCcw } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
@@ -22,7 +22,7 @@ function Dashboard() {
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
-  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
+  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique">("structure");
 
   useEffect(() => {
     (async () => {
@@ -50,7 +50,6 @@ function Dashboard() {
     { k: "evenements", l: "Événements", i: Calendar, c: "icon-gold" },
     { k: "edt", l: "Emploi du temps", i: Clock, c: "icon-teal" },
     { k: "historique", l: "Historique", i: History, c: "icon-green" },
-    { k: "corbeille", l: "Corbeille", i: Trash2, c: "icon-danger" },
   ] as const;
   const current = sections.find((s) => s.k === tab);
 
@@ -119,7 +118,6 @@ function Dashboard() {
         {tab === "evenements" && <EvenementsPanel etabId={etabId} />}
         {tab === "edt" && <EDTPanel etabId={etabId} />}
         {tab === "historique" && <HistoriquePanel etabId={etabId} />}
-        {tab === "corbeille" && <CorbeillePanel etabId={etabId} />}
       </main>
     </div>
   );
@@ -163,7 +161,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: f,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("filieres", f.id, etabId, `Suppression de la filière "${f.nom}"`);
+    await supabase.from("filieres").delete().eq("id", f.id);
     setFilASupprimer(null);
     load();
   }
@@ -185,7 +183,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: n,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("niveaux", n.id, etabId, `Suppression du niveau "${n.nom}"`);
+    await supabase.from("niveaux").delete().eq("id", n.id);
     setNivASupprimer(null);
     load();
   }
@@ -245,7 +243,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
       {filASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer cette filière ?"
-          message={`Cette action retirera la filière de la plateforme et la placera dans la corbeille. Vous pourrez la restaurer pendant 30 jours.`}
+          message={`Cette action supprimera définitivement la filière et tous ses niveaux. Cette action est irréversible.`}
           motAttendu={filASupprimer.nom}
           onConfirm={confirmerDelFil}
           onCancel={() => setFilASupprimer(null)}
@@ -255,7 +253,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
       {nivASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer ce niveau ?"
-          message={`Ce niveau sera placé dans la corbeille. Vous pourrez le restaurer pendant 30 jours.`}
+          message={`Cette action supprimera définitivement le niveau "${nivASupprimer.nom}". Cette action est irréversible.`}
           motAttendu={nivASupprimer.nom}
           onConfirm={confirmerDelNiv}
           onCancel={() => setNivASupprimer(null)}
@@ -361,7 +359,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: etu,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("etudiants_pre_inscrits", etu.id, etabId, `Suppression de l'étudiant "${etu.nom_complet}"`);
+    await supabase.from("etudiants_pre_inscrits").delete().eq("id", etu.id);
     setEtuASupprimer(null);
     load();
   }
@@ -378,9 +376,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: { niveau: niv?.label ?? niveauId, nombre: ids.length, noms: list.map((e) => e.nom_complet) },
       _nouvelle_valeur: null,
     });
-    for (const id of ids) {
-      await deplacerVersCorbeille("etudiants_pre_inscrits", id, etabId, `Suppression en masse — ${niv?.label ?? "niveau inconnu"}`);
-    }
+    await supabase.from("etudiants_pre_inscrits").delete().in("id", ids);
     setSupprimerTout(false);
     load();
   }
@@ -521,7 +517,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: m,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("matieres", m.id, etabId, `Suppression de la matière "${m.nom}"`);
+    await supabase.from("matieres").delete().eq("id", m.id);
     if (selMat === m.id) { setSelMat(""); setNotes([]); setSaisie({}); }
     const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom");
     setMatieres((data as never) ?? []);
@@ -540,7 +536,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: n,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("notes", n.id, etabId, `Suppression de la note de "${n.nom_complet}"`);
+    await supabase.from("notes").delete().eq("id", n.id);
     setSaisie({ ...saisie, [n.etudiant_user_id]: "" });
     await reloadNotes();
     setNoteASupprimer(null);
@@ -763,7 +759,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: a,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("annonces", a.id, etabId, `Suppression de l'annonce "${a.titre}"`);
+    await supabase.from("annonces").delete().eq("id", a.id);
     setAnnASupprimer(null);
     load();
   }
@@ -850,7 +846,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
       {annASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer cette annonce ?"
-          message={`Cette annonce sera placée dans la corbeille. Vous pourrez la restaurer pendant 30 jours.`}
+          message={`Cette action supprimera définitivement l'annonce "${annASupprimer.titre}". Cette action est irréversible.`}
           motAttendu={annASupprimer.titre}
           onConfirm={confirmerDelAnn}
           onCancel={() => setAnnASupprimer(null)}
@@ -890,7 +886,7 @@ function AdminComments({ annonceId }: { annonceId: string }) {
                 _ancienne_valeur: c,
                 _nouvelle_valeur: null,
               });
-              await deplacerVersCorbeille("announcement_comments", c.id, etabId, `Suppression du commentaire de "${c.author_name ?? "Étudiant"}"`); load();
+              await supabase.from("announcement_comments").delete().eq("id", c.id); load();
             }}
             className="shrink-0 text-xs text-destructive underline">Suppr.</button>
         </div>
@@ -953,7 +949,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: e,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("evenements", e.id, etabId, `Suppression de l'événement "${e.titre}"`);
+    await supabase.from("evenements").delete().eq("id", e.id);
     setEvtASupprimer(null);
     load();
   }
@@ -1013,7 +1009,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
       {evtASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer cet événement ?"
-          message={`Cet événement sera placé dans la corbeille. Vous pourrez le restaurer pendant 30 jours.`}
+          message={`Cette action supprimera définitivement l'événement "${evtASupprimer.titre}". Cette action est irréversible.`}
           motAttendu={evtASupprimer.titre}
           onConfirm={confirmerDelEvt}
           onCancel={() => setEvtASupprimer(null)}
@@ -1086,7 +1082,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
       _ancienne_valeur: cours,
       _nouvelle_valeur: null,
     });
-    await deplacerVersCorbeille("cours_emploi_temps", cours.id, etabId, `Suppression du cours "${cours.matiere}"`);
+    await supabase.from("cours_emploi_temps").delete().eq("id", cours.id);
     if (editId === cours.id) { setCell(null); setEditId(null); }
     setCoursASupprimer(null);
     await load();
@@ -1171,137 +1167,11 @@ function EDTPanel({ etabId }: { etabId: string }) {
       {coursASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer ce cours ?"
-          message={`Ce cours sera placé dans la corbeille. Vous pourrez le restaurer pendant 30 jours.`}
+          message={`Cette action supprimera définitivement le cours "${coursASupprimer.matiere}" (${JOURS_LONGS[coursASupprimer.jour_semaine - 1]}). Cette action est irréversible.`}
           motAttendu={coursASupprimer.matiere}
           onConfirm={confirmerDelCours}
           onCancel={() => setCoursASupprimer(null)}
         />
-      )}
-    </div>
-  );
-}
-
-// -------------- Corbeille : suppression récupérable pendant 30 jours --------------
-type CorbeilleItem = {
-  id: string;
-  etablissement_id: string;
-  table_name: string;
-  record_id: string;
-  item_data: Record<string, unknown>;
-  description: string | null;
-  deleted_at: string;
-  expires_at: string;
-};
-
-const CORBEILLE_LABELS: Record<string, string> = {
-  filieres: "Filière",
-  niveaux: "Niveau",
-  etudiants_pre_inscrits: "Étudiant",
-  matieres: "Matière",
-  notes: "Note",
-  annonces: "Annonce",
-  announcement_comments: "Commentaire",
-  evenements: "Événement",
-  cours_emploi_temps: "Emploi du temps",
-};
-
-async function deplacerVersCorbeille(tableName: string, recordId: string, etabId: string, description: string) {
-  const { error } = await supabase.rpc("mettre_en_corbeille", {
-    _table_name: tableName,
-    _record_id: recordId,
-    _etablissement_id: etabId,
-    _description: description,
-  });
-  if (error) throw new Error(error.message);
-}
-
-function nomElementCorbeille(item: CorbeilleItem) {
-  const d = item.item_data ?? {};
-  return String(d.nom ?? d.titre ?? d.nom_complet ?? d.matiere ?? d.content ?? item.description ?? "Élément supprimé");
-}
-
-function CorbeillePanel({ etabId }: { etabId: string }) {
-  const [items, setItems] = useState<CorbeilleItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function load() {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("corbeille")
-      .select("id,etablissement_id,table_name,record_id,item_data,description,deleted_at,expires_at")
-      .eq("etablissement_id", etabId)
-      .gt("expires_at", new Date().toISOString())
-      .order("deleted_at", { ascending: false });
-    if (error) setMessage(error.message);
-    setItems((data as CorbeilleItem[]) ?? []);
-    setLoading(false);
-  }
-
-  useEffect(() => { load(); }, [etabId]);
-
-  function joursRestants(expiresAt: string) {
-    return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000));
-  }
-
-  async function restaurer(item: CorbeilleItem) {
-    setBusyId(item.id); setMessage(null);
-    const { error } = await supabase.rpc("restaurer_corbeille", { _corbeille_id: item.id });
-    if (error) setMessage(error.message);
-    else await load();
-    setBusyId(null);
-  }
-
-  async function supprimerDefinitivement(item: CorbeilleItem) {
-    setBusyId(item.id); setMessage(null);
-    const { error } = await supabase.rpc("supprimer_definitivement_corbeille", { _corbeille_id: item.id });
-    if (error) setMessage(error.message);
-    else await load();
-    setBusyId(null);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="card-soft p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="flex items-center gap-2 font-bold"><Trash2 className="icon-danger h-5 w-5" />Corbeille ({items.length})</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Les éléments supprimés restent récupérables pendant 30 jours.</p>
-          </div>
-          <button onClick={load} className="btn-bf-outline text-sm">Actualiser</button>
-        </div>
-        {message && <p className="mt-4 rounded bg-destructive/10 p-2 text-sm text-destructive">{message}</p>}
-      </div>
-
-      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
-      {!loading && items.length === 0 && <div className="card-soft p-8 text-center text-sm text-muted-foreground">La corbeille est vide.</div>}
-
-      {!loading && items.length > 0 && (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const jours = joursRestants(item.expires_at);
-            return (
-              <div key={item.id} className="card-soft flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-primary-soft px-2 py-0.5 text-xs font-semibold text-primary">{CORBEILLE_LABELS[item.table_name] ?? item.table_name}</span>
-                    <span className="font-semibold">{nomElementCorbeille(item)}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">Supprimé le {new Date(item.deleted_at).toLocaleString("fr-FR")} · {jours} jour(s) restant(s)</p>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <button disabled={busyId === item.id} onClick={() => restaurer(item)} className="btn-bf-primary inline-flex items-center gap-1 text-sm disabled:opacity-50">
-                    <RotateCcw className="h-4 w-4" />Restaurer
-                  </button>
-                  <button disabled={busyId === item.id} onClick={() => supprimerDefinitivement(item)} className="rounded-[10px] bg-destructive px-3 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-50">
-                    Mettre dans la corbeille
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       )}
     </div>
   );
@@ -1440,7 +1310,7 @@ function ConfirmationSaisie({
             disabled={!ok}
             className="rounded-[10px] bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
-            Mettre dans la corbeille
+            Supprimer définitivement
           </button>
         </div>
       </div>

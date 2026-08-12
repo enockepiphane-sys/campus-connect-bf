@@ -411,7 +411,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
               ))}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant.</p>}
             </div>
-          </div>
+          (</div>
 
           <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
             <h3 className="font-bold">Ajouter un étudiant</h3>

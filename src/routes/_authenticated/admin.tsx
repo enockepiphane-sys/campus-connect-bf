@@ -129,6 +129,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
   const [niveaux, setNiveaux] = useState<Niveau[]>([]);
   const [nfil, setNfil] = useState("");
   const [nniv, setNniv] = useState({ filiere_id: "", nom: "", ordre: "1" });
+  const [filASupprimer, setFilASupprimer] = useState<Filiere | null>(null);
 
   async function load() {
     const { data: f } = await supabase.from("filieres").select("id,nom").eq("etablissement_id", etabId).order("nom");
@@ -147,19 +148,21 @@ function StructurePanel({ etabId }: { etabId: string }) {
     await supabase.from("filieres").insert({ etablissement_id: etabId, nom: nfil.trim() });
     setNfil(""); load();
   }
-  async function delFil(id: string) {
-    if (!confirm("Supprimer cette filière et tous ses niveaux ?")) return;
-    const f = filieres.find((x) => x.id === id);
+  async function confirmerDelFil() {
+    if (!filASupprimer) return;
+    const f = filASupprimer;
     await supabase.rpc("enregistrer_audit", {
       _etablissement_id: etabId,
       _action: "suppression",
       _table_name: "filieres",
-      _record_id: id,
-      _description: `Suppression de la filière "${f?.nom ?? id}"`,
-      _ancienne_valeur: f ?? null,
+      _record_id: f.id,
+      _description: `Suppression de la filière "${f.nom}"`,
+      _ancienne_valeur: f,
       _nouvelle_valeur: null,
     });
-    await supabase.from("filieres").delete().eq("id", id); load();
+    await supabase.from("filieres").delete().eq("id", f.id);
+    setFilASupprimer(null);
+    load();
   }
   async function addNiv(e: React.FormEvent) {
     e.preventDefault();
@@ -195,7 +198,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
           {filieres.map((f) => (
             <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
               <span className="truncate">{f.nom}</span>
-              <button onClick={() => delFil(f.id)} className="text-xs text-destructive underline">Suppr.</button>
+              <button onClick={() => setFilASupprimer(f)} className="text-xs text-destructive underline">Suppr.</button>
             </li>
           ))}
         </ul>
@@ -233,6 +236,16 @@ function StructurePanel({ etabId }: { etabId: string }) {
           ))}
         </ul>
       </div>
+
+      {filASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cette filière ?"
+          message={`Cette action supprimera définitivement la filière et tous ses niveaux. Cette action est irréversible.`}
+          motAttendu={filASupprimer.nom}
+          onConfirm={confirmerDelFil}
+          onCancel={() => setFilASupprimer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -263,7 +276,7 @@ function NiveauPicker({ items, value, onChange }: { items: { niveau_id: string; 
   );
 }
 
-      // -------------- Étudiants --------------
+// -------------- Étudiants --------------
 function EtudiantsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -573,7 +586,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   );
 }
 
-    // -------------- Annonces --------------
+                                                                            // -------------- Annonces --------------
 function AnnoncesPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
@@ -1104,6 +1117,48 @@ function HistoriquePanel({ etabId }: { etabId: string }) {
   );
 }
 
+// -------------- Confirmation par saisie (suppressions sensibles) --------------
+function ConfirmationSaisie({
+  titre, message, motAttendu, onConfirm, onCancel,
+}: {
+  titre: string;
+  message: string;
+  motAttendu: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const [saisie, setSaisie] = useState("");
+  const ok = saisie.trim() === motAttendu.trim();
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
+        <h3 className="mb-2 font-bold text-destructive">{titre}</h3>
+        <p className="mb-3 text-sm text-muted-foreground">{message}</p>
+        <p className="mb-2 text-sm">
+          Pour confirmer, tapez : <strong className="font-mono">{motAttendu}</strong>
+        </p>
+        <input
+          autoFocus
+          value={saisie}
+          onChange={(e) => setSaisie(e.target.value)}
+          className="input-soft mb-4 w-full"
+          placeholder={motAttendu}
+        />
+        <div className="flex justify-end gap-2">
+          <button onClick={onCancel} className="btn-bf-outline">Annuler</button>
+          <button
+            onClick={onConfirm}
+            disabled={!ok}
+            className="rounded-[10px] bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
+          >
+            Supprimer définitivement
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on: (v: string) => void; type?: string }) {
   return (
     <div>
@@ -1112,5 +1167,5 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
         className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
-      }
-                                
+                            }
+      

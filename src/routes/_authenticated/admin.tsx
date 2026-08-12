@@ -347,7 +347,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     }
   }
 
-  async function confirmerDel() async function confirmerSuppressionTotale() {
+  async function confirmerSuppressionTotale() {
   const ids = list.map((e) => e.id);
   if (!ids.length) { setConfirmerToutSupprimer(false); return; }
   await supabase.rpc("enregistrer_audit", {
@@ -359,7 +359,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   await supabase.from("etudiants_pre_inscrits").update({ deleted_at: new Date().toISOString() }).in("id", ids);
   setConfirmerToutSupprimer(false);
   load();
-} {
+} 
+  async function confirmerDel() {
     if (!etuASupprimer) return;
     const etu = etuASupprimer;
     await supabase.rpc("enregistrer_audit", {

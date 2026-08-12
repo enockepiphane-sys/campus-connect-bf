@@ -298,6 +298,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [etuASupprimer, setEtuASupprimer] = useState<{ id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean } | null>(null);
+  const [supprimerTout, setSupprimerTout] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   async function load() {
@@ -363,6 +364,23 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     load();
   }
 
+  async function confirmerDelTout() {
+    if (!niveauId || list.length === 0) return;
+    const ids = list.map((e) => e.id);
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "etudiants_pre_inscrits",
+      _record_id: niveauId,
+      _description: `Suppression en masse de ${ids.length} étudiant(s) — ${niv?.label ?? "niveau inconnu"}`,
+      _ancienne_valeur: { niveau: niv?.label ?? niveauId, nombre: ids.length, noms: list.map((e) => e.nom_complet) },
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("etudiants_pre_inscrits").delete().in("id", ids);
+    setSupprimerTout(false);
+    load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -374,10 +392,19 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           <div className="card-soft p-6">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
-              <label className="btn-bf-outline cursor-pointer text-sm">
-                <Upload className="icon-tinted h-4 w-4" />Import CSV
-                <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-              </label>
+              <div className="flex items-center gap-2">
+                <label className="btn-bf-outline cursor-pointer text-sm">
+                  <Upload className="icon-tinted h-4 w-4" />Import CSV
+                  <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
+                </label>
+                <button
+                  onClick={() => setSupprimerTout(true)}
+                  disabled={list.length === 0}
+                  className="rounded-[10px] border border-destructive px-3 py-2 text-sm font-semibold text-destructive disabled:opacity-40"
+                >
+                  Suppr. tout ({list.length})
+                </button>
+              </div>
             </div>
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             <div className="space-y-1">
@@ -414,6 +441,16 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           onCancel={() => setEtuASupprimer(null)}
         />
       )}
+
+      {supprimerTout && (
+        <ConfirmationSaisie
+          titre={`Supprimer les ${list.length} étudiants du niveau ?`}
+          message={`Cette action supprimera définitivement tous les étudiants pré-inscrits du niveau "${niv?.label}" (${list.length} étudiant(s)) et leurs données associées (notes, etc.). Cette action est irréversible.`}
+          motAttendu="SUPPRIMER TOUT"
+          onConfirm={confirmerDelTout}
+          onCancel={() => setSupprimerTout(false)}
+        />
+      )}
     </div>
   );
 }
@@ -430,6 +467,8 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   const [msg, setMsg] = useState<string | null>(null);
   const [saisie, setSaisie] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [matASupprimer, setMatASupprimer] = useState<{ id: string; nom: string; credits: number } | null>(null);
+  const [noteASupprimer, setNoteASupprimer] = useState<{ id: string; nom_complet: string; valeur: number; etudiant_user_id: string } | null>(null);
 
   useEffect(() => {
     if (!niveauId) { setMatieres([]); setEtudiants([]); setSelMat(""); setNotes([]); setSaisie({}); return; }
@@ -464,6 +503,43 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     if (!selMat) return;
     const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat);
     setNotes((data as never) ?? []);
+  }
+
+  async function confirmerDelMat() {
+    if (!matASupprimer) return;
+    const m = matASupprimer;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "matieres",
+      _record_id: m.id,
+      _description: `Suppression de la matière "${m.nom}"`,
+      _ancienne_valeur: m,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("matieres").delete().eq("id", m.id);
+    if (selMat === m.id) { setSelMat(""); setNotes([]); setSaisie({}); }
+    const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).order("nom");
+    setMatieres((data as never) ?? []);
+    setMatASupprimer(null);
+  }
+
+  async function confirmerDelNote() {
+    if (!noteASupprimer) return;
+    const n = noteASupprimer;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "notes",
+      _record_id: n.id,
+      _description: `Suppression de la note de "${n.nom_complet}"`,
+      _ancienne_valeur: n,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("notes").delete().eq("id", n.id);
+    setSaisie({ ...saisie, [n.etudiant_user_id]: "" });
+    await reloadNotes();
+    setNoteASupprimer(null);
   }
 
   /** Enregistre (crée ou met à jour) la note d'un étudiant pour la matière sélectionnée. */
@@ -538,12 +614,13 @@ function MatieresPanel({ etabId }: { etabId: string }) {
             </form>
             <ul className="space-y-1">
               {matieres.map((m) => (
-                <li key={m.id}>
+                <li key={m.id} className="flex items-center gap-2">
                   <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
                     className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
                     <span className="font-semibold">{m.nom}</span>{" "}
                     <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{m.credits} crédit{m.credits > 1 ? "s" : ""}</span>
                   </button>
+                  <button onClick={() => setMatASupprimer(m)} className="shrink-0 text-xs text-destructive underline">Suppr.</button>
                 </li>
               ))}
               {matieres.length === 0 && <p className="text-sm text-muted-foreground">Aucune matière.</p>}
@@ -583,18 +660,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                         <button onClick={() => saveOne(e.user_id)} disabled={saving} className="btn-forest">OK</button>
                         {existing && (
                           <button
-                            onClick={async () => {
-                              await supabase.rpc("enregistrer_audit", {
-                                _etablissement_id: etabId,
-                                _action: "suppression",
-                                _table_name: "notes",
-                                _record_id: existing.id,
-                                _description: `Suppression de la note de "${e.nom_complet}"`,
-                                _ancienne_valeur: existing,
-                                _nouvelle_valeur: null,
-                              });
-                              await supabase.from("notes").delete().eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes();
-                            }}
+                            onClick={() => setNoteASupprimer({ id: existing.id, nom_complet: e.nom_complet, valeur: existing.valeur, etudiant_user_id: e.user_id })}
                             className="text-xs text-destructive underline">Suppr.</button>
                         )}
                       </div>
@@ -609,6 +675,25 @@ function MatieresPanel({ etabId }: { etabId: string }) {
           </div>
         </div>
       )}
+
+      {matASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cette matière ?"
+          message={`Cette action supprimera définitivement la matière "${matASupprimer.nom}" et toutes les notes associées. Cette action est irréversible.`}
+          motAttendu={matASupprimer.nom}
+          onConfirm={confirmerDelMat}
+          onCancel={() => setMatASupprimer(null)}
+        />
+      )}
+      {noteASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cette note ?"
+          message={`Cette action supprimera définitivement la note (${noteASupprimer.valeur}/20) de "${noteASupprimer.nom_complet}". Cette action est irréversible.`}
+          motAttendu={noteASupprimer.nom_complet}
+          onConfirm={confirmerDelNote}
+          onCancel={() => setNoteASupprimer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -620,6 +705,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
   const [list, setList] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number }[]>([]);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [form, setForm] = useState({ titre: "", contenu: "", is_urgent: false, comments_enabled: false, max_comments: "10" });
+  const [annASupprimer, setAnnASupprimer] = useState<{ id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number } | null>(null);
 
   async function load() {
     if (!niveauId) { setList([]); setLikes({}); return; }
@@ -661,6 +747,23 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
     load();
   }
 
+  async function confirmerDelAnn() {
+    if (!annASupprimer) return;
+    const a = annASupprimer;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "annonces",
+      _record_id: a.id,
+      _description: `Suppression de l'annonce "${a.titre}"`,
+      _ancienne_valeur: a,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("annonces").delete().eq("id", a.id);
+    setAnnASupprimer(null);
+    load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -678,18 +781,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                       {a.is_urgent && <span className="mr-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">🚨 URGENT</span>}
                       {a.titre}
                     </h4>
-                    <button onClick={async () => {
-                      await supabase.rpc("enregistrer_audit", {
-                        _etablissement_id: etabId,
-                        _action: "suppression",
-                        _table_name: "annonces",
-                        _record_id: a.id,
-                        _description: `Suppression de l'annonce "${a.titre}"`,
-                        _ancienne_valeur: a,
-                        _nouvelle_valeur: null,
-                      });
-                      await supabase.from("annonces").delete().eq("id", a.id); load();
-                    }}
+                    <button onClick={() => setAnnASupprimer(a)}
                       className="text-xs text-destructive underline">Suppr.</button>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
@@ -750,6 +842,16 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
           </form>
         </div>
       )}
+
+      {annASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cette annonce ?"
+          message={`Cette action supprimera définitivement l'annonce "${annASupprimer.titre}". Cette action est irréversible.`}
+          motAttendu={annASupprimer.titre}
+          onConfirm={confirmerDelAnn}
+          onCancel={() => setAnnASupprimer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -804,6 +906,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [evtASupprimer, setEvtASupprimer] = useState<{ id: string; titre: string; description: string | null; date_evenement: string; lieu: string | null; affiche_url: string | null } | null>(null);
 
   async function load() {
     if (!niveauId) { setList([]); setUrls({}); return; }
@@ -834,6 +937,23 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
     setBusy(false);
   }
 
+  async function confirmerDelEvt() {
+    if (!evtASupprimer) return;
+    const e = evtASupprimer;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "evenements",
+      _record_id: e.id,
+      _description: `Suppression de l'événement "${e.titre}"`,
+      _ancienne_valeur: e,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("evenements").delete().eq("id", e.id);
+    setEvtASupprimer(null);
+    load();
+  }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -855,18 +975,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
                         <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
                         {e.description && <p className="mt-1 text-sm">{e.description}</p>}
                       </div>
-                      <button onClick={async () => {
-                        await supabase.rpc("enregistrer_audit", {
-                          _etablissement_id: etabId,
-                          _action: "suppression",
-                          _table_name: "evenements",
-                          _record_id: e.id,
-                          _description: `Suppression de l'événement "${e.titre}"`,
-                          _ancienne_valeur: e,
-                          _nouvelle_valeur: null,
-                        });
-                        await supabase.from("evenements").delete().eq("id", e.id); load();
-                      }}
+                      <button onClick={() => setEvtASupprimer(e)}
                         className="text-xs text-destructive underline">Suppr.</button>
                     </div>
                   </div>
@@ -896,6 +1005,16 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
           </form>
         </div>
       )}
+
+      {evtASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer cet événement ?"
+          message={`Cette action supprimera définitivement l'événement "${evtASupprimer.titre}". Cette action est irréversible.`}
+          motAttendu={evtASupprimer.titre}
+          onConfirm={confirmerDelEvt}
+          onCancel={() => setEvtASupprimer(null)}
+        />
+      )}
     </div>
   );
 }
@@ -909,6 +1028,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
   const [form, setForm] = useState({ heure_debut: "", heure_fin: "", matiere: "", professeur: "", salle: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [coursASupprimer, setCoursASupprimer] = useState<Cours | null>(null);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -950,19 +1070,21 @@ function EDTPanel({ etabId }: { etabId: string }) {
     setBusy(false);
   }
 
-  async function del(id: string) {
-    const cours = list.find((x) => x.id === id);
+  async function confirmerDelCours() {
+    if (!coursASupprimer) return;
+    const cours = coursASupprimer;
     await supabase.rpc("enregistrer_audit", {
       _etablissement_id: etabId,
       _action: "suppression",
       _table_name: "cours_emploi_temps",
-      _record_id: id,
-      _description: `Suppression du cours "${cours?.matiere ?? id}"`,
-      _ancienne_valeur: cours ?? null,
+      _record_id: cours.id,
+      _description: `Suppression du cours "${cours.matiere}"`,
+      _ancienne_valeur: cours,
       _nouvelle_valeur: null,
     });
-    await supabase.from("cours_emploi_temps").delete().eq("id", id);
-    if (editId === id) { setCell(null); setEditId(null); }
+    await supabase.from("cours_emploi_temps").delete().eq("id", cours.id);
+    if (editId === cours.id) { setCell(null); setEditId(null); }
+    setCoursASupprimer(null);
     await load();
   }
 
@@ -1006,7 +1128,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
                               {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
                               <div className="mt-1 flex gap-2">
                                 <button onClick={() => openEdit(c)} className="text-[10px] text-primary underline">Modifier</button>
-                                <button onClick={() => del(c.id)} className="text-[10px] text-destructive underline">Suppr.</button>
+                                <button onClick={() => setCoursASupprimer(c)} className="text-[10px] text-destructive underline">Suppr.</button>
                               </div>
                             </div>
                           ))}
@@ -1040,6 +1162,16 @@ function EDTPanel({ etabId }: { etabId: string }) {
             </form>
           )}
         </div>
+      )}
+
+      {coursASupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer ce cours ?"
+          message={`Cette action supprimera définitivement le cours "${coursASupprimer.matiere}" (${JOURS_LONGS[coursASupprimer.jour_semaine - 1]}). Cette action est irréversible.`}
+          motAttendu={coursASupprimer.matiere}
+          onConfirm={confirmerDelCours}
+          onCancel={() => setCoursASupprimer(null)}
+        />
       )}
     </div>
   );

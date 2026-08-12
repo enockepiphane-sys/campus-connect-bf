@@ -374,8 +374,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       )}
     </div>
   );
-        }
-      
+                                                       }
+          
 // -------------- Matières & Notes --------------
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
@@ -433,6 +433,18 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     const existing = noteOf(uid);
     const payload = { valeur: val, commentaire: appreciation(val) };
     if (existing) {
+      if (existing.valeur !== val) {
+        const etu = etudiants.find((x) => x.user_id === uid);
+        await supabase.rpc("enregistrer_audit", {
+          _etablissement_id: etabId,
+          _action: "modification",
+          _table_name: "notes",
+          _record_id: existing.id,
+          _description: `Modification de la note de "${etu?.nom_complet ?? uid}" : ${existing.valeur} → ${val}`,
+          _ancienne_valeur: existing,
+          _nouvelle_valeur: payload,
+        });
+      }
       const { error } = await supabase.from("notes").update(payload).eq("id", existing.id);
       return error?.message ?? null;
     }
@@ -739,6 +751,7 @@ function AdminComments({ annonceId }: { annonceId: string }) {
   );
 }
 
+            
 // -------------- Événements --------------
 function EvenementsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
@@ -998,6 +1011,5 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
         className="w-full input-soft outline-none focus:border-primary" />
     </div>
   );
-        }
-                          
-                                     
+                                                                                          }
+              

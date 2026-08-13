@@ -398,7 +398,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 )}
     </div>
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
-            <div className="space-y-1">
+          <></>  <div className="space-y-1">
               {list.map((e) => (
                 <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <div>
@@ -420,7 +420,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
             <button className="btn-forest w-full">Ajouter</button>
             <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
-          </form>
+          </form><></>
         </div>
       )}
       {etuASupprimer const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false); && (

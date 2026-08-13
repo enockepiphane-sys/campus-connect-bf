@@ -298,7 +298,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null); const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false);
+  const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null);
+  const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   async function load() {
@@ -347,7 +348,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     }
   }
 
-    async function confirmerSuppressionTotale() {
+  async function confirmerSuppressionTotale() {
     if (!niveauId || !list.length) {
       setConfirmerToutSupprimer(false);
       return;
@@ -358,7 +359,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       const ids = list.map((e) => e.id);
       const now = new Date().toISOString();
 
-      // 1. Enregistrement dans l'historique d'audit
       await supabase.rpc("enregistrer_audit", {
         _etablissement_id: etabId,
         _action: "suppression",
@@ -369,7 +369,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
         _nouvelle_valeur: null,
       });
 
-      // 2. Suppression groupée directe par niveau_id
       const { error } = await supabase
         .from("etudiants_pre_inscrits")
         .update({ deleted_at: now })
@@ -386,8 +385,8 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       setConfirmerToutSupprimer(false);
       load();
     }
-    }
-  
+  }
+
   async function confirmerDel() {
     if (!etuASupprimer) return;
     const etu = etuASupprimer;
@@ -414,24 +413,26 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="card-soft p-6">
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
-              <label className="btn-bf-outline cursor-pointer text-sm">
-                <Upload className="icon-tinted h-4 w-4" />Import CSV
-                <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-              </label> {list.length > 0 && (
-  <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
-    Supprimer tout
-  </button>
-)}
-    </div>
+              <div className="flex items-center gap-2">
+                <label className="btn-bf-outline cursor-pointer text-sm">
+                  <Upload className="icon-tinted h-4 w-4" />Import CSV
+                  <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
+                </label> 
+                {list.length > 0 && (
+                  <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
+                    Supprimer tout
+                  </button>
+                )}
+              </div>
+            </div>
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
-          <></>  <div className="space-y-1">
+            <div className="space-y-1">
               {list.map((e) => (
                 <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
-                  <div>
-                    <div className="min-w-0">
-  <span className="font-semibold">{e.nom_complet}</span>
+                  <div className="min-w-0">
+                    <span className="font-semibold">{e.nom_complet}</span>
                     <span className="ml-2 text-xs text-muted-foreground">{e.email} · {e.date_naissance} · {e.inscrit ? "✓ inscrit" : "en attente"}</span>
                   </div>
                   <button onClick={() => setEtuASupprimer(e)} className="text-xs text-destructive underline">Suppr.</button>
@@ -448,10 +449,10 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
             <button className="btn-forest w-full">Ajouter</button>
             <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
-          </form><></>
+          </form>
         </div>
       )}
-      {etuASupprimer const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false); && (
+      {etuASupprimer && (
         <ConfirmationSaisie
           titre="Supprimer cet étudiant ?"
           message={`Cet étudiant sera déplacé vers la corbeille : "${etuASupprimer.nom_complet}".`}
@@ -459,18 +460,21 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           onConfirm={confirmerDel}
           onCancel={() => setEtuASupprimer(null)}
         />
-      )} {confirmerToutSupprimer && (
-  <ConfirmationSaisie
-    titre="Supprimer tous les étudiants ?"
-    message={`Tous les étudiants de "${niv?.label ?? ""}" (${list.length}) seront déplacés vers la corbeille.`}
-    motAttendu="SUPPRIMER TOUT"
-    onConfirm={confirmerSuppressionTotale}
-    onCancel={() => setConfirmerToutSupprimer(false)}
-  />
-)}
+      )}
+      {confirmerToutSupprimer && (
+        <ConfirmationSaisie
+          titre="Supprimer tous les étudiants ?"
+          message={`Tous les étudiants de "${niv?.label ?? ""}" (${list.length}) seront déplacés vers la corbeille.`}
+          motAttendu="SUPPRIMER TOUT"
+          onConfirm={confirmerSuppressionTotale}
+          onCancel={() => setConfirmerToutSupprimer(false)}
+        />
+      )}
     </div>
   );
 }
+
+
 
                                                      // -------------- Matières & Notes --------------
 function MatieresPanel({ etabId }: { etabId: string }) {

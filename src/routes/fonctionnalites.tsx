@@ -71,7 +71,7 @@ function Page() {
             <FeatureCard
               icon={<Users className="h-6 w-6" />}
               title="Listes étudiantes"
-              desc="Import des listes officielles d'étudiants par niveau via CSV. Seuls les étudiants pré-inscrits peuvent créer un compte."
+              desc="Import des listes officielles d'étudiants par niveau via Excel. Seuls les étudiants pré-inscrits peuvent créer un compte."
               color="accent"
             />
             <FeatureCard
@@ -141,7 +141,7 @@ function Page() {
                 step="3"
                 icon={<FileSpreadsheet className="h-5 w-5" />}
                 title="Structurer & importer"
-                desc="L'admin crée filières, niveaux, matières, importe les listes d'étudiants et les notes via CSV."
+                desc="L'admin crée filières, niveaux, importe les listes d'étudiants avec Excel et saisit les notes."
               />
               <StepBlock
                 step="4"

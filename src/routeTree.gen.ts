@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminAccesRouteImport } from './routes/admin-acces'
+import { Route as ConfirmerCompteRouteImport } from './routes/confirmer-compte'
 import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
@@ -31,6 +32,7 @@ import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscr
 import { Route as EtudiantMotDePasseOublieRouteImport } from './routes/etudiant.mot-de-passe-oublie'
 import { Route as SuperAdminAccesMotDePasseOublieRouteImport } from './routes/super-admin-acces_.mot-de-passe-oublie'
 import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
+import { Route as ApiAdminImportExcelRouteImport } from './routes/api.admin.import-excel'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,6 +51,11 @@ const AProposRoute = AProposRouteImport.update({
 const AdminAccesRoute = AdminAccesRouteImport.update({
   id: '/admin-acces',
   path: '/admin-acces',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfirmerCompteRoute = ConfirmerCompteRouteImport.update({
+  id: '/confirmer-compte',
+  path: '/confirmer-compte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
@@ -144,11 +151,17 @@ const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
   path: '/api/admin/import-csv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminImportExcelRoute = ApiAdminImportExcelRouteImport.update({
+  id: '/api/admin/import-excel',
+  path: '/api/admin/import-excel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -167,11 +180,13 @@ export interface FileRoutesByFullPath {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -190,6 +205,7 @@ export interface FileRoutesByTo {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -197,6 +213,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
   '/cours-en-ligne': typeof CoursEnLigneRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
@@ -215,6 +232,7 @@ export interface FileRoutesById {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces_/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,6 +240,7 @@ export interface FileRouteTypes {
     | '/'
     | '/a-propos'
     | '/admin-acces'
+    | '/confirmer-compte'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -240,11 +259,13 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/a-propos'
     | '/admin-acces'
+    | '/confirmer-compte'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -263,12 +284,14 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/a-propos'
     | '/admin-acces'
+    | '/confirmer-compte'
     | '/cours-en-ligne'
     | '/devenir-partenaire'
     | '/fonctionnalites'
@@ -287,6 +310,7 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces_/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -294,6 +318,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AProposRoute: typeof AProposRoute
   AdminAccesRoute: typeof AdminAccesRoute
+  ConfirmerCompteRoute: typeof ConfirmerCompteRoute
   CoursEnLigneRoute: typeof CoursEnLigneRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
@@ -309,6 +334,7 @@ export interface RootRouteChildren {
   EtudiantMotDePasseOublieRoute: typeof EtudiantMotDePasseOublieRoute
   SuperAdminAccesMotDePasseOublieRoute: typeof SuperAdminAccesMotDePasseOublieRoute
   ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
+  ApiAdminImportExcelRoute: typeof ApiAdminImportExcelRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -339,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-acces'
       fullPath: '/admin-acces'
       preLoaderRoute: typeof AdminAccesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/confirmer-compte': {
+      id: '/confirmer-compte'
+      path: '/confirmer-compte'
+      fullPath: '/confirmer-compte'
+      preLoaderRoute: typeof ConfirmerCompteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/cours-en-ligne': {
@@ -467,6 +500,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminImportCsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/import-excel': {
+      id: '/api/admin/import-excel'
+      path: '/api/admin/import-excel'
+      fullPath: '/api/admin/import-excel'
+      preLoaderRoute: typeof ApiAdminImportExcelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -490,6 +530,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AProposRoute: AProposRoute,
   AdminAccesRoute: AdminAccesRoute,
+  ConfirmerCompteRoute: ConfirmerCompteRoute,
   CoursEnLigneRoute: CoursEnLigneRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
@@ -505,6 +546,7 @@ const rootRouteChildren: RootRouteChildren = {
   EtudiantMotDePasseOublieRoute: EtudiantMotDePasseOublieRoute,
   SuperAdminAccesMotDePasseOublieRoute: SuperAdminAccesMotDePasseOublieRoute,
   ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
+  ApiAdminImportExcelRoute: ApiAdminImportExcelRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

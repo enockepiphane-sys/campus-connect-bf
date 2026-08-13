@@ -4,10 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2 } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Menu, X, Heart, ImagePlus, Plus, History, Trash2 } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
+import { EtudiantsExcelImport } from "@/components/EtudiantsExcelImport";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,
@@ -323,31 +324,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     setForm({ nom_complet: "", email: "", date_naissance: "" }); load();
   }
 
-  async function importCSV(file: File) {
-    setMsg(null);
-    if (!niveauId) { setMsg("Sélectionnez un niveau"); return; }
-    setBusy(true);
-    try {
-      const text = await file.text();
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      if (!token) throw new Error("Session expirée. Reconnectez-vous.");
-      const res = await fetch("/api/admin/import-csv", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText: text, niveauId }),
-      });
-      const json = await res.json().catch(() => ({ error: "Échec de l'import CSV" }));
-      if (!res.ok) throw new Error(json.message || json.error || "Échec de l'import CSV");
-      setMsg(`${json.imported} étudiant(s) importé(s)`);
-    } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Échec de l'import CSV");
-    } finally {
-      setBusy(false);
-      load();
-    }
-  }
-
   async function confirmerSuppressionTotale() {
     if (!niveauId || !list.length) {
       setConfirmerToutSupprimer(false);
@@ -410,16 +386,13 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
         <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
+      <EtudiantsExcelImport etabId={etabId} />
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <div className="card-soft p-6">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
               <div className="flex items-center gap-2">
-                <label className="btn-bf-outline cursor-pointer text-sm">
-                  <Upload className="icon-tinted h-4 w-4" />Import CSV
-                  <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-                </label> 
                 {list.length > 0 && (
                   <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
                     Supprimer tout
@@ -448,7 +421,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <SmInput label="Email" type="email" v={form.email} on={(v) => setForm({ ...form, email: v })} />
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
             <button className="btn-forest w-full">Ajouter</button>
-            <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
           </form>
         </div>
       )}

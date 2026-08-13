@@ -347,19 +347,47 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     }
   }
 
-  async function confirmerSuppressionTotale() {
-  const ids = list.map((e) => e.id);
-  if (!ids.length) { setConfirmerToutSupprimer(false); return; }
-  await supabase.rpc("enregistrer_audit", {
-    _etablissement_id: etabId, _action: "suppression",
-    _table_name: "etudiants_pre_inscrits", _record_id: null,
-    _description: `Mise en corbeille de tous les étudiants (${ids.length}) du niveau "${niv?.label ?? ""}"`,
-    _ancienne_valeur: { count: ids.length, ids }, _nouvelle_valeur: null,
-  });
-  await supabase.from("etudiants_pre_inscrits").update({ deleted_at: new Date().toISOString() }).in("id", ids);
-  setConfirmerToutSupprimer(false);
-  load();
-} 
+    async function confirmerSuppressionTotale() {
+    if (!niveauId || !list.length) {
+      setConfirmerToutSupprimer(false);
+      return;
+    }
+
+    try {
+      setBusy(true);
+      const ids = list.map((e) => e.id);
+      const now = new Date().toISOString();
+
+      // 1. Enregistrement dans l'historique d'audit
+      await supabase.rpc("enregistrer_audit", {
+        _etablissement_id: etabId,
+        _action: "suppression",
+        _table_name: "etudiants_pre_inscrits",
+        _record_id: null,
+        _description: `Mise en corbeille de tous les étudiants (${ids.length}) du niveau "${niv?.label ?? ""}"`,
+        _ancienne_valeur: JSON.stringify({ count: ids.length, niveau_id: niveauId }),
+        _nouvelle_valeur: null,
+      });
+
+      // 2. Suppression groupée directe par niveau_id
+      const { error } = await supabase
+        .from("etudiants_pre_inscrits")
+        .update({ deleted_at: now })
+        .eq("niveau_id", niveauId)
+        .is("deleted_at", null);
+
+      if (error) throw error;
+
+      setMsg(`${ids.length} étudiant(s) déplacé(s) vers la corbeille.`);
+    } catch (err: any) {
+      setMsg(`Erreur lors de la suppression : ${err.message || "Échec de l'opération"}`);
+    } finally {
+      setBusy(false);
+      setConfirmerToutSupprimer(false);
+      load();
+    }
+    }
+  
   async function confirmerDel() {
     if (!etuASupprimer) return;
     const etu = etuASupprimer;

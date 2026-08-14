@@ -70,8 +70,15 @@ function Dashboard() {
             <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
           </Link>
           <div className="flex shrink-0 items-center gap-2">
-            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} />
-            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
+            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
+            <button
+              onClick={signOutAndGoHome}
+              aria-label="Déconnexion"
+              className="btn-bf-outline shrink-0 !p-2 text-sm sm:!px-4 sm:!py-2"
+            >
+              <LogOut className="icon-danger h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Déconnexion</span>
+            </button>
           </div>
         </div>
       </header>
@@ -110,7 +117,7 @@ function Dashboard() {
   );
 }
 
-function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string; niveauLabel: string }) {
+function ProfilAvatar({ nom, email, niveauLabel, etabNom }: { nom: string; email: string; niveauLabel: string; etabNom: string }) {
   const [open, setOpen] = useState(false);
   const initiales = nom
     .split(/\s+/)
@@ -134,7 +141,7 @@ function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string;
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-64 max-w-[80vw] rounded-[10px] border border-border bg-surface p-4 shadow-lg">
+          <div className="fixed right-3 top-16 z-50 w-[min(280px,calc(100vw-1.5rem))] rounded-[10px] border border-border bg-surface p-4 shadow-lg sm:absolute sm:right-0 sm:top-11 sm:w-64">
             <div className="flex min-w-0 items-center gap-3">
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
@@ -145,10 +152,13 @@ function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string;
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-foreground">{nom}</p>
-                {email && <p className="truncate text-xs font-light text-muted-foreground">{email}</p>}
+                {email && <p className="break-all text-xs font-light text-muted-foreground">{email}</p>}
               </div>
             </div>
-            <p className="mt-2 truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+            <div className="mt-3 space-y-0.5 border-t border-border pt-2">
+              <p className="truncate text-xs font-light text-muted-foreground">{etabNom}</p>
+              <p className="truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+            </div>
           </div>
         </>
       )}

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/etudiant")({
 
 function Dashboard() {
   const [ok, setOk] = useState<boolean | null>(null);
-  const [ctx, setCtx] = useState<{ niveauId: string; niveauLabel: string; etabNom: string; userName: string } | null>(null);
+  const [ctx, setCtx] = useState<{ niveauId: string; niveauLabel: string; etabNom: string; userName: string; userEmail: string } | null>(null);
   const [tab, setTab] = useState<"annonces" | "edt" | "evenements" | "notes">("annonces");
 
   useEffect(() => {
@@ -41,6 +41,7 @@ function Dashboard() {
         niveauLabel: `${f?.nom ?? ""} — ${n?.nom ?? ""}`,
         etabNom: e?.nom ?? "",
         userName: pre.nom_complet,
+        userEmail: u.user.email ?? "",
       });
       setOk(true);
       // Notifications push : non bloquant, échec silencieux si refus/non supporté.
@@ -68,16 +69,14 @@ function Dashboard() {
             <DrapeauBF className="h-4 w-6 shrink-0" />
             <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
           </Link>
-          <div className="flex w-full flex-wrap items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
-            <span className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">{ctx.userName} · {ctx.niveauLabel}</span>
-            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
-          </div>
+          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-28 sm:px-6">
         {tab === "annonces" && (
           <>
+            <ProfilCard nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} />
             <StatsBanner niveauId={ctx.niveauId} />
             <Annonces niveauId={ctx.niveauId} />
           </>
@@ -105,6 +104,32 @@ function Dashboard() {
           })}
         </div>
       </nav>
+    </div>
+  );
+}
+
+function ProfilCard({ nom, email, niveauLabel }: { nom: string; email: string; niveauLabel: string }) {
+  const initiales = nom
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join("") || "?";
+
+  return (
+    <div className="card-soft mb-6 flex min-w-0 items-center gap-4 p-5">
+      <div
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white"
+        style={{ background: "linear-gradient(135deg, #0F8A44 0%, #F0C419 100%)" }}
+        aria-hidden="true"
+      >
+        {initiales}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-base font-bold text-foreground sm:text-lg">{nom}</p>
+        {email && <p className="truncate text-sm font-light text-muted-foreground">{email}</p>}
+        <p className="mt-0.5 truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+      </div>
     </div>
   );
 }

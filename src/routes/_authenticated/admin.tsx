@@ -479,19 +479,34 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             )}
 
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
-            <div className="space-y-1">
+            <div className="space-y-2">
               {list.map((e) => (
-                <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
-                  <div className="min-w-0">
-                    <span className="font-semibold">{e.nom_complet}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      {e.email} · {e.date_naissance}
-                      {config.matricule && e.matricule ? ` · Mat. ${e.matricule}` : ""}
-                      {config.telephone && e.telephone ? ` · ${e.telephone}` : ""}
-                      {" · "}{e.inscrit ? "✓ inscrit" : "en attente"}
+                <div key={e.id} className="rounded-xl border border-border bg-surface p-3">
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h4 className="font-semibold leading-tight">{e.nom_complet}</h4>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${e.inscrit ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {e.inscrit ? "✓ Inscrit" : "En attente"}
                     </span>
                   </div>
-                  <button onClick={() => setEtuASupprimer(e)} className="text-xs text-destructive underline">Suppr.</button>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div className="text-muted-foreground">Email</div>
+                    <div className="truncate text-right">{e.email}</div>
+                    <div className="text-muted-foreground">Naissance</div>
+                    <div className="text-right">{e.date_naissance}</div>
+                    {config.matricule && e.matricule && (
+                      <>
+                        <div className="text-muted-foreground">Matricule</div>
+                        <div className="text-right">{e.matricule}</div>
+                      </>
+                    )}
+                    {config.telephone && e.telephone && (
+                      <>
+                        <div className="text-muted-foreground">Téléphone</div>
+                        <div className="text-right">{e.telephone}</div>
+                      </>
+                    )}
+                  </div>
+                  <button onClick={() => setEtuASupprimer(e)} className="mt-2 text-xs text-destructive underline">Supprimer</button>
                 </div>
               ))}
               {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant.</p>}

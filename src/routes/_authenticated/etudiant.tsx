@@ -62,24 +62,29 @@ function Dashboard() {
 
   return (
     <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
-      <header className="sticky top-0 z-30 border-b border-border bg-surface">
+      <header
+        className="sticky top-0 z-30 border-b border-border"
+        style={{ background: "linear-gradient(120deg, #0F8A44 0%, #12A150 55%, #F0C419 100%)" }}
+      >
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-            <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0" />
-            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold text-white sm:text-xl">
+            <span className="whitespace-nowrap drop-shadow-sm">Campus<span className="text-[#FCD34D]">Link</span></span>
+            <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px] shadow-sm" />
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
             <NotificationBell />
-            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
-            <button
-              onClick={signOutAndGoHome}
-              aria-label="Déconnexion"
-              className="btn-bf-outline shrink-0 !p-2 text-sm sm:!px-4 sm:!py-2"
-            >
-              <LogOut className="icon-danger h-4 w-4 sm:mr-1" />
-              <span className="hidden sm:inline">Déconnexion</span>
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
+              <button
+                onClick={signOutAndGoHome}
+                aria-label="Déconnexion"
+                className="inline-flex shrink-0 items-center justify-center rounded-[10px] border border-white/40 bg-white/10 p-2 text-sm text-white backdrop-blur-sm transition hover:bg-white/20 sm:px-4 sm:py-2"
+              >
+                <LogOut className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Déconnexion</span>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -248,7 +253,7 @@ function NotificationBell() {
         onClick={() => setOpen((o) => !o)}
         aria-label="Notifications"
         aria-expanded={open}
-        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
+        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20"
       >
         <Bell className="h-4 w-4" />
         {nonLues > 0 && (

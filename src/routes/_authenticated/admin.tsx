@@ -8,6 +8,7 @@ import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upl
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
+import { parseExcelEtudiants, type ChampsOptionnels } from "@/lib/excel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,
@@ -294,21 +295,38 @@ function NiveauPicker({ items, value, onChange }: { items: { niveau_id: string; 
 function EtudiantsPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [list, setList] = useState<{ id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean }[]>([]);
-  const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
+  const [list, setList] = useState<{ id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean; matricule?: string | null; telephone?: string | null }[]>([]);
+  const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "", matricule: "", telephone: "" });
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [etuASupprimer, setEtuASupprimer] = useState<typeof list[0] | null>(null);
   const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false);
+  const [config, setConfig] = useState<ChampsOptionnels>({ matricule: false, telephone: false });
+  const [showImportExcel, setShowImportExcel] = useState(false);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
-    const { data } = await supabase.from("etudiants_pre_inscrits").select("id,nom_complet,email,date_naissance,inscrit")
+    const { data } = await supabase.from("etudiants_pre_inscrits").select("id,nom_complet,email,date_naissance,inscrit,matricule,telephone")
       .eq("niveau_id", niveauId).is("deleted_at", null).order("nom_complet");
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from("etablissement_champs_optionnels")
+        .select("utilise_matricule,utilise_telephone").eq("etablissement_id", etabId).maybeSingle();
+      setConfig({ matricule: data?.utilise_matricule ?? false, telephone: data?.utilise_telephone ?? false });
+    })();
+  }, [etabId]);
+
+  async function sauverConfig(next: ChampsOptionnels) {
+    setConfig(next);
+    await supabase.from("etablissement_champs_optionnels").upsert({
+      etablissement_id: etabId, utilise_matricule: next.matricule, utilise_telephone: next.telephone,
+    });
+  }
 
   async function add(e: React.FormEvent) {
     e.preventDefault(); setMsg(null);
@@ -318,30 +336,39 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     const { error } = await supabase.from("etudiants_pre_inscrits").insert({
       etablissement_id: etabId, filiere_id: n.filiere_id, niveau_id: niveauId,
       nom_complet: form.nom_complet.trim(), email: form.email.trim().toLowerCase(), date_naissance: form.date_naissance,
+      matricule: config.matricule ? (form.matricule.trim() || null) : null,
+      telephone: config.telephone ? (form.telephone.trim() || null) : null,
     });
     if (error) { setMsg(error.message); return; }
-    setForm({ nom_complet: "", email: "", date_naissance: "" }); load();
+    setForm({ nom_complet: "", email: "", date_naissance: "", matricule: "", telephone: "" }); load();
   }
 
-  async function importCSV(file: File) {
+  async function importExcel(file: File) {
     setMsg(null);
     if (!niveauId) { setMsg("Sélectionnez un niveau"); return; }
     setBusy(true);
     try {
-      const text = await file.text();
+      const { valides, rejetees } = await parseExcelEtudiants(file, config);
+      if (valides.length === 0) {
+        throw new Error(rejetees.length > 0 ? `Aucune ligne valide (${rejetees.length} rejetée(s)). Vérifiez les colonnes du fichier.` : "Fichier vide ou illisible.");
+      }
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
       if (!token) throw new Error("Session expirée. Reconnectez-vous.");
-      const res = await fetch("/api/admin/import-csv", {
+      const res = await fetch("/api/admin/import-excel", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ csvText: text, niveauId }),
+        body: JSON.stringify({ niveauId, lignes: valides }),
       });
-      const json = await res.json().catch(() => ({ error: "Échec de l'import CSV" }));
-      if (!res.ok) throw new Error(json.message || json.error || "Échec de l'import CSV");
-      setMsg(`${json.imported} étudiant(s) importé(s)`);
+      const json = await res.json().catch(() => ({ error: "Échec de l'import Excel" }));
+      if (!res.ok) throw new Error(json.message || json.error || "Échec de l'import Excel");
+      const suffixe = rejetees.length > 0 ? ` — ${rejetees.length} ligne(s) ignorée(s) (voir détails ci-dessous)` : "";
+      setMsg(`${json.imported} étudiant(s) importé(s)${suffixe}`);
+      if (rejetees.length > 0) {
+        console.warn("Lignes rejetées à l'import Excel :", rejetees);
+      }
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Échec de l'import CSV");
+      setMsg(err instanceof Error ? err.message : "Échec de l'import Excel");
     } finally {
       setBusy(false);
       load();
@@ -416,10 +443,9 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
               <div className="flex items-center gap-2">
-                <label className="btn-bf-outline cursor-pointer text-sm">
-                  <Upload className="icon-tinted h-4 w-4" />Import CSV
-                  <input hidden type="file" accept=".csv,text/csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-                </label> 
+                <button onClick={() => setShowImportExcel((v) => !v)} className="btn-bf-outline text-sm">
+                  <Upload className="icon-tinted h-4 w-4" />Import Excel
+                </button>
                 {list.length > 0 && (
                   <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
                     Supprimer tout
@@ -427,13 +453,43 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
                 )}
               </div>
             </div>
+
+            {showImportExcel && (
+              <div className="mb-4 rounded-xl border border-border bg-surface p-4 space-y-3">
+                <h4 className="text-sm font-bold">Import Excel (.xlsx)</h4>
+                <p className="text-xs text-muted-foreground">
+                  Colonnes obligatoires reconnues automatiquement : nom complet (ou nom + prénom séparés), email, date de naissance (tout format accepté).
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={config.matricule} onChange={(e) => sauverConfig({ ...config, matricule: e.target.checked })} />
+                    Fichier avec matricule
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={config.telephone} onChange={(e) => sauverConfig({ ...config, telephone: e.target.checked })} />
+                    Fichier avec téléphone
+                  </label>
+                </div>
+                <label className="btn-forest inline-block cursor-pointer text-sm">
+                  Choisir le fichier Excel
+                  <input hidden type="file" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel(f); e.target.value = ""; }} />
+                </label>
+                {busy && <p className="text-xs text-muted-foreground">Import en cours…</p>}
+              </div>
+            )}
+
             {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
             <div className="space-y-1">
               {list.map((e) => (
                 <div key={e.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
                   <div className="min-w-0">
                     <span className="font-semibold">{e.nom_complet}</span>
-                    <span className="ml-2 text-xs text-muted-foreground">{e.email} · {e.date_naissance} · {e.inscrit ? "✓ inscrit" : "en attente"}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      {e.email} · {e.date_naissance}
+                      {config.matricule && e.matricule ? ` · Mat. ${e.matricule}` : ""}
+                      {config.telephone && e.telephone ? ` · ${e.telephone}` : ""}
+                      {" · "}{e.inscrit ? "✓ inscrit" : "en attente"}
+                    </span>
                   </div>
                   <button onClick={() => setEtuASupprimer(e)} className="text-xs text-destructive underline">Suppr.</button>
                 </div>
@@ -447,8 +503,9 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <SmInput label="Nom complet" v={form.nom_complet} on={(v) => setForm({ ...form, nom_complet: v })} />
             <SmInput label="Email" type="email" v={form.email} on={(v) => setForm({ ...form, email: v })} />
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
+            {config.matricule && <SmInput label="Matricule" v={form.matricule} on={(v) => setForm({ ...form, matricule: v })} />}
+            {config.telephone && <SmInput label="Téléphone" v={form.telephone} on={(v) => setForm({ ...form, telephone: v })} />}
             <button className="btn-forest w-full">Ajouter</button>
-            <p className="text-xs text-muted-foreground">CSV attendu : colonnes <code>nom_complet, email, date_naissance</code> (YYYY-MM-DD).</p>
           </form>
         </div>
       )}
@@ -1364,4 +1421,3 @@ function SmInput({ label, v, on, type = "text" }: { label: string; v: string; on
     </div>
   );
 }
-

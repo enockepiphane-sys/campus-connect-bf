@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
-import { setupPushNotifications } from "@/lib/push-notifications";
+import { setupPushNotifications, disablePushNotifications, isPushSubscribed, isPushSupported } from "@/lib/push-notifications";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle } from "lucide-react";
+import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, BellOff } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,
@@ -44,8 +44,8 @@ function Dashboard() {
         userEmail: u.user.email ?? "",
       });
       setOk(true);
-      // Notifications push : non bloquant, échec silencieux si refus/non supporté.
-      void setupPushNotifications();
+      // L'activation des notifications push se fait désormais via la cloche
+      // dans le header (choix explicite de l'étudiant, pas de demande forcée).
 
     })();
   }, []);
@@ -64,14 +64,22 @@ function Dashboard() {
     <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
             <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
             <DrapeauBF className="h-4 w-6 shrink-0" />
             <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
-          </Link>
+          </div>
           <div className="flex shrink-0 items-center gap-2">
-            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} />
-            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
+            <NotificationBell />
+            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
+            <button
+              onClick={signOutAndGoHome}
+              aria-label="Déconnexion"
+              className="btn-bf-outline shrink-0 !p-2 text-sm sm:!px-4 sm:!py-2"
+            >
+              <LogOut className="icon-danger h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Déconnexion</span>
+            </button>
           </div>
         </div>
       </header>
@@ -110,7 +118,7 @@ function Dashboard() {
   );
 }
 
-function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string; niveauLabel: string }) {
+function ProfilAvatar({ nom, email, niveauLabel, etabNom }: { nom: string; email: string; niveauLabel: string; etabNom: string }) {
   const [open, setOpen] = useState(false);
   const initiales = nom
     .split(/\s+/)
@@ -134,7 +142,7 @@ function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string;
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-11 z-50 w-64 max-w-[80vw] rounded-[10px] border border-border bg-surface p-4 shadow-lg">
+          <div className="fixed right-3 top-16 z-50 w-[min(280px,calc(100vw-1.5rem))] rounded-[10px] border border-border bg-surface p-4 shadow-lg sm:absolute sm:right-0 sm:top-11 sm:w-64">
             <div className="flex min-w-0 items-center gap-3">
               <div
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
@@ -145,10 +153,161 @@ function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string;
               </div>
               <div className="min-w-0">
                 <p className="truncate text-sm font-bold text-foreground">{nom}</p>
-                {email && <p className="truncate text-xs font-light text-muted-foreground">{email}</p>}
+                {email && <p className="break-all text-xs font-light text-muted-foreground">{email}</p>}
               </div>
             </div>
-            <p className="mt-2 truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+            <div className="mt-3 space-y-0.5 border-t border-border pt-2">
+              <p className="truncate text-xs font-light text-muted-foreground">{etabNom}</p>
+              <p className="truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+type NotifItem = {
+  id: string;
+  type: "annonce" | "edt" | "evenement" | "note";
+  titre: string;
+  corps: string | null;
+  lien: string | null;
+  lu: boolean;
+  created_at: string;
+};
+
+function NotificationBell() {
+  const [open, setOpen] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<NotifItem[]>([]);
+  const supported = isPushSupported();
+
+  const nonLues = items.filter((n) => !n.lu).length;
+
+  const chargerNotifications = async () => {
+    const { data } = await supabase
+      .from("notifications")
+      .select("id,type,titre,corps,lien,lu,created_at")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setItems((data as never as NotifItem[]) ?? []);
+  };
+
+  useEffect(() => {
+    chargerNotifications();
+    isPushSubscribed().then(setSubscribed);
+
+    // Rafraîchissement en direct : nouvelle notification insérée pour cet utilisateur
+    const channel = supabase
+      .channel("notifications-etudiant")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications" },
+        () => { chargerNotifications(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const toggleSubscription = async () => {
+    setLoading(true);
+    try {
+      if (subscribed) {
+        const res = await disablePushNotifications();
+        if (res.status === "ok") setSubscribed(false);
+      } else {
+        const res = await setupPushNotifications();
+        if (res.status === "ok") setSubscribed(true);
+        else if (res.status === "denied") {
+          alert("Notifications refusées. Active-les dans les réglages du navigateur pour ce site si tu changes d'avis.");
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const marquerLu = async (id: string) => {
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
+    await supabase.from("notifications").update({ lu: true }).eq("id", id);
+  };
+
+  const marquerToutLu = async () => {
+    const ids = items.filter((n) => !n.lu).map((n) => n.id);
+    if (ids.length === 0) return;
+    setItems((prev) => prev.map((n) => ({ ...n, lu: true })));
+    await supabase.from("notifications").update({ lu: true }).in("id", ids);
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Notifications"
+        aria-expanded={open}
+        className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-foreground transition hover:bg-muted"
+      >
+        <Bell className="h-4 w-4" />
+        {nonLues > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+            {nonLues > 9 ? "9+" : nonLues}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="fixed left-3 right-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-[10px] border border-border bg-surface p-3 shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-80">
+            <div className="mb-2 flex items-center justify-between gap-2 border-b border-border pb-2">
+              <span className="text-sm font-bold">Notifications</span>
+              <div className="flex items-center gap-2">
+                {nonLues > 0 && (
+                  <button onClick={marquerToutLu} className="text-xs font-medium text-primary">
+                    Tout marquer lu
+                  </button>
+                )}
+                {supported && (
+                  <button
+                    onClick={toggleSubscription}
+                    disabled={loading}
+                    aria-label={subscribed ? "Désactiver les notifications" : "Activer les notifications"}
+                    className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
+                  >
+                    {subscribed ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
+                    {subscribed ? "Désactiver" : "Activer"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {!supported && (
+              <p className="mb-2 text-xs text-muted-foreground">
+                Les notifications push ne sont pas prises en charge par ce navigateur.
+              </p>
+            )}
+
+            <div className="space-y-1">
+              {items.map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => { marquerLu(n.id); if (n.lien) window.location.href = n.lien; }}
+                  className={`w-full rounded-[8px] p-2 text-left text-sm transition hover:bg-muted ${n.lu ? "" : "bg-primary-soft"}`}
+                >
+                  <p className="font-medium">{n.titre}</p>
+                  {n.corps && <p className="truncate text-xs text-muted-foreground">{n.corps}</p>}
+                  <p className="mt-0.5 text-[10px] text-muted-foreground">
+                    {new Date(n.created_at).toLocaleString("fr-FR")}
+                  </p>
+                </button>
+              ))}
+              {items.length === 0 && (
+                <p className="py-6 text-center text-xs text-muted-foreground">Aucune notification pour le moment.</p>
+              )}
+            </div>
           </div>
         </>
       )}

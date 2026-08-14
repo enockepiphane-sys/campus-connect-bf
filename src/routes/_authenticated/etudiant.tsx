@@ -66,14 +66,13 @@ function Dashboard() {
         className="sticky top-0 z-30 border-b border-border"
         style={{ background: "linear-gradient(120deg, #0F8A44 0%, #12A150 55%, #F0C419 100%)" }}
       >
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold text-white sm:text-xl">
-            <span className="whitespace-nowrap drop-shadow-sm">Campus<span className="text-[#FCD34D]">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px] shadow-sm" />
-            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
-          </div>
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-            <NotificationBell />
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2 font-display text-lg font-bold sm:text-xl">
+              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+              <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px] shadow-sm" />
+              <span className="hidden truncate rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:inline sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
+            </div>
             <div className="flex shrink-0 items-center gap-2">
               <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
               <button
@@ -85,6 +84,10 @@ function Dashboard() {
                 <span className="hidden sm:inline">Déconnexion</span>
               </button>
             </div>
+          </div>
+          <div className="mt-2 flex items-center justify-between gap-3 sm:justify-start">
+            <span className="truncate rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:hidden">Étudiant · {ctx.etabNom}</span>
+            <NotificationBell />
           </div>
         </div>
       </header>

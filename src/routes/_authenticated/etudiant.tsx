@@ -69,14 +69,16 @@ function Dashboard() {
             <DrapeauBF className="h-4 w-6 shrink-0" />
             <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
           </Link>
-          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
+          <div className="flex shrink-0 items-center gap-2">
+            <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} />
+            <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pt-6 pb-28 sm:px-6">
         {tab === "annonces" && (
           <>
-            <ProfilCard nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} />
             <StatsBanner niveauId={ctx.niveauId} />
             <Annonces niveauId={ctx.niveauId} />
           </>
@@ -108,7 +110,8 @@ function Dashboard() {
   );
 }
 
-function ProfilCard({ nom, email, niveauLabel }: { nom: string; email: string; niveauLabel: string }) {
+function ProfilAvatar({ nom, email, niveauLabel }: { nom: string; email: string; niveauLabel: string }) {
+  const [open, setOpen] = useState(false);
   const initiales = nom
     .split(/\s+/)
     .filter(Boolean)
@@ -117,19 +120,38 @@ function ProfilCard({ nom, email, niveauLabel }: { nom: string; email: string; n
     .join("") || "?";
 
   return (
-    <div className="card-soft mb-6 flex min-w-0 items-center gap-4 p-5">
-      <div
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-bold text-white"
+    <div className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        aria-label="Profil"
+        aria-expanded={open}
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
         style={{ background: "linear-gradient(135deg, #0F8A44 0%, #F0C419 100%)" }}
-        aria-hidden="true"
       >
         {initiales}
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-base font-bold text-foreground sm:text-lg">{nom}</p>
-        {email && <p className="truncate text-sm font-light text-muted-foreground">{email}</p>}
-        <p className="mt-0.5 truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
-      </div>
+      </button>
+
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-11 z-50 w-64 max-w-[80vw] rounded-[10px] border border-border bg-surface p-4 shadow-lg">
+            <div className="flex min-w-0 items-center gap-3">
+              <div
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-base font-bold text-white"
+                style={{ background: "linear-gradient(135deg, #0F8A44 0%, #F0C419 100%)" }}
+                aria-hidden="true"
+              >
+                {initiales}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-bold text-foreground">{nom}</p>
+                {email && <p className="truncate text-xs font-light text-muted-foreground">{email}</p>}
+              </div>
+            </div>
+            <p className="mt-2 truncate text-xs font-light text-muted-foreground">{niveauLabel}</p>
+          </div>
+        </>
+      )}
     </div>
   );
 }

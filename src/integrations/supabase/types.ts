@@ -320,39 +320,48 @@ export type Database = {
         Row: {
           created_at: string
           date_naissance: string
+          deleted_at: string | null
           email: string
           etablissement_id: string
           filiere_id: string
           id: string
           inscrit: boolean
+          matricule: string | null
           niveau_id: string
           nom_complet: string
+          telephone: string | null
           updated_at: string
           user_id: string | null
         }
         Insert: {
           created_at?: string
           date_naissance: string
+          deleted_at?: string | null
           email: string
           etablissement_id: string
           filiere_id: string
           id?: string
           inscrit?: boolean
+          matricule?: string | null
           niveau_id: string
           nom_complet: string
+          telephone?: string | null
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           created_at?: string
           date_naissance?: string
+          deleted_at?: string | null
           email?: string
           etablissement_id?: string
           filiere_id?: string
           id?: string
           inscrit?: boolean
+          matricule?: string | null
           niveau_id?: string
           nom_complet?: string
+          telephone?: string | null
           updated_at?: string
           user_id?: string | null
         }
@@ -383,6 +392,144 @@ export type Database = {
             columns: ["niveau_id"]
             isOneToOne: false
             referencedRelation: "niveaux"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      etablissements_champs_config: {
+        Row: {
+          etablissement_id: string
+          matricule_actif: boolean
+          matricule_obligatoire: boolean
+          telephone_actif: boolean
+          telephone_obligatoire: boolean
+          updated_at: string
+        }
+        Insert: {
+          etablissement_id: string
+          matricule_actif?: boolean
+          matricule_obligatoire?: boolean
+          telephone_actif?: boolean
+          telephone_obligatoire?: boolean
+          updated_at?: string
+        }
+        Update: {
+          etablissement_id?: string
+          matricule_actif?: boolean
+          matricule_obligatoire?: boolean
+          telephone_actif?: boolean
+          telephone_obligatoire?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etablissements_champs_config_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: true
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etablissements_champs_config_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: true
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      etablissements_champs_personnalises: {
+        Row: {
+          created_at: string
+          deleted_at: string | null
+          etablissement_id: string
+          id: string
+          nom_champ: string
+          obligatoire: boolean
+          options: Json | null
+          ordre: number
+          type_champ: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deleted_at?: string | null
+          etablissement_id: string
+          id?: string
+          nom_champ: string
+          obligatoire?: boolean
+          options?: Json | null
+          ordre?: number
+          type_champ: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deleted_at?: string | null
+          etablissement_id?: string
+          id?: string
+          nom_champ?: string
+          obligatoire?: boolean
+          options?: Json | null
+          ordre?: number
+          type_champ?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etablissements_champs_personnalises_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etablissements_champs_personnalises_etablissement_id_fkey"
+            columns: ["etablissement_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      etudiants_valeurs_personnalisees: {
+        Row: {
+          champ_id: string
+          created_at: string
+          etudiant_id: string
+          id: string
+          updated_at: string
+          valeur: string
+        }
+        Insert: {
+          champ_id: string
+          created_at?: string
+          etudiant_id: string
+          id?: string
+          updated_at?: string
+          valeur: string
+        }
+        Update: {
+          champ_id?: string
+          created_at?: string
+          etudiant_id?: string
+          id?: string
+          updated_at?: string
+          valeur?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "etudiants_valeurs_personnalisees_champ_id_fkey"
+            columns: ["champ_id"]
+            isOneToOne: false
+            referencedRelation: "etablissements_champs_personnalises"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "etudiants_valeurs_personnalisees_etudiant_id_fkey"
+            columns: ["etudiant_id"]
+            isOneToOne: false
+            referencedRelation: "etudiants_pre_inscrits"
             referencedColumns: ["id"]
           },
         ]
@@ -677,6 +824,18 @@ export type Database = {
     Functions: {
       etablissement_of_admin: { Args: { _user_id: string }; Returns: string }
       etablissement_of_niveau: { Args: { _niveau_id: string }; Returns: string }
+      enregistrer_audit: {
+        Args: {
+          _action: string
+          _ancienne_valeur: Json | null
+          _description: string
+          _etablissement_id: string | null
+          _nouvelle_valeur: Json | null
+          _record_id: string | null
+          _table_name: string
+        }
+        Returns: string
+      }
       get_announcement_comments: {
         Args: { p_announcement_id: string }
         Returns: {

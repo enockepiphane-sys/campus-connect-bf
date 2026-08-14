@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2 } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Settings2 } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
@@ -22,7 +23,7 @@ function Dashboard() {
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
-  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
+  const [tab, setTab] = useState<"structure" | "format" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
 
   useEffect(() => {
     (async () => {
@@ -44,6 +45,7 @@ function Dashboard() {
 
   const sections = [
     { k: "structure", l: "Filières & niveaux", i: BookOpen, c: "icon-green" },
+    { k: "format", l: "Format des fiches étudiants", i: Settings2, c: "icon-teal" },
     { k: "etudiants", l: "Étudiants", i: Users, c: "icon-blue" },
     { k: "matieres", l: "Matières & notes", i: GraduationCap, c: "icon-violet" },
     { k: "annonces", l: "Annonces", i: Megaphone, c: "icon-terracotta" },
@@ -113,6 +115,7 @@ function Dashboard() {
 
       <main className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
         {tab === "structure" && <StructurePanel etabId={etabId} />}
+        {tab === "format" && <FormatFichesPanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}
         {tab === "annonces" && <AnnoncesPanel etabId={etabId} />}
@@ -121,6 +124,352 @@ function Dashboard() {
         {tab === "historique" && <HistoriquePanel etabId={etabId} />}
         {tab === "corbeille" && <CorbeillePanel etabId={etabId} />}
       </main>
+    </div>
+  );
+}
+
+// -------------- Format des fiches étudiants --------------
+type ChampType = "texte" | "liste_deroulante";
+
+type ChampsConfig = {
+  matricule_actif: boolean;
+  matricule_obligatoire: boolean;
+  telephone_actif: boolean;
+  telephone_obligatoire: boolean;
+};
+
+type ChampPersonnalise = {
+  id: string;
+  nom_champ: string;
+  type_champ: ChampType;
+  options: unknown;
+  obligatoire: boolean;
+  ordre: number;
+  deleted_at: string | null;
+};
+
+const EMPTY_CHAMPS_CONFIG: ChampsConfig = {
+  matricule_actif: false,
+  matricule_obligatoire: false,
+  telephone_actif: false,
+  telephone_obligatoire: false,
+};
+
+const EMPTY_CHAMP_FORM = {
+  nom_champ: "",
+  type_champ: "texte" as ChampType,
+  options: "",
+  obligatoire: false,
+};
+
+function FormatFichesPanel({ etabId }: { etabId: string }) {
+  const [config, setConfig] = useState<ChampsConfig>(EMPTY_CHAMPS_CONFIG);
+  const [champs, setChamps] = useState<ChampPersonnalise[]>([]);
+  const [form, setForm] = useState(EMPTY_CHAMP_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [savingChamp, setSavingChamp] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  async function load() {
+    setLoading(true);
+    const [{ data: configRow, error: configError }, { data: champsRows, error: champsError }] = await Promise.all([
+      supabase
+        .from("etablissements_champs_config")
+        .select("matricule_actif,matricule_obligatoire,telephone_actif,telephone_obligatoire")
+        .eq("etablissement_id", etabId)
+        .maybeSingle(),
+      supabase
+        .from("etablissements_champs_personnalises")
+        .select("id,nom_champ,type_champ,options,obligatoire,ordre,deleted_at")
+        .eq("etablissement_id", etabId)
+        .is("deleted_at", null)
+        .order("ordre", { ascending: true })
+        .order("created_at", { ascending: true }),
+    ]);
+
+    if (configError || champsError) {
+      setMessage(configError?.message ?? champsError?.message ?? "Impossible de charger le format des fiches.");
+    } else {
+      setConfig({ ...EMPTY_CHAMPS_CONFIG, ...(configRow ?? {}) });
+      setChamps((champsRows ?? []) as unknown as ChampPersonnalise[]);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, [etabId]);
+
+  function updateConfig(changes: Partial<ChampsConfig>) {
+    setConfig((current) => ({ ...current, ...changes }));
+  }
+
+  async function saveConfig() {
+    setSavingConfig(true);
+    setMessage(null);
+    const { error } = await supabase
+      .from("etablissements_champs_config")
+      .upsert({ etablissement_id: etabId, ...config }, { onConflict: "etablissement_id" });
+    setSavingConfig(false);
+    setMessage(error ? `Erreur : ${error.message}` : "Configuration enregistrée.");
+  }
+
+  function openAddForm() {
+    setEditingId(null);
+    setForm(EMPTY_CHAMP_FORM);
+    setMessage(null);
+    setShowForm(true);
+  }
+
+  function openEditForm(champ: ChampPersonnalise) {
+    const options = Array.isArray(champ.options)
+      ? champ.options.filter((option): option is string => typeof option === "string").join(", ")
+      : "";
+    setEditingId(champ.id);
+    setForm({
+      nom_champ: champ.nom_champ,
+      type_champ: champ.type_champ,
+      options,
+      obligatoire: champ.obligatoire,
+    });
+    setMessage(null);
+    setShowForm(true);
+  }
+
+  function closeForm() {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(EMPTY_CHAMP_FORM);
+  }
+
+  async function saveChamp(e: React.FormEvent) {
+    e.preventDefault();
+    const nomChamp = form.nom_champ.trim();
+    const options = form.options.split(",").map((option) => option.trim()).filter(Boolean);
+    if (!nomChamp) {
+      setMessage("Le nom du champ est obligatoire.");
+      return;
+    }
+    if (form.type_champ === "liste_deroulante" && options.length === 0) {
+      setMessage("Ajoutez au moins une valeur pour la liste déroulante.");
+      return;
+    }
+
+    setSavingChamp(true);
+    setMessage(null);
+    const payload = {
+      nom_champ: nomChamp,
+      type_champ: form.type_champ,
+      options: form.type_champ === "liste_deroulante" ? options : null,
+      obligatoire: form.obligatoire,
+    };
+    const result = editingId
+      ? await supabase.from("etablissements_champs_personnalises").update(payload).eq("id", editingId)
+      : await supabase.from("etablissements_champs_personnalises").insert({
+          etablissement_id: etabId,
+          ...payload,
+          ordre: champs.length ? Math.max(...champs.map((champ) => champ.ordre)) + 1 : 0,
+        });
+
+    if (result.error) {
+      setMessage(`Erreur : ${result.error.message}`);
+    } else {
+      closeForm();
+      setMessage(editingId ? "Champ personnalisé modifié." : "Champ personnalisé ajouté.");
+      await load();
+    }
+    setSavingChamp(false);
+  }
+
+  async function softDeleteChamp(champ: ChampPersonnalise) {
+    if (!window.confirm(`Mettre le champ "${champ.nom_champ}" à la corbeille ?`)) return;
+    setMessage(null);
+    const { error: auditError } = await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "etablissements_champs_personnalises",
+      _record_id: champ.id,
+      _description: `Mise en corbeille du champ personnalisé "${champ.nom_champ}"`,
+      _ancienne_valeur: champ as unknown as Json,
+      _nouvelle_valeur: null,
+    });
+    if (auditError) {
+      setMessage(`Erreur d'audit : ${auditError.message}`);
+      return;
+    }
+    const { error } = await supabase
+      .from("etablissements_champs_personnalises")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", champ.id)
+      .eq("etablissement_id", etabId);
+    if (error) {
+      setMessage(`Erreur : ${error.message}`);
+      return;
+    }
+    setMessage("Champ personnalisé déplacé à la corbeille.");
+    await load();
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="card-soft p-6">
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold">Format des fiches étudiants</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Choisissez les champs optionnels à utiliser pour les futurs étudiants.</p>
+          </div>
+          <Settings2 className="icon-teal h-6 w-6" />
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">Chargement…</p>
+        ) : (
+          <div className="space-y-4">
+            <label className="flex items-start gap-3 rounded-[10px] border border-border p-3">
+              <input
+                type="checkbox"
+                checked={config.matricule_actif}
+                onChange={(e) => updateConfig({
+                  matricule_actif: e.target.checked,
+                  ...(e.target.checked ? {} : { matricule_obligatoire: false }),
+                })}
+                className="mt-1"
+              />
+              <span>
+                <span className="block text-sm font-semibold">Utiliser le matricule</span>
+                {config.matricule_actif && (
+                  <span className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={config.matricule_obligatoire}
+                      onChange={(e) => updateConfig({ matricule_obligatoire: e.target.checked })}
+                    />
+                    Rendre le matricule obligatoire
+                  </span>
+                )}
+              </span>
+            </label>
+
+            <label className="flex items-start gap-3 rounded-[10px] border border-border p-3">
+              <input
+                type="checkbox"
+                checked={config.telephone_actif}
+                onChange={(e) => updateConfig({
+                  telephone_actif: e.target.checked,
+                  ...(e.target.checked ? {} : { telephone_obligatoire: false }),
+                })}
+                className="mt-1"
+              />
+              <span>
+                <span className="block text-sm font-semibold">Utiliser le numéro de téléphone</span>
+                {config.telephone_actif && (
+                  <span className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={config.telephone_obligatoire}
+                      onChange={(e) => updateConfig({ telephone_obligatoire: e.target.checked })}
+                    />
+                    Rendre le téléphone obligatoire
+                  </span>
+                )}
+              </span>
+            </label>
+
+            <p className="rounded-[10px] bg-primary-soft p-3 text-sm text-primary">
+              Nom complet, adresse mail et date de naissance sont toujours obligatoires.
+            </p>
+            <button type="button" onClick={saveConfig} disabled={savingConfig} className="btn-forest">
+              {savingConfig ? "Enregistrement…" : "Enregistrer"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div className="card-soft p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-bold">Champs personnalisés</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Ajoutez les informations propres à votre établissement.</p>
+          </div>
+          <button type="button" onClick={openAddForm} className="btn-bf-outline">
+            <Plus className="h-4 w-4" /> Ajouter un champ personnalisé
+          </button>
+        </div>
+
+        {champs.length === 0 ? (
+          <p className="rounded-[10px] border border-dashed border-border p-4 text-sm text-muted-foreground">
+            Aucun champ personnalisé actif.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {champs.map((champ) => (
+              <div key={champ.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[10px] border border-border bg-surface p-3">
+                <div className="min-w-0">
+                  <p className="font-semibold">{champ.nom_champ}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {champ.type_champ === "liste_deroulante" ? "Liste déroulante" : "Texte libre"}
+                    {champ.obligatoire ? " · obligatoire" : " · facultatif"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <button type="button" onClick={() => openEditForm(champ)} className="text-primary underline">Modifier</button>
+                  <button type="button" onClick={() => softDeleteChamp(champ)} className="text-destructive underline">Supprimer</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {message && <p className="rounded bg-primary-soft p-3 text-sm text-primary">{message}</p>}
+
+      {showForm && (
+        <div className="card-soft border-2 border-primary/20 p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h3 className="font-bold">{editingId ? "Modifier le champ personnalisé" : "Ajouter un champ personnalisé"}</h3>
+            <button type="button" onClick={closeForm} className="text-sm text-muted-foreground underline">Annuler</button>
+          </div>
+          <form onSubmit={saveChamp} className="grid gap-3 md:grid-cols-2">
+            <SmInput label="Nom du champ" v={form.nom_champ} on={(v) => setForm({ ...form, nom_champ: v })} />
+            <div>
+              <label className="mb-1 block text-sm">Type</label>
+              <select
+                value={form.type_champ}
+                onChange={(e) => setForm({ ...form, type_champ: e.target.value as ChampType })}
+                className="w-full input-soft"
+              >
+                <option value="texte">Texte libre</option>
+                <option value="liste_deroulante">Liste déroulante</option>
+              </select>
+            </div>
+            {form.type_champ === "liste_deroulante" && (
+              <div className="md:col-span-2">
+                <SmInput
+                  label="Valeurs possibles (séparées par des virgules)"
+                  v={form.options}
+                  on={(v) => setForm({ ...form, options: v })}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">Exemple : L1, L2, L3, M1, M2</p>
+              </div>
+            )}
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <input
+                type="checkbox"
+                checked={form.obligatoire}
+                onChange={(e) => setForm({ ...form, obligatoire: e.target.checked })}
+              />
+              Rendre ce champ obligatoire
+            </label>
+            <div className="flex gap-2 md:col-span-2">
+              <button type="submit" disabled={savingChamp} className="btn-forest">
+                {savingChamp ? "Enregistrement…" : editingId ? "Enregistrer les modifications" : "Ajouter le champ"}
+              </button>
+              <button type="button" onClick={closeForm} className="btn-bf-outline">Annuler</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

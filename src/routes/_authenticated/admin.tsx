@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
@@ -68,11 +68,11 @@ function Dashboard() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
               <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
               <DrapeauBF className="h-4 w-6 shrink-0" />
               <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
-            </Link>
+            </div>
           </div>
           <span className="text-sm font-medium text-muted-foreground">{current?.l}</span>
         </div>

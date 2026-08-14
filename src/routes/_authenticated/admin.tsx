@@ -1186,7 +1186,7 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
 
   const TABLES: Record<string, { table: string; select: string; label: (r: any) => string; sousLabel?: (r: any) => string }> = {
     filieres: { table: "filieres", select: "id,nom,deleted_at", label: (r) => r.nom },
-    niveaux: { table: "niveaux", select: "id,nom,ordre,deleted_at", label: (r) => r.nom },
+    niveaux: { table: "niveaux", select: "id,nom,ordre,filiere_id,deleted_at", label: (r) => r.nom },
     etudiants: { table: "etudiants_pre_inscrits", select: "id,nom_complet,email,deleted_at", label: (r) => r.nom_complet, sousLabel: (r) => r.email },
     notes: { table: "notes", select: "id,valeur,type_evaluation,deleted_at", label: (r) => `Note : ${r.valeur}/20`, sousLabel: (r) => r.type_evaluation },
   };
@@ -1194,8 +1194,38 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
   async function load() {
     setLoading(true);
     const conf = TABLES[tab];
+
+    // La table "niveaux" n'a pas de colonne etablissement_id : le lien avec
+    // l'établissement passe par filiere_id -> filieres.etablissement_id.
+    // On ne peut donc pas filtrer avec .eq("etablissement_id", etabId)
+    // directement dessus (c'est ce qui empêchait les niveaux supprimés
+    // d'apparaître dans la corbeille). On récupère d'abord les filières
+    // (actives + en corbeille) de l'établissement, puis on filtre les
+    // niveaux supprimés par ces filiere_id.
+    if (tab === "niveaux") {
+      const { data: fil } = await supabase.from("filieres").select("id").eq("etablissement_id", etabId);
+      const filiereIds = (fil ?? []).map((f: { id: string }) => f.id);
+      if (filiereIds.length === 0) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("niveaux")
+        .select(conf.select)
+        .in("filiere_id", filiereIds)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+      const rows = (data ?? []) as any[];
+      setItems(rows.map((r) => ({
+        id: r.id, label: conf.label(r), sousLabel: conf.sousLabel?.(r), deleted_at: r.deleted_at, raw: r,
+      })));
+      setLoading(false);
+      return;
+    }
+
     let query: any = supabase.from(conf.table).select(conf.select).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
-    if (tab === "filieres" || tab === "niveaux" || tab === "etudiants") {
+    if (tab === "filieres" || tab === "etudiants") {
       query = supabase.from(conf.table).select(conf.select).eq("etablissement_id", etabId).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
     }
     const { data } = await query;

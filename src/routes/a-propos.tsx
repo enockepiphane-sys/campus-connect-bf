@@ -73,7 +73,7 @@ function Page() {
           href="mailto:campuslink226@gmail.com"
           className="font-medium text-primary underline"
         >
-          campuslink226@gmail.com
+          team@campuslink-bf.app
         </a>
       </p>
 

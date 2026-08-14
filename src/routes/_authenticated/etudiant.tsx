@@ -64,11 +64,11 @@ function Dashboard() {
     <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
       <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-            <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0" />
-            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
-          </Link>
+         <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+  <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+  <DrapeauBF className="h-4 w-6 shrink-0" />
+  <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Étudiant · {ctx.etabNom}</span>
+</Link>
           <div className="flex shrink-0 items-center gap-2">
             <ProfilAvatar nom={ctx.userName} email={ctx.userEmail} niveauLabel={ctx.niveauLabel} etabNom={ctx.etabNom} />
             <button

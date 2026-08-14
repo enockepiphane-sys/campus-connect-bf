@@ -21,9 +21,9 @@ export function isPushSupported(): boolean {
 export async function isPushSubscribed(): Promise<boolean> {
   if (!isPushSupported()) return false;
   try {
-    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
-    if (!registration) return false;
-    const sub = await registration.pushManager.getSubscription();
+    const existing = await navigator.serviceWorker.getRegistration();
+    if (!existing) return false; // aucun SW enregistré → pas d'abonnement possible
+    const sub = await existing.pushManager.getSubscription();
     return !!sub;
   } catch {
     return false;
@@ -98,7 +98,7 @@ export async function disablePushNotifications(): Promise<PushSetupResult> {
   try {
     if (!isPushSupported()) return { status: "unsupported" };
 
-    const registration = await navigator.serviceWorker.getRegistration("/sw.js");
+    const registration = await navigator.serviceWorker.getRegistration();
     if (!registration) return { status: "ok" };
 
     const subscription = await registration.pushManager.getSubscription();

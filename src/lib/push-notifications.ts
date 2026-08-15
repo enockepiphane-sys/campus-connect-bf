@@ -48,7 +48,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
  */
 export async function setupPushNotifications(): Promise<PushSetupResult> {
   try {
-    if (!isPushSupported()) return { status: "unsupported" };
+    if (!isPushSupported()) { console.log("[push] non supporté"); return { status: "unsupported" }; }
 
     const permission =
       Notification.permission === "granted"
@@ -57,38 +57,47 @@ export async function setupPushNotifications(): Promise<PushSetupResult> {
           ? "denied"
           : await Notification.requestPermission();
 
+    console.log("[push] permission:", permission);
     if (permission !== "granted") return { status: "denied" };
 
     const registration = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
     await navigator.serviceWorker.ready;
+    console.log("[push] service worker prêt", registration);
 
     let subscription = await registration.pushManager.getSubscription();
+    console.log("[push] abonnement existant ?", subscription);
     if (!subscription) {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
+      console.log("[push] nouvel abonnement créé", subscription);
     }
 
     const raw = subscription.toJSON();
     const endpoint = raw.endpoint;
     const p256dh = raw.keys?.p256dh;
     const auth = raw.keys?.auth;
+    console.log("[push] endpoint:", endpoint, "p256dh:", !!p256dh, "auth:", !!auth);
     if (!endpoint || !p256dh || !auth) {
       return { status: "error", reason: "Abonnement push incomplet" };
     }
 
-    const { data: userData } = await supabase.auth.getUser();
+    const { data: userData, error: userErr } = await supabase.auth.getUser();
+    console.log("[push] userData:", userData, "userErr:", userErr);
     const userId = userData.user?.id;
     if (!userId) return { status: "error", reason: "Utilisateur non connecté" };
 
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from("push_subscriptions")
-      .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "endpoint" });
+      .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "endpoint" })
+      .select();
+    console.log("[push] résultat upsert:", data, "erreur:", error);
     if (error) return { status: "error", reason: error.message };
 
     return { status: "ok" };
   } catch (err) {
+    console.log("[push] EXCEPTION setupPushNotifications:", err);
     return { status: "error", reason: err instanceof Error ? err.message : String(err) };
   }
 }

@@ -147,6 +147,7 @@ function EvenementsSociauxSection() {
         .from("evenements_sociaux")
         .select("id,titre,description,affiche_url,lien,date_evenement")
         .eq("actif", true)
+        .is("deleted_at", null)
         .order("date_evenement", { ascending: true, nullsFirst: false });
       const rows = (data as EvenementSocial[]) ?? [];
       setList(rows);

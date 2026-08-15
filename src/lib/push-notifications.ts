@@ -88,12 +88,22 @@ export async function setupPushNotifications(): Promise<PushSetupResult> {
     const userId = userData.user?.id;
     if (!userId) return { status: "error", reason: "Utilisateur non connecté" };
 
-    const { error, data } = await supabase
+    console.log("[push] URL Supabase utilisée:", (supabase as unknown as { supabaseUrl: string }).supabaseUrl);
+    console.log("[push] tentative upsert avec user_id:", userId, "endpoint:", endpoint);
+
+    const { error, data, status, statusText } = await supabase
       .from("push_subscriptions")
       .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "endpoint" })
       .select();
-    console.log("[push] résultat upsert:", data, "erreur:", error);
+    console.log("[push] résultat upsert:", data, "erreur:", error, "status HTTP:", status, statusText);
     if (error) return { status: "error", reason: error.message };
+
+    // Vérification indépendante : relire la ligne juste après pour confirmer sa présence réelle
+    const { data: verif, error: verifErr } = await supabase
+      .from("push_subscriptions")
+      .select("id")
+      .eq("endpoint", endpoint);
+    console.log("[push] vérification post-écriture:", verif, "erreur vérif:", verifErr);
 
     return { status: "ok" };
   } catch (err) {

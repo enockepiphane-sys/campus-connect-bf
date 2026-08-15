@@ -7,7 +7,7 @@ import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, Trash2 } from "lucide-react";
+import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, Trash2, Sun, Moon, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,
@@ -17,6 +17,11 @@ export const Route = createFileRoute("/_authenticated/etudiant")({
 
 function Dashboard() {
   const [ok, setOk] = useState<boolean | null>(null);
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
   const [ctx, setCtx] = useState<{ niveauId: string; niveauLabel: string; etabNom: string; userName: string; userEmail: string } | null>(null);
   const [tab, setTab] = useState<"annonces" | "edt" | "evenements" | "notes">("annonces");
 
@@ -86,7 +91,16 @@ function Dashboard() {
           </div>
           <div className="mt-2 flex items-center justify-between gap-3 sm:justify-start">
             <span className="truncate rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:hidden">Étudiant · {ctx.etabNom}</span>
-            <NotificationBell />
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setDarkMode((d) => !d)}
+                aria-label="Changer de thème"
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+              <NotificationBell />
+            </div>
           </div>
         </div>
       </header>
@@ -95,6 +109,7 @@ function Dashboard() {
         {tab === "annonces" && (
           <>
             <StatsBanner niveauId={ctx.niveauId} />
+            <SemaineCard niveauId={ctx.niveauId} />
             <Annonces niveauId={ctx.niveauId} />
           </>
         )}
@@ -398,13 +413,93 @@ function StatsBanner({ niveauId }: { niveauId: string }) {
 
 type AnnonceRow = { id: string; titre: string; contenu: string; created_at: string; is_urgent: boolean; comments_enabled: boolean; max_comments: number };
 
-function Annonces({ niveauId }: { niveauId: string }) {
-  const [list, setList] = useState<AnnonceRow[]>([]);
-  useEffect(() => {
-    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+const COULEURS_MATIERES = ["icon-green", "icon-teal", "icon-violet", "icon-terracotta", "icon-gold", "icon-blue"];
+function couleurMatiere(nom: string): string {
+  let hash = 0;
+  for (let i = 0; i < nom.length; i++) hash = nom.charCodeAt(i) + ((hash << 5) - hash);
+  return COULEURS_MATIERES[Math.abs(hash) % COULEURS_MATIERES.length];
+}
 
+function SemaineCard({ niveauId }: { niveauId: string }) {
+  const [list, setList] = useState<Cours[]>([]);
+  useEffect(() => {
+    supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut")
       .then(({ data }) => setList((data as never) ?? []));
   }, [niveauId]);
+
+  if (list.length === 0) return null;
+
+  const joursOuvres = [1, 2, 3, 4, 5];
+
+  return (
+    <div className="card-soft mb-6 p-5">
+      <h2 className="mb-3 flex items-center gap-2 font-bold">
+        <Calendar className="icon-gold h-5 w-5" />
+        Cette semaine
+      </h2>
+      <div className="grid grid-cols-5 gap-1.5">
+        {joursOuvres.map((j) => {
+          const coursJour = list.filter((c) => c.jour_semaine === j);
+          return (
+            <div key={j} className="min-w-0">
+              <p className="mb-1.5 text-center text-[10px] font-semibold uppercase text-muted-foreground">
+                {JOURS_LONGS[j - 1]?.slice(0, 3)}
+              </p>
+              <div className="relative h-36 rounded-[10px] bg-muted/50">
+                {coursJour.map((c) => {
+                  const debut = parseFloat(c.heure_debut.slice(0, 2)) + parseFloat(c.heure_debut.slice(3, 5)) / 60;
+                  const fin = parseFloat(c.heure_fin.slice(0, 2)) + parseFloat(c.heure_fin.slice(3, 5)) / 60;
+                  const top = Math.max(0, ((debut - 7) / 11) * 100);
+                  const height = Math.max(8, ((fin - debut) / 11) * 100);
+                  return (
+                    <div
+                      key={c.id}
+                      className={`absolute left-0.5 right-0.5 overflow-hidden rounded-[6px] bg-primary-soft p-1 ${couleurMatiere(c.matiere)}`}
+                      style={{ top: `${top}%`, height: `${height}%` }}
+                      title={`${c.matiere} · ${hhmm(c.heure_debut)}–${hhmm(c.heure_fin)}${c.salle ? ` · ${c.salle}` : ""}`}
+                    >
+                      <p className="truncate text-[8px] font-bold leading-tight">{c.matiere}</p>
+                      <p className="truncate text-[7px] leading-tight opacity-80">{hhmm(c.heure_debut)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function Annonces({ niveauId }: { niveauId: string }) {
+  const [list, setList] = useState<AnnonceRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [recherche, setRecherche] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    supabase.from("annonces").select("id,titre,contenu,created_at,is_urgent,comments_enabled,max_comments").eq("niveau_id", niveauId).order("created_at", { ascending: false })
+      .then(({ data }) => { setList((data as never) ?? []); setLoading(false); });
+  }, [niveauId]);
+
+  const filtered = list.filter(
+    (a) => a.titre.toLowerCase().includes(recherche.toLowerCase()) || a.contenu?.toLowerCase().includes(recherche.toLowerCase())
+  );
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card-soft animate-pulse p-5">
+            <div className="mb-2 h-3 w-16 rounded-full bg-muted" />
+            <div className="mb-2 h-4 w-2/3 rounded bg-muted" />
+            <div className="h-3 w-1/2 rounded bg-muted" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   if (list.length === 0) {
     return (
@@ -416,8 +511,18 @@ function Annonces({ niveauId }: { niveauId: string }) {
   }
 
   return (
-    <div className="space-y-3">
-      {list.map((a, i) => {
+    <div>
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+          placeholder="Rechercher une annonce…"
+          className="card-soft w-full py-2.5 pl-10 pr-4 text-sm outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+      <div className="space-y-3">
+      {filtered.map((a, i) => {
         const recent = Date.now() - new Date(a.created_at).getTime() < 7 * 864e5;
         return (
           <article key={a.id} className="card-soft p-5">
@@ -442,6 +547,10 @@ function Annonces({ niveauId }: { niveauId: string }) {
           </article>
         );
       })}
+      {filtered.length === 0 && (
+        <p className="py-8 text-center text-sm text-muted-foreground">Aucune annonce ne correspond à « {recherche} ».</p>
+      )}
+      </div>
     </div>
   );
 }

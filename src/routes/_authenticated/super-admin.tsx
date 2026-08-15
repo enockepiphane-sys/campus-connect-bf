@@ -1,9 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper } from "lucide-react";
+import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw } from "lucide-react";
 
 const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 
@@ -57,13 +57,13 @@ export const Route = createFileRoute("/_authenticated/super-admin")({
   component: Dashboard,
 });
 
-type Etab = { id: string; nom: string; email: string | null; telephone: string | null; adresse: string | null; description: string | null; statut: string };
-type PreAdmin = { id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean; etablissement_id: string };
+type Etab = { id: string; nom: string; email: string | null; telephone: string | null; adresse: string | null; description: string | null; statut: string; deleted_at?: string | null };
+type PreAdmin = { id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean; etablissement_id: string; deleted_at?: string | null };
 type Demande = { id: string; nom_etablissement: string; nom_contact: string; email_contact: string; telephone_contact: string | null; message: string | null; statut: string; created_at: string };
-type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean };
+type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean; deleted_at?: string | null };
 
 function Dashboard() {
-  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "evenements" | "historique">("etabs");
+  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "evenements" | "historique" | "corbeille">("etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -94,39 +94,51 @@ function Dashboard() {
 
   return (
     <div className="bg-app min-h-screen text-foreground">
-      <header className="border-b border-border bg-surface">
+      <header
+        className="sticky top-0 z-30 border-b border-border"
+        style={{ background: "linear-gradient(120deg, #0F8A44 0%, #12A150 55%, #F0C419 100%)" }}
+      >
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
-          <Link to="/" className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
             <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
-            <DrapeauBF className="h-4 w-6 shrink-0" />
-            <span className="rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-medium text-primary sm:px-3 sm:py-1 sm:text-xs">Super Admin</span>
-          </Link>
-          <button onClick={signOutAndGoHome} className="btn-bf-outline shrink-0 text-sm"><LogOut className="icon-danger h-4 w-4" />Déconnexion</button>
+            <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px] shadow-sm" />
+            <span className="rounded-full bg-white/20 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm sm:px-3 sm:py-1 sm:text-xs">Super Admin</span>
+          </div>
+          <button
+            onClick={signOutAndGoHome}
+            aria-label="Déconnexion"
+            className="inline-flex shrink-0 items-center justify-center rounded-[10px] border border-white/40 bg-white/10 p-2 text-sm text-white backdrop-blur-sm transition hover:bg-white/20 sm:px-4 sm:py-2"
+          >
+            <LogOut className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Déconnexion</span>
+          </button>
         </div>
       </header>
 
       <nav className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:px-6 sm:py-0">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:flex-wrap sm:px-6 sm:py-2">
           {[
             { k: "etabs", l: "Établissements", i: <Building2 className="icon-green h-4 w-4" /> },
             { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="icon-blue h-4 w-4" /> },
             { k: "demandes", l: "Demandes partenariat", i: <Mail className="icon-terracotta h-4 w-4" /> },
             { k: "evenements", l: "Événements sociaux", i: <PartyPopper className="icon-gold h-4 w-4" /> },
+            { k: "corbeille", l: "Corbeille", i: <Trash2 className="text-destructive h-4 w-4" /> },
             { k: "historique", l: "Historique", i: <History className="icon-blue h-4 w-4" /> },
           ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k as never)}
-              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition sm:w-auto sm:rounded-none sm:border-b-2 sm:py-3 ${tab === t.k ? "bg-primary-soft text-primary sm:bg-transparent sm:border-primary" : "text-muted-foreground hover:bg-muted/50 sm:border-transparent sm:hover:bg-transparent hover:text-foreground"}`}>
+              className={`inline-flex w-full items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition sm:w-auto ${tab === t.k ? "bg-primary-soft text-primary shadow-sm" : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"}`}>
               {t.i}{t.l}
             </button>
           ))}
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {tab === "etabs" && <EtablissementsPanel />}
         {tab === "preadmins" && <PreAdminsPanel />}
         {tab === "demandes" && <DemandesPanel />}
         {tab === "evenements" && <EvenementsSociauxPanel />}
+        {tab === "corbeille" && <CorbeilleSuperAdminPanel />}
         {tab === "historique" && <HistoriquePanel />}
       </main>
     </div>
@@ -142,7 +154,7 @@ function EtablissementsPanel() {
   const [toDelete, setToDelete] = useState<Etab | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("etablissements").select("*").order("nom");
+    const { data } = await supabase.from("etablissements").select("*").is("deleted_at", null).order("nom");
     setList((data as Etab[]) ?? []);
   }
   useEffect(() => { load(); }, []);
@@ -172,8 +184,8 @@ function EtablissementsPanel() {
   }
 
   async function del(id: string, nom: string) {
-    await supabase.from("etablissements").delete().eq("id", id);
-    logAction("suppression", "etablissement", nom);
+    await supabase.from("etablissements").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    logAction("suppression", "etablissement", nom, "Déplacé vers la corbeille");
     load();
   }
 
@@ -239,14 +251,14 @@ function PreAdminsPanel() {
   const [toDelete, setToDelete] = useState<PreAdmin | null>(null);
 
   useEffect(() => {
-    supabase.from("etablissements").select("*").order("nom").then(({ data }) => {
+    supabase.from("etablissements").select("*").is("deleted_at", null).order("nom").then(({ data }) => {
       setEtabs((data as Etab[]) ?? []);
       if (data && data.length && !selEtab) setSelEtab(data[0].id);
     });
   }, []);
   useEffect(() => {
     if (!selEtab) return;
-    supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).order("nom_complet")
+    supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).is("deleted_at", null).order("nom_complet")
       .then(({ data }) => setList((data as PreAdmin[]) ?? []));
   }, [selEtab]);
 
@@ -259,13 +271,13 @@ function PreAdminsPanel() {
     if (error) { setMsg(error.message); return; }
     logAction("creation", "admin_pre_autorise", form.nom_complet, `Email : ${form.email.trim().toLowerCase()}`);
     setForm({ nom_complet: "", email: "", date_naissance: "" });
-    const { data } = await supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).order("nom_complet");
+    const { data } = await supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).is("deleted_at", null).order("nom_complet");
     setList((data as PreAdmin[]) ?? []);
   }
 
   async function del(id: string, nomComplet: string) {
-    await supabase.from("admins_pre_autorises").delete().eq("id", id);
-    logAction("suppression", "admin_pre_autorise", nomComplet);
+    await supabase.from("admins_pre_autorises").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    logAction("suppression", "admin_pre_autorise", nomComplet, "Déplacé vers la corbeille");
     setList((l) => l.filter((x) => x.id !== id));
   }
 
@@ -373,7 +385,7 @@ function EvenementsSociauxPanel() {
   const [toDelete, setToDelete] = useState<EvenementSocial | null>(null);
 
   async function load() {
-    const { data } = await supabase.from("evenements_sociaux").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("evenements_sociaux").select("*").is("deleted_at", null).order("created_at", { ascending: false });
     const rows = (data as EvenementSocial[]) ?? [];
     setList(rows);
     const entries = await Promise.all(
@@ -427,13 +439,13 @@ function EvenementsSociauxPanel() {
   }
 
   async function del(id: string, titre: string) {
-    await supabase.from("evenements_sociaux").delete().eq("id", id);
-    logAction("suppression", "evenement_social", titre);
+    await supabase.from("evenements_sociaux").update({ deleted_at: new Date().toISOString() }).eq("id", id);
+    logAction("suppression", "evenement_social", titre, "Déplacé vers la corbeille");
     load();
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
       {toDelete && (
         <ConfirmDeleteModal
           title="Supprimer un événement social"
@@ -516,6 +528,100 @@ function EvenementsSociauxPanel() {
           {editing && <button type="button" onClick={resetForm} className="btn-bf-outline">Annuler</button>}
         </div>
       </form>
+    </div>
+  );
+}
+
+// ============ Corbeille (centralisée) ============
+type ItemCorbeilleSA = { id: string; label: string; sousLabel?: string; deleted_at: string; raw: Record<string, unknown> };
+
+function CorbeilleSuperAdminPanel() {
+  const [tab, setTab] = useState<"etabs" | "preadmins" | "evenements">("etabs");
+  const [items, setItems] = useState<ItemCorbeilleSA[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const TABLES: Record<string, { table: string; select: string; label: (r: Record<string, unknown>) => string; sousLabel?: (r: Record<string, unknown>) => string; cibleType: CibleType }> = {
+    etabs: { table: "etablissements", select: "id,nom,email,deleted_at", label: (r) => String(r.nom), sousLabel: (r) => (r.email ? String(r.email) : ""), cibleType: "etablissement" },
+    preadmins: { table: "admins_pre_autorises", select: "id,nom_complet,email,deleted_at", label: (r) => String(r.nom_complet), sousLabel: (r) => String(r.email), cibleType: "admin_pre_autorise" },
+    evenements: { table: "evenements_sociaux", select: "id,titre,deleted_at", label: (r) => String(r.titre), cibleType: "evenement_social" },
+  };
+
+  async function load() {
+    setLoading(true);
+    const conf = TABLES[tab];
+    const { data } = await supabase.from(conf.table).select(conf.select).not("deleted_at", "is", null).order("deleted_at", { ascending: false });
+    const rows = (data ?? []) as Record<string, unknown>[];
+    setItems(rows.map((r) => ({
+      id: String(r.id), label: conf.label(r), sousLabel: conf.sousLabel?.(r), deleted_at: String(r.deleted_at), raw: r,
+    })));
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, [tab]);
+
+  async function restaurer(item: ItemCorbeilleSA) {
+    const conf = TABLES[tab];
+    await supabase.from(conf.table).update({ deleted_at: null }).eq("id", item.id);
+    logAction("modification", conf.cibleType, item.label, "Restauré depuis la corbeille");
+    load();
+  }
+
+  async function supprimerDefinitivement(item: ItemCorbeilleSA) {
+    if (!confirm(`Supprimer définitivement "${item.label}" ? Cette action est IRRÉVERSIBLE.`)) return;
+    const conf = TABLES[tab];
+    await supabase.from(conf.table).delete().eq("id", item.id);
+    logAction("suppression", conf.cibleType, item.label, "Suppression définitive depuis la corbeille");
+    load();
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+
+  const onglets = [
+    { k: "etabs", l: "Établissements" },
+    { k: "preadmins", l: "Pré-admins" },
+    { k: "evenements", l: "Événements sociaux" },
+  ] as const;
+
+  return (
+    <div className="card-glass rounded-xl p-6">
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-bold">
+        <Trash2 className="text-destructive h-5 w-5" /> Corbeille
+      </h2>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {onglets.map((o) => (
+          <button
+            key={o.k}
+            onClick={() => setTab(o.k)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${tab === o.k ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+          >
+            {o.l}
+          </button>
+        ))}
+      </div>
+
+      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {!loading && items.length === 0 && <p className="text-sm text-muted-foreground">Corbeille vide.</p>}
+
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-muted p-3 text-sm">
+            <div className="min-w-0">
+              <span className="font-semibold text-foreground">{item.label}</span>
+              {item.sousLabel && <span className="ml-2 text-xs text-muted-foreground">{item.sousLabel}</span>}
+              <div className="text-xs text-muted-foreground">Supprimé le {formatDate(item.deleted_at)}</div>
+            </div>
+            <div className="flex shrink-0 items-center gap-3">
+              <button onClick={() => restaurer(item)} className="inline-flex items-center gap-1 text-xs font-semibold text-primary underline">
+                <RotateCcw className="h-3 w-3" /> Restaurer
+              </button>
+              <button onClick={() => supprimerDefinitivement(item)} className="inline-flex items-center gap-1 text-xs font-semibold text-destructive underline">
+                <Trash2 className="h-3 w-3" /> Suppr. définitivement
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

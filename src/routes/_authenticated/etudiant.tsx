@@ -226,11 +226,16 @@ function NotificationBell() {
       if (subscribed) {
         const res = await disablePushNotifications();
         if (res.status === "ok") setSubscribed(false);
+        else if (res.status === "error") alert("Erreur désactivation : " + res.reason);
       } else {
         const res = await setupPushNotifications();
         if (res.status === "ok") setSubscribed(true);
         else if (res.status === "denied") {
           alert("Notifications refusées. Active-les dans les réglages du navigateur pour ce site si tu changes d'avis.");
+        } else if (res.status === "error") {
+          alert("Erreur activation : " + res.reason);
+        } else if (res.status === "unsupported") {
+          alert("Notifications non supportées par ce navigateur.");
         }
       }
     } finally {
@@ -269,7 +274,7 @@ function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="fixed left-3 right-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-[10px] border border-border bg-surface p-3 shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-11 sm:w-80">
+          <div className="fixed left-3 right-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-[10px] border border-border bg-surface p-3 shadow-lg sm:left-3 sm:right-auto sm:w-80">
             <div className="mb-2 flex items-center justify-between gap-2 border-b border-border pb-2">
               <span className="text-sm font-bold">Notifications</span>
               <div className="flex items-center gap-2">

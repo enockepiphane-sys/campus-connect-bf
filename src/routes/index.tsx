@@ -162,8 +162,6 @@ function EvenementsSociauxSection() {
     })();
   }, []);
 
-  if (!loading && list.length === 0) return null;
-
   return (
     <section className="mx-auto mt-16 max-w-5xl">
       <div className="mb-8 text-center">
@@ -177,6 +175,12 @@ function EvenementsSociauxSection() {
       </div>
 
       {loading && <p className="text-center text-sm text-muted-foreground">Chargement…</p>}
+
+      {!loading && list.length === 0 && (
+        <p className="text-center text-sm text-muted-foreground">
+          Aucun événement pour le moment. Revenez bientôt pour découvrir les prochains événements.
+        </p>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2">
         {list.map((ev) => {

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Pencil } from "lucide-react";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Search } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
@@ -57,42 +57,31 @@ function Dashboard() {
 
   return (
     <div className="bg-app min-h-screen w-full max-w-full overflow-x-hidden text-foreground">
-      <header className="sticky top-0 z-30 overflow-hidden text-white shadow-[var(--shadow-elegant)]" style={{ background: "linear-gradient(120deg, #0F8A44 0%, #167d5e 45%, #D9A61A 130%)" }}>
+      <header className="sticky top-0 z-30 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               aria-label="Ouvrir le menu"
               onClick={() => setMenu(true)}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-white/15 text-white backdrop-blur-sm transition hover:bg-white/25"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-foreground transition hover:bg-muted"
             >
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-              <span className="whitespace-nowrap text-white">Campus<span className="text-[#FDE9B0]">Link</span></span>
-              <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px]" />
+              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+              <DrapeauBF className="h-4 w-6 shrink-0" />
+              <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground sm:px-3 sm:py-1 sm:text-xs">Admin · {etabNom}</span>
             </div>
           </div>
-          <div className="flex min-w-0 items-center gap-2">
-            {current?.i && (
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/20 backdrop-blur-sm">
-                <current.i className="h-4 w-4 text-white" strokeWidth={2.2} />
-              </span>
-            )}
-            <span className="truncate text-sm font-semibold text-white sm:text-base">{current?.l}</span>
-          </div>
-        </div>
-        <div className="mx-auto max-w-7xl px-4 pb-3 sm:px-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-medium text-white backdrop-blur-sm sm:text-xs">
-            Administrateur · {etabNom}
-          </span>
+          <span className="text-sm font-medium text-muted-foreground">{current?.l}</span>
         </div>
       </header>
 
       {menu && (
         <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true">
-          <aside className="flex w-72 max-w-[85%] flex-col bg-surface p-4 shadow-2xl">
-            <div className="mb-5 flex items-center justify-between">
+          <aside className="flex w-72 max-w-[85%] flex-col border-r border-border bg-surface p-4 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
               <span className="font-display text-base font-bold">Menu</span>
               <button
                 type="button"
@@ -103,16 +92,14 @@ function Dashboard() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="flex-1 space-y-1.5">
+            <nav className="flex-1 space-y-1">
               {sections.map((s) => (
                 <button
                   key={s.k}
                   onClick={() => { setTab(s.k as never); setMenu(false); }}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition ${tab === s.k ? "bg-primary text-primary-foreground shadow-[var(--shadow-elegant)]" : "text-muted-foreground hover:bg-muted"}`}
+                  className={`flex w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-sm font-medium transition ${tab === s.k ? "bg-primary-soft text-primary" : "text-muted-foreground hover:bg-muted"}`}
                 >
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg ${tab === s.k ? "bg-white/20" : "bg-muted"}`}>
-                    <s.i className={`h-4 w-4 ${tab === s.k ? "text-primary-foreground" : s.c}`} />
-                  </span>
+                  <s.i className={`h-4 w-4 shrink-0 ${s.c}`} />
                   {s.l}
                 </button>
               ))}
@@ -137,31 +124,6 @@ function Dashboard() {
       </main>
     </div>
   );
-}
-
-// -------------- Petits composants d'action réutilisables --------------
-function ActionBtn({ onClick, variant = "default", icon: Icon, label }: { onClick: () => void; variant?: "default" | "danger"; icon: typeof Pencil; label: string }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition ${variant === "danger" ? "bg-destructive/10 text-destructive hover:bg-destructive/20" : "bg-primary-soft text-primary hover:bg-primary/20"}`}
-    >
-      <Icon className="h-3.5 w-3.5" />
-    </button>
-  );
-}
-
-function Pill({ children, tone = "default" }: { children: React.ReactNode; tone?: "default" | "green" | "gold" | "muted" }) {
-  const tones: Record<string, string> = {
-    default: "bg-primary-soft text-primary",
-    green: "bg-primary-soft text-primary",
-    gold: "bg-accent text-accent-foreground",
-    muted: "bg-muted text-muted-foreground",
-  };
-  return <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium ${tones[tone]}`}>{children}</span>;
 }
 
 // -------------- Structure : Filières + Niveaux --------------
@@ -231,76 +193,54 @@ function StructurePanel({ etabId }: { etabId: string }) {
 
   return (
     <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-      <div className="card-soft min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><BookOpen className="h-4 w-4" /></span>
-          <h2 className="font-bold">Filières</h2>
-          <Pill>{filieres.length}</Pill>
-        </div>
-        <div className="p-6">
-          <form onSubmit={addFil} className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-            <input value={nfil} onChange={(e) => setNfil(e.target.value)} placeholder="Nom de la filière"
-              className="input-soft min-w-0 w-full" />
-            <button className="btn-forest w-full sm:w-auto"><Plus className="h-4 w-4" />Ajouter</button>
-          </form>
-          <ul className="space-y-2">
-            {filieres.map((f) => (
-              <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
-                <span className="truncate font-medium">{f.nom}</span>
-                <ActionBtn onClick={() => setFilASupprimer(f)} variant="danger" icon={Trash2} label="Supprimer la filière" />
-              </li>
-            ))}
-            {filieres.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune filière pour le moment.</p>}
-          </ul>
-        </div>
+      <div className="card-soft min-w-0 p-6">
+        <h2 className="mb-3 font-bold">Filières</h2>
+        <form onSubmit={addFil} className="mb-3 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <input value={nfil} onChange={(e) => setNfil(e.target.value)} placeholder="Nom de la filière"
+            className="input-soft min-w-0 w-full" />
+          <button className="btn-forest w-full sm:w-auto">Ajouter</button>
+        </form>
+        <ul className="space-y-2">
+          {filieres.map((f) => (
+            <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+              <span className="truncate">{f.nom}</span>
+              <button onClick={() => setFilASupprimer(f)} className="text-xs text-destructive underline">Suppr.</button>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <div className="card-soft min-w-0 overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><GraduationCap className="h-4 w-4" /></span>
-          <h2 className="font-bold">Niveaux</h2>
-          <Pill>{niveaux.length}</Pill>
-        </div>
-        <div className="p-6">
-          <form onSubmit={addNiv} className="mb-4 space-y-2">
-            <select value={nniv.filiere_id} onChange={(e) => setNniv({ ...nniv, filiere_id: e.target.value })}
-              className="w-full input-soft" required>
-              <option value="">— Filière —</option>
-              {filieres.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
-            </select>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
-              <input value={nniv.nom} onChange={(e) => setNniv({ ...nniv, nom: e.target.value })} placeholder="Nom (ex: L1)"
-                className="input-soft min-w-0 w-full" />
-              <input type="number" value={nniv.ordre} onChange={(e) => setNniv({ ...nniv, ordre: e.target.value })}
-                className="input-soft min-w-0 w-full" />
-              <button className="btn-forest w-full sm:w-auto"><Plus className="h-4 w-4" />Ajouter</button>
-            </div>
-          </form>
-          <ul className="space-y-3">
-            {filieres.map((f) => {
-              const niveauxFiliere = niveaux.filter((n) => n.filiere_id === f.id);
-              return (
-                <li key={f.id}>
-                  <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                    {f.nom}
+      <div className="card-soft min-w-0 p-6">
+        <h2 className="mb-3 font-bold">Niveaux</h2>
+        <form onSubmit={addNiv} className="mb-3 space-y-2">
+          <select value={nniv.filiere_id} onChange={(e) => setNniv({ ...nniv, filiere_id: e.target.value })}
+            className="w-full input-soft" required>
+            <option value="">— Filière —</option>
+            {filieres.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
+          </select>
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
+            <input value={nniv.nom} onChange={(e) => setNniv({ ...nniv, nom: e.target.value })} placeholder="Nom (ex: L1)"
+              className="input-soft min-w-0 w-full" />
+            <input type="number" value={nniv.ordre} onChange={(e) => setNniv({ ...nniv, ordre: e.target.value })}
+              className="input-soft min-w-0 w-full" />
+            <button className="btn-forest w-full sm:w-auto">Ajouter</button>
+          </div>
+        </form>
+        <ul className="space-y-2">
+          {filieres.map((f) => (
+            <li key={f.id}>
+              <div className="mb-1 text-xs font-bold text-muted-foreground">{f.nom}</div>
+              <div className="space-y-1">
+                {niveaux.filter((n) => n.filiere_id === f.id).map((n) => (
+                  <div key={n.id} className="flex min-w-0 items-center justify-between gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+                    <span className="truncate">{n.ordre}. {n.nom}</span>
+                    <button onClick={() => setNivASupprimer(n)} className="text-xs text-destructive underline">Suppr.</button>
                   </div>
-                  <div className="space-y-1.5">
-                    {niveauxFiliere.map((n) => (
-                      <div key={n.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
-                        <span className="flex min-w-0 items-center gap-2 truncate">
-                          <Pill tone="gold">{n.ordre}</Pill>
-                          <span className="truncate font-medium">{n.nom}</span>
-                        </span>
-                        <ActionBtn onClick={() => setNivASupprimer(n)} variant="danger" icon={Trash2} label="Supprimer le niveau" />
-                      </div>
-                    ))}
-                    {niveauxFiliere.length === 0 && <p className="py-1 text-xs text-muted-foreground">Aucun niveau.</p>}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+                ))}
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       {filASupprimer && (
@@ -363,7 +303,19 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [confirmerToutSupprimer, setConfirmerToutSupprimer] = useState(false);
   const [config, setConfig] = useState<ChampsOptionnels>({ matricule: false, telephone: false });
   const [showImportExcel, setShowImportExcel] = useState(false);
+  const [recherche, setRecherche] = useState("");
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
+
+  const filteredList = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((e) =>
+      e.nom_complet.toLowerCase().includes(q) ||
+      e.email.toLowerCase().includes(q) ||
+      (e.matricule ?? "").toLowerCase().includes(q) ||
+      (e.telephone ?? "").toLowerCase().includes(q)
+    );
+  }, [list, recherche]);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -494,86 +446,98 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
-        <label className="mb-2 block text-sm font-medium text-muted-foreground">Niveau</label>
+        <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Users className="h-4 w-4" /></span>
-                <h3 className="font-bold">Étudiants — {niv?.label}</h3>
-                <Pill>{list.length}</Pill>
-              </div>
+          <div className="card-soft p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold">Étudiants pré-inscrits ({list.length}) — {niv?.label}</h3>
               <div className="flex items-center gap-2">
                 <button onClick={() => setShowImportExcel((v) => !v)} className="btn-bf-outline text-sm">
                   <Upload className="icon-tinted h-4 w-4" />Import Excel
                 </button>
                 {list.length > 0 && (
-                  <ActionBtn onClick={() => setConfirmerToutSupprimer(true)} variant="danger" icon={Trash2} label="Supprimer tous les étudiants" />
+                  <button onClick={() => setConfirmerToutSupprimer(true)} className="text-xs text-destructive underline">
+                    Supprimer tout
+                  </button>
                 )}
               </div>
             </div>
 
-            <div className="p-6">
-              {showImportExcel && (
-                <div className="mb-4 space-y-3 rounded-xl border border-border bg-surface p-4">
-                  <h4 className="text-sm font-bold">Import Excel (.xlsx)</h4>
-                  <p className="text-xs text-muted-foreground">
-                    Colonnes obligatoires reconnues automatiquement : nom complet (ou nom + prénom séparés), email, date de naissance (tout format accepté).
-                  </p>
-                  <div className="flex flex-wrap gap-4">
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={config.matricule} onChange={(e) => sauverConfig({ ...config, matricule: e.target.checked })} />
-                      Fichier avec matricule
-                    </label>
-                    <label className="flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={config.telephone} onChange={(e) => sauverConfig({ ...config, telephone: e.target.checked })} />
-                      Fichier avec téléphone
-                    </label>
-                  </div>
-                  <label className="btn-forest inline-block cursor-pointer text-sm">
-                    Choisir le fichier Excel
-                    <input hidden type="file" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel(f); e.target.value = ""; }} />
+            {showImportExcel && (
+              <div className="mb-4 rounded-xl border border-border bg-surface p-4 space-y-3">
+                <h4 className="text-sm font-bold">Import Excel (.xlsx)</h4>
+                <p className="text-xs text-muted-foreground">
+                  Colonnes obligatoires reconnues automatiquement : nom complet (ou nom + prénom séparés), email, date de naissance (tout format accepté).
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={config.matricule} onChange={(e) => sauverConfig({ ...config, matricule: e.target.checked })} />
+                    Fichier avec matricule
                   </label>
-                  {busy && <p className="text-xs text-muted-foreground">Import en cours…</p>}
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={config.telephone} onChange={(e) => sauverConfig({ ...config, telephone: e.target.checked })} />
+                    Fichier avec téléphone
+                  </label>
                 </div>
-              )}
-
-              {msg && <div className="mb-3 rounded-lg bg-primary-soft p-2.5 text-sm text-primary">{msg}</div>}
-              <div className="space-y-2">
-                {list.map((e) => (
-                  <div key={e.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:shadow-md">
-                    <div className="mb-2 flex items-start justify-between gap-2">
-                      <h4 className="font-semibold leading-tight">{e.nom_complet}</h4>
-                      <Pill tone={e.inscrit ? "green" : "muted"}>{e.inscrit ? "✓ Inscrit" : "En attente"}</Pill>
-                    </div>
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-                      <div className="text-muted-foreground">Email</div>
-                      <div className="truncate text-right">{e.email}</div>
-                      <div className="text-muted-foreground">Naissance</div>
-                      <div className="text-right">{e.date_naissance}</div>
-                      {config.matricule && e.matricule && (
-                        <>
-                          <div className="text-muted-foreground">Matricule</div>
-                          <div className="text-right">{e.matricule}</div>
-                        </>
-                      )}
-                      {config.telephone && e.telephone && (
-                        <>
-                          <div className="text-muted-foreground">Téléphone</div>
-                          <div className="text-right">{e.telephone}</div>
-                        </>
-                      )}
-                    </div>
-                    <div className="mt-3 flex justify-end border-t border-border pt-2">
-                      <ActionBtn onClick={() => setEtuASupprimer(e)} variant="danger" icon={Trash2} label="Supprimer l'étudiant" />
-                    </div>
-                  </div>
-                ))}
-                {list.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucun étudiant.</p>}
+                <label className="btn-forest inline-block cursor-pointer text-sm">
+                  Choisir le fichier Excel
+                  <input hidden type="file" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f) importExcel(f); e.target.value = ""; }} />
+                </label>
+                {busy && <p className="text-xs text-muted-foreground">Import en cours…</p>}
               </div>
+            )}
+
+            {msg && <div className="mb-3 rounded bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
+
+            {list.length > 0 && (
+              <div className="relative mb-3">
+                <Search className="icon-tinted absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
+                <input
+                  value={recherche}
+                  onChange={(e) => setRecherche(e.target.value)}
+                  placeholder="Rechercher un étudiant (nom, email, matricule, téléphone)…"
+                  className="w-full rounded-full border border-input bg-surface py-2.5 pl-10 pr-4 text-sm outline-none focus:border-primary"
+                />
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {filteredList.map((e) => (
+                <div key={e.id} className="rounded-xl border border-border bg-surface p-3">
+                  <div className="mb-2 flex items-start justify-between gap-2">
+                    <h4 className="font-semibold leading-tight">{e.nom_complet}</h4>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${e.inscrit ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {e.inscrit ? "✓ Inscrit" : "En attente"}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
+                    <div className="text-muted-foreground">Email</div>
+                    <div className="truncate text-right">{e.email}</div>
+                    <div className="text-muted-foreground">Naissance</div>
+                    <div className="text-right">{e.date_naissance}</div>
+                    {config.matricule && e.matricule && (
+                      <>
+                        <div className="text-muted-foreground">Matricule</div>
+                        <div className="text-right">{e.matricule}</div>
+                      </>
+                    )}
+                    {config.telephone && e.telephone && (
+                      <>
+                        <div className="text-muted-foreground">Téléphone</div>
+                        <div className="text-right">{e.telephone}</div>
+                      </>
+                    )}
+                  </div>
+                  <button onClick={() => setEtuASupprimer(e)} className="mt-2 text-xs text-destructive underline">Supprimer</button>
+                </div>
+              ))}
+              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant.</p>}
+              {list.length > 0 && filteredList.length === 0 && (
+                <p className="text-sm text-muted-foreground">Aucun étudiant ne correspond à « {recherche} ».</p>
+              )}
             </div>
           </div>
 
@@ -584,7 +548,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
             <SmInput label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
             {config.matricule && <SmInput label="Matricule" v={form.matricule} on={(v) => setForm({ ...form, matricule: v })} />}
             {config.telephone && <SmInput label="Téléphone" v={form.telephone} on={(v) => setForm({ ...form, telephone: v })} />}
-            <button className="btn-forest w-full"><Plus className="h-4 w-4" />Ajouter</button>
+            <button className="btn-forest w-full">Ajouter</button>
           </form>
         </div>
       )}
@@ -715,106 +679,92 @@ function MatieresPanel({ etabId }: { etabId: string }) {
   return (
     <div className="w-full min-w-0 space-y-6">
       <div className="card-soft p-6">
-        <label className="mb-2 block text-sm font-medium text-muted-foreground">Niveau</label>
+        <label className="mb-2 block text-sm">Niveau</label>
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
 
       {niveauId && (
         <div className="grid min-w-0 gap-6 lg:grid-cols-2">
-          <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><GraduationCap className="h-4 w-4" /></span>
-              <h3 className="font-bold">Matières</h3>
-              <Pill>{matieres.length}</Pill>
-            </div>
-            <div className="p-6">
-              <form onSubmit={addMat} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
-                <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
-                  className="input-soft col-span-2 min-w-0 sm:col-span-1" />
-                <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
-                  className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
-                <button className="btn-forest col-span-2 sm:col-span-1"><Plus className="h-4 w-4" />Ajouter</button>
-              </form>
-              <ul className="space-y-1.5">
-                {matieres.map((m) => (
-                  <li key={m.id}>
-                    <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
-                      className={`w-full rounded-xl border p-3 text-left text-sm shadow-sm transition ${selMat === m.id ? "border-primary bg-primary-soft shadow-md" : "border-border bg-surface hover:shadow-md"}`}>
-                      <span className="font-semibold">{m.nom}</span>{" "}
-                      <Pill tone="gold">{m.credits} crédit{m.credits > 1 ? "s" : ""}</Pill>
-                    </button>
-                  </li>
-                ))}
-                {matieres.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune matière.</p>}
-              </ul>
-            </div>
+          <div className="card-soft min-w-0 p-6">
+            <h3 className="mb-3 font-bold">Matières</h3>
+            <form onSubmit={addMat} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
+              <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
+                className="input-soft col-span-2 min-w-0 sm:col-span-1" />
+              <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
+                className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
+              <button className="btn-forest col-span-2 sm:col-span-1">Ajouter</button>
+            </form>
+            <ul className="space-y-1">
+              {matieres.map((m) => (
+                <li key={m.id}>
+                  <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
+                    className={`w-full rounded-[10px] border p-2 text-left text-sm transition ${selMat === m.id ? "border-primary bg-primary-soft" : "border-border bg-surface hover:bg-muted"}`}>
+                    <span className="font-semibold">{m.nom}</span>{" "}
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{m.credits} crédit{m.credits > 1 ? "s" : ""}</span>
+                  </button>
+                </li>
+              ))}
+              {matieres.length === 0 && <p className="text-sm text-muted-foreground">Aucune matière.</p>}
+            </ul>
           </div>
 
-          <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Pencil className="h-4 w-4" /></span>
-                <h3 className="font-bold">Saisie des notes</h3>
-              </div>
+          <div className="card-soft min-w-0 p-6">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="font-bold">Saisie des notes</h3>
               {matieres.length > 0 && selMat && etudiants.length > 0 && (
-                <button onClick={saveAll} disabled={saving} className="btn-forest">Tout enregistrer</button>
+                <button onClick={saveAll} disabled={saving} className="btn-forest">Enregistrer toutes les notes</button>
               )}
             </div>
-            <div className="p-6">
-              {msg && <div className="mb-3 rounded-xl bg-primary-soft p-2.5 text-sm text-primary">{msg}</div>}
-              {matieres.length === 0 && <p className="text-sm text-muted-foreground">Créez d'abord une matière pour saisir des notes.</p>}
-              {matieres.length > 0 && !selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
-              {matieres.length > 0 && selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
-              {matieres.length > 0 && selMat && etudiants.length > 0 && (
-                <div className="space-y-2">
-                  {etudiants.map((e) => {
-                    const existing = noteOf(e.user_id);
-                    const value = saisie[e.user_id] ?? (existing ? String(existing.valeur) : "");
-                    const num = Number(String(value).replace(",", "."));
-                    const appr = value !== "" && !Number.isNaN(num) ? appreciation(num) : null;
-                    return (
-                      <div key={e.user_id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-surface p-3 text-sm shadow-sm">
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold">{e.nom_complet}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {e.email}{appr ? ` · ${appr}` : ""}
-                          </p>
-                        </div>
-                        <div className="flex shrink-0 items-center gap-2">
-                          <input type="number" min="0" max="20" step="0.25" value={value} placeholder="/20"
-                            onChange={(ev) => setSaisie({ ...saisie, [e.user_id]: ev.target.value })}
-                            className="input-soft w-20" />
-                          <button onClick={() => saveOne(e.user_id)} disabled={saving} className="btn-forest">OK</button>
-                          {existing && (
-                            <ActionBtn
-                              variant="danger"
-                              icon={Trash2}
-                              label="Supprimer la note"
-                              onClick={async () => {
-                                if (!confirm(`Supprimer la note de "${e.nom_complet}" ?`)) return;
-                                await supabase.rpc("enregistrer_audit", {
-                                  _etablissement_id: etabId,
-                                  _action: "suppression",
-                                  _table_name: "notes",
-                                  _record_id: existing.id,
-                                  _description: `Mise en corbeille de la note de "${e.nom_complet}"`,
-                                  _ancienne_valeur: existing,
-                                  _nouvelle_valeur: null,
-                                });
-                                await supabase.from("notes").update({ deleted_at: new Date().toISOString() }).eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes();
-                              }}
-                            />
-                          )}
-                        </div>
+            {msg && <div className="mb-3 rounded-[10px] bg-primary-soft p-2 text-sm text-primary">{msg}</div>}
+            {matieres.length === 0 && <p className="text-sm text-muted-foreground">Créez d'abord une matière pour saisir des notes.</p>}
+            {matieres.length > 0 && !selMat && <p className="text-sm text-muted-foreground">Sélectionnez une matière.</p>}
+            {matieres.length > 0 && selMat && etudiants.length === 0 && <p className="text-sm text-muted-foreground">Aucun étudiant inscrit pour ce niveau.</p>}
+            {matieres.length > 0 && selMat && etudiants.length > 0 && (
+              <div className="space-y-2">
+                {etudiants.map((e) => {
+                  const existing = noteOf(e.user_id);
+                  const value = saisie[e.user_id] ?? (existing ? String(existing.valeur) : "");
+                  const num = Number(String(value).replace(",", "."));
+                  const appr = value !== "" && !Number.isNaN(num) ? appreciation(num) : null;
+                  return (
+                    <div key={e.user_id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-[10px] border border-border bg-surface p-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{e.nom_complet}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {e.email}{appr ? ` · ${appr}` : ""}
+                        </p>
                       </div>
-                    );
-                  })}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    L'appréciation est générée automatiquement selon le barème (0–5 Très insuffisant … 18–20 Excellent).
-                  </p>
-                </div>
-              )}
-            </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <input type="number" min="0" max="20" step="0.25" value={value} placeholder="/20"
+                          onChange={(ev) => setSaisie({ ...saisie, [e.user_id]: ev.target.value })}
+                          className="input-soft w-20" />
+                        <button onClick={() => saveOne(e.user_id)} disabled={saving} className="btn-forest">OK</button>
+                        {existing && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Supprimer la note de "${e.nom_complet}" ?`)) return;
+                              await supabase.rpc("enregistrer_audit", {
+                                _etablissement_id: etabId,
+                                _action: "suppression",
+                                _table_name: "notes",
+                                _record_id: existing.id,
+                                _description: `Mise en corbeille de la note de "${e.nom_complet}"`,
+                                _ancienne_valeur: existing,
+                                _nouvelle_valeur: null,
+                              });
+                              await supabase.from("notes").update({ deleted_at: new Date().toISOString() }).eq("id", existing.id); setSaisie({ ...saisie, [e.user_id]: "" }); await reloadNotes();
+                            }}
+                            className="text-xs text-destructive underline">Suppr.</button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="mt-2 text-xs text-muted-foreground">
+                  L'appréciation est générée automatiquement selon le barème (0–5 Très insuffisant … 18–20 Excellent).
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -877,40 +827,34 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Megaphone className="h-4 w-4" /></span>
-              <h3 className="font-bold">Annonces</h3>
-              <Pill>{list.length}</Pill>
-            </div>
-            <div className="space-y-3 p-6">
+          <div className="card-soft p-6">
+            <h3 className="mb-3 font-bold">Annonces ({list.length})</h3>
+            <div className="space-y-3">
               {list.map((a) => (
-                <article key={a.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:shadow-md">
-                  <div className="flex items-start justify-between gap-2">
+                <article key={a.id} className="rounded-[10px] border border-border bg-surface p-4">
+                  <div className="flex justify-between">
                     <h4 className="font-semibold">
                       {a.is_urgent && <span className="mr-2 rounded-full bg-destructive/10 px-2 py-0.5 text-[11px] font-bold text-destructive">🚨 URGENT</span>}
                       {a.titre}
                     </h4>
-                    <ActionBtn
-                      variant="danger" icon={Trash2} label="Supprimer l'annonce"
-                      onClick={async () => {
-                        await supabase.rpc("enregistrer_audit", {
-                          _etablissement_id: etabId,
-                          _action: "suppression",
-                          _table_name: "annonces",
-                          _record_id: a.id,
-                          _description: `Suppression de l'annonce "${a.titre}"`,
-                          _ancienne_valeur: a,
-                          _nouvelle_valeur: null,
-                        });
-                        await supabase.from("annonces").delete().eq("id", a.id); load();
-                      }}
-                    />
+                    <button onClick={async () => {
+                      await supabase.rpc("enregistrer_audit", {
+                        _etablissement_id: etabId,
+                        _action: "suppression",
+                        _table_name: "annonces",
+                        _record_id: a.id,
+                        _description: `Suppression de l'annonce "${a.titre}"`,
+                        _ancienne_valeur: a,
+                        _nouvelle_valeur: null,
+                      });
+                      await supabase.from("annonces").delete().eq("id", a.id); load();
+                    }}
+                      className="text-xs text-destructive underline">Suppr.</button>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{a.contenu}</p>
-                  <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-border pt-3 text-xs">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-accent-foreground">
-                      <Heart className="h-3.5 w-3.5 fill-current" />
+                  <div className="mt-2 flex flex-wrap items-center gap-4 text-xs">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2 py-0.5">
+                      <Heart className="icon-terracotta h-3.5 w-3.5 fill-current" />
                       <span className="font-semibold">{likes[a.id] ?? 0}</span> like{(likes[a.id] ?? 0) > 1 ? "s" : ""}
                     </span>
                     <label className="flex items-center gap-1.5">
@@ -934,7 +878,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                   {/*{a.comments_enabled && <AdminComments annonceId={a.id} />}*/}
                 </article>
               ))}
-              {list.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune annonce.</p>}
+              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucune annonce.</p>}
             </div>
           </div>
           <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
@@ -961,7 +905,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
                   className="input-soft w-full" />
               </div>
             )} */}
-            <button className="btn-forest w-full"><Plus className="h-4 w-4" />Publier</button>
+            <button className="btn-forest w-full">Publier</button>
           </form>
         </div>
       )}
@@ -1056,44 +1000,38 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
       </div>
       {niveauId && (
         <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-          <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Calendar className="h-4 w-4" /></span>
-              <h3 className="font-bold">Événements</h3>
-              <Pill>{list.length}</Pill>
-            </div>
-            <div className="space-y-3 p-6">
+          <div className="card-soft p-6">
+            <h3 className="mb-3 flex items-center gap-2 font-bold"><Calendar className="icon-gold h-5 w-5" />Événements ({list.length})</h3>
+            <div className="space-y-3">
               {list.map((e) => {
                 const img = e.affiche_url ? urls[e.affiche_url] : null;
                 return (
-                  <div key={e.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition hover:shadow-md">
+                  <div key={e.id} className="overflow-hidden rounded-[10px] border border-border bg-surface">
                     {img && <img src={img} alt={`Affiche de ${e.titre}`} loading="lazy" className="h-36 w-full object-cover" />}
-                    <div className="flex items-start justify-between gap-2 p-4">
-                      <div className="min-w-0">
+                    <div className="flex justify-between p-3">
+                      <div>
                         <h4 className="font-semibold">{e.titre}</h4>
                         <p className="text-xs text-muted-foreground">{new Date(e.date_evenement).toLocaleString("fr-FR")}{e.lieu ? ` · ${e.lieu}` : ""}</p>
                         {e.description && <p className="mt-1 text-sm">{e.description}</p>}
                       </div>
-                      <ActionBtn
-                        variant="danger" icon={Trash2} label="Supprimer l'événement"
-                        onClick={async () => {
-                          await supabase.rpc("enregistrer_audit", {
-                            _etablissement_id: etabId,
-                            _action: "suppression",
-                            _table_name: "evenements",
-                            _record_id: e.id,
-                            _description: `Suppression de l'événement "${e.titre}"`,
-                            _ancienne_valeur: e,
-                            _nouvelle_valeur: null,
-                          });
-                          await supabase.from("evenements").delete().eq("id", e.id); load();
-                        }}
-                      />
+                      <button onClick={async () => {
+                        await supabase.rpc("enregistrer_audit", {
+                          _etablissement_id: etabId,
+                          _action: "suppression",
+                          _table_name: "evenements",
+                          _record_id: e.id,
+                          _description: `Suppression de l'événement "${e.titre}"`,
+                          _ancienne_valeur: e,
+                          _nouvelle_valeur: null,
+                        });
+                        await supabase.from("evenements").delete().eq("id", e.id); load();
+                      }}
+                        className="text-xs text-destructive underline">Suppr.</button>
                     </div>
                   </div>
                 );
               })}
-              {list.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucun événement.</p>}
+              {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement.</p>}
             </div>
           </div>
           <form onSubmit={add} className="card-soft space-y-3 rounded-xl p-6">
@@ -1113,7 +1051,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
               {file && <p className="mt-1 truncate text-xs text-muted-foreground">{file.name}</p>}
             </div>
             {err && <p className="text-xs text-destructive">{err}</p>}
-            <button className="btn-forest w-full" disabled={busy}>{busy ? "Envoi…" : (<><Plus className="h-4 w-4" />Ajouter</>)}</button>
+            <button className="btn-forest w-full" disabled={busy}>{busy ? "Envoi…" : "Ajouter"}</button>
           </form>
         </div>
       )}
@@ -1194,8 +1132,8 @@ function EDTPanel({ etabId }: { etabId: string }) {
       </div>
       {niveauId && (
         <div className="card-soft min-w-0 overflow-hidden p-0">
-          <div className="flex flex-wrap items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Clock className="h-4 w-4" /></span>
+          <div className="flex flex-wrap items-center gap-2 border-b border-border px-5 py-4">
+            <Clock className="icon-teal h-5 w-5" />
             <h3 className="font-bold">Emploi du temps</h3>
             <span className="text-xs text-muted-foreground">Matin et après-midi — plusieurs cours possibles par bloc</span>
           </div>
@@ -1220,20 +1158,20 @@ function EDTPanel({ etabId }: { etabId: string }) {
                       <td key={j} className="border-b border-l border-border p-1.5 align-top">
                         <div className="space-y-1.5">
                           {coursOf(list, j, b.key).map((c) => (
-                            <div key={c.id} className="rounded-xl bg-primary-soft p-2.5 leading-tight shadow-sm">
+                            <div key={c.id} className="rounded-[10px] bg-primary-soft p-2 leading-tight">
                               <p className="font-mono text-[10px] text-muted-foreground">{hhmm(c.heure_debut)}–{hhmm(c.heure_fin)}</p>
                               <p className="font-semibold text-primary">{c.matiere}</p>
                               {c.professeur && <p className="text-[11px] text-muted-foreground">{c.professeur}</p>}
                               {c.salle && <p className="text-[11px] text-muted-foreground">{c.salle}</p>}
-                              <div className="mt-1.5 flex gap-1.5">
-                                <button onClick={() => openEdit(c)} className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-white/70 text-primary transition hover:bg-white"><Pencil className="h-3 w-3" /></button>
-                                <button onClick={() => del(c.id)} className="inline-flex h-6 w-6 items-center justify-center rounded-md bg-destructive/10 text-destructive transition hover:bg-destructive/20"><Trash2 className="h-3 w-3" /></button>
+                              <div className="mt-1 flex gap-2">
+                                <button onClick={() => openEdit(c)} className="text-[10px] text-primary underline">Modifier</button>
+                                <button onClick={() => del(c.id)} className="text-[10px] text-destructive underline">Suppr.</button>
                               </div>
                             </div>
                           ))}
                           <button onClick={() => openAdd(j, b.key)}
-                            className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-primary/40 py-1.5 text-[11px] text-primary transition hover:bg-primary-soft">
-                            <Plus className="h-3 w-3" />Ajouter
+                            className="flex w-full items-center justify-center gap-1 rounded-[8px] border border-dashed border-border py-1.5 text-[11px] text-muted-foreground transition hover:bg-muted">
+                            <Plus className="h-3 w-3" />Ajouter un cours
                           </button>
                         </div>
                       </td>
@@ -1245,7 +1183,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
           </div>
 
           {cell && (
-            <form onSubmit={save} className="grid gap-3 border-t border-border bg-primary-soft/30 p-5 sm:grid-cols-3 lg:grid-cols-6">
+            <form onSubmit={save} className="grid gap-3 border-t border-border p-5 sm:grid-cols-3 lg:grid-cols-6">
               <div className="text-sm font-semibold text-primary sm:col-span-3 lg:col-span-6">
                 {JOURS_LONGS[cell.jour - 1]} · {BLOCS.find((b) => b.key === cell.bloc)?.label} {editId ? "· modification" : ""}
               </div>
@@ -1370,43 +1308,37 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
   ] as const;
 
   return (
-    <div className="card-soft min-w-0 overflow-hidden">
-      <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-        <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Trash2 className="h-4 w-4" /></span>
-        <h2 className="font-bold">Corbeille</h2>
-        <Pill>{items.length}</Pill>
+    <div className="card-soft p-6">
+      <h2 className="mb-4 font-bold">🗑️ Corbeille</h2>
+      <div className="mb-4 flex flex-wrap gap-2">
+        {onglets.map((o) => (
+          <button
+            key={o.k}
+            onClick={() => setTab(o.k)}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium ${tab === o.k ? "bg-primary-soft text-primary" : "bg-muted text-muted-foreground"}`}
+          >
+            {o.l}
+          </button>
+        ))}
       </div>
-      <div className="p-6">
-        <div className="mb-4 flex flex-wrap gap-2">
-          {onglets.map((o) => (
-            <button
-              key={o.k}
-              onClick={() => setTab(o.k)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${tab === o.k ? "bg-primary text-primary-foreground shadow-[var(--shadow-elegant)]" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-            >
-              {o.l}
-            </button>
-          ))}
-        </div>
 
-        {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
-        {!loading && items.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Corbeille vide.</p>}
+      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {!loading && items.length === 0 && <p className="text-sm text-muted-foreground">Corbeille vide.</p>}
 
-        <div className="space-y-2">
-          {items.map((item) => (
-            <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-dashed border-border bg-muted/60 p-4 text-sm">
-              <div className="min-w-0">
-                <span className="font-semibold text-foreground/80">{item.label}</span>
-                {item.sousLabel && <span className="ml-2 text-xs text-muted-foreground">{item.sousLabel}</span>}
-                <div className="mt-0.5 text-xs text-muted-foreground">Supprimé le {formatDate(item.deleted_at)}</div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <button onClick={() => restaurer(item)} className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-semibold text-primary transition hover:bg-primary/20">Restaurer</button>
-                <ActionBtn onClick={() => supprimerDefinitivement(item)} variant="danger" icon={Trash2} label="Supprimer définitivement" />
-              </div>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-[10px] border border-border bg-muted p-3 text-sm">
+            <div>
+              <span className="font-semibold text-muted-foreground">{item.label}</span>
+              {item.sousLabel && <span className="ml-2 text-xs text-muted-foreground">{item.sousLabel}</span>}
+              <div className="text-xs text-muted-foreground">Supprimé le {formatDate(item.deleted_at)}</div>
             </div>
-          ))}
-        </div>
+            <div className="flex shrink-0 gap-3">
+              <button onClick={() => restaurer(item)} className="text-xs font-semibold text-primary underline">Restaurer</button>
+              <button onClick={() => supprimerDefinitivement(item)} className="text-xs font-semibold text-destructive underline">Suppr. définitivement</button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -1468,13 +1400,9 @@ function HistoriquePanel({ etabId }: { etabId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="card-soft min-w-0 overflow-hidden">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-primary-soft/60 px-6 py-4">
-          <div className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><History className="h-4 w-4" /></span>
-            <h2 className="font-bold">Historique des actions</h2>
-            <Pill>{logs.length}</Pill>
-          </div>
+      <div className="card-soft p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-bold">Historique des actions ({logs.length})</h2>
           <select
             value={filtreAction}
             onChange={(e) => setFiltreAction(e.target.value)}
@@ -1486,31 +1414,29 @@ function HistoriquePanel({ etabId }: { etabId: string }) {
           </select>
         </div>
 
-        <div className="p-6">
-          {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
-          {!loading && logs.length === 0 && (
-            <p className="py-6 text-center text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>
-          )}
+        {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+        {!loading && logs.length === 0 && (
+          <p className="text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>
+        )}
 
-          <div className="space-y-2">
-            {logs.map((log) => {
-              const actionInfo = ACTION_LABELS[log.action] ?? { l: log.action, c: "text-muted-foreground" };
-              const tableLabel = TABLE_LABELS[log.table_name] ?? log.table_name;
-              return (
-                <div key={log.id} className="rounded-xl border border-border bg-surface p-4 text-sm shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`font-bold ${actionInfo.c}`}>{actionInfo.l}</span>
-                      <Pill tone="muted">{tableLabel}</Pill>
-                    </div>
-                    <span className="text-xs text-muted-foreground">{formatDate(log.created_at)}</span>
+        <div className="space-y-2">
+          {logs.map((log) => {
+            const actionInfo = ACTION_LABELS[log.action] ?? { l: log.action, c: "text-muted-foreground" };
+            const tableLabel = TABLE_LABELS[log.table_name] ?? log.table_name;
+            return (
+              <div key={log.id} className="rounded-[10px] border border-border bg-surface p-3 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className={`font-bold ${actionInfo.c}`}>{actionInfo.l}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{tableLabel}</span>
                   </div>
-                  <p className="mt-1.5">{log.description}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Par {log.admin_email ?? "administrateur inconnu"}</p>
+                  <span className="text-xs text-muted-foreground">{formatDate(log.created_at)}</span>
                 </div>
-              );
-            })}
-          </div>
+                <p className="mt-1">{log.description}</p>
+                <p className="mt-1 text-xs text-muted-foreground">Par {log.admin_email ?? "administrateur inconnu"}</p>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -1530,12 +1456,9 @@ function ConfirmationSaisie({
   const [saisie, setSaisie] = useState("");
   const ok = saisie.trim() === motAttendu.trim();
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
-      <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
-        <div className="mb-3 flex items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive"><Trash2 className="h-4 w-4" /></span>
-          <h3 className="font-bold text-destructive">{titre}</h3>
-        </div>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4" role="dialog" aria-modal="true">
+      <div className="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl">
+        <h3 className="mb-2 font-bold text-destructive">{titre}</h3>
         <p className="mb-3 text-sm text-muted-foreground">{message}</p>
         <p className="mb-2 text-sm">
           Pour confirmer, tapez : <strong className="font-mono">{motAttendu}</strong>
@@ -1552,7 +1475,7 @@ function ConfirmationSaisie({
           <button
             onClick={onConfirm}
             disabled={!ok}
-            className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition disabled:opacity-40"
+            className="rounded-[10px] bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground disabled:opacity-40"
           >
             Supprimer
           </button>

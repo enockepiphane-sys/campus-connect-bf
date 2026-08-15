@@ -2,13 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
-import { setupPushNotifications, disablePushNotifications, isPushSubscribed, isPushSupported } from "@/lib/push-notifications";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, BellOff } from "lucide-react";
+import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
   component: Dashboard,
@@ -187,10 +186,7 @@ type NotifItem = {
 
 function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<NotifItem[]>([]);
-  const supported = isPushSupported();
 
   const nonLues = items.filter((n) => !n.lu).length;
 
@@ -205,7 +201,6 @@ function NotificationBell() {
 
   useEffect(() => {
     chargerNotifications();
-    isPushSubscribed().then(setSubscribed);
 
     // Rafraîchissement en direct : nouvelle notification insérée pour cet utilisateur
     const channel = supabase
@@ -220,36 +215,6 @@ function NotificationBell() {
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const toggleSubscription = async () => {
-    alert("CLIC DÉTECTÉ - début toggleSubscription");
-    setLoading(true);
-    try {
-      if (subscribed) {
-        alert("Avant appel disablePushNotifications");
-        const res = await disablePushNotifications();
-        alert("Après appel, résultat: " + JSON.stringify(res));
-        if (res.status === "ok") setSubscribed(false);
-        else if (res.status === "error") alert("Erreur désactivation : " + res.reason);
-      } else {
-        alert("Avant appel setupPushNotifications");
-        const res = await setupPushNotifications();
-        alert("Après appel, résultat: " + JSON.stringify(res));
-        if (res.status === "ok") setSubscribed(true);
-        else if (res.status === "denied") {
-          alert("Notifications refusées. Active-les dans les réglages du navigateur pour ce site si tu changes d'avis.");
-        } else if (res.status === "error") {
-          alert("Erreur activation : " + res.reason);
-        } else if (res.status === "unsupported") {
-          alert("Notifications non supportées par ce navigateur.");
-        }
-      }
-    } catch (e) {
-      alert("EXCEPTION dans toggleSubscription: " + String(e));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const marquerLu = async (id: string) => {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, lu: true } : n)));
     await supabase.from("notifications").update({ lu: true }).eq("id", id);
@@ -260,6 +225,18 @@ function NotificationBell() {
     if (ids.length === 0) return;
     setItems((prev) => prev.map((n) => ({ ...n, lu: true })));
     await supabase.from("notifications").update({ lu: true }).in("id", ids);
+  };
+
+  const supprimerNotif = async (id: string) => {
+    setItems((prev) => prev.filter((n) => n.id !== id));
+    await supabase.from("notifications").delete().eq("id", id);
+  };
+
+  const viderTout = async () => {
+    if (items.length === 0) return;
+    const ids = items.map((n) => n.id);
+    setItems([]);
+    await supabase.from("notifications").delete().in("id", ids);
   };
 
   return (
@@ -284,45 +261,45 @@ function NotificationBell() {
           <div className="fixed left-3 right-3 top-16 z-50 max-h-[70vh] overflow-y-auto rounded-[10px] border border-border bg-surface p-3 shadow-lg sm:left-3 sm:right-auto sm:w-80">
             <div className="mb-2 flex items-center justify-between gap-2 border-b border-border pb-2">
               <span className="text-sm font-bold">Notifications</span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 {nonLues > 0 && (
                   <button onClick={marquerToutLu} className="text-xs font-medium text-primary">
                     Tout marquer lu
                   </button>
                 )}
-                {supported && (
-                  <button
-                    onClick={toggleSubscription}
-                    disabled={loading}
-                    aria-label={subscribed ? "Désactiver les notifications" : "Activer les notifications"}
-                    className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-1 text-[11px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-50"
-                  >
-                    {subscribed ? <BellOff className="h-3 w-3" /> : <Bell className="h-3 w-3" />}
-                    {subscribed ? "Désactiver" : "Activer"}
+                {items.length > 0 && (
+                  <button onClick={viderTout} className="flex items-center gap-1 text-xs font-medium text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                    Tout vider
                   </button>
                 )}
               </div>
             </div>
 
-            {!supported && (
-              <p className="mb-2 text-xs text-muted-foreground">
-                Les notifications push ne sont pas prises en charge par ce navigateur.
-              </p>
-            )}
-
             <div className="space-y-1">
               {items.map((n) => (
-                <button
+                <div
                   key={n.id}
-                  onClick={() => { marquerLu(n.id); if (n.lien) window.location.href = n.lien; }}
-                  className={`w-full rounded-[8px] p-2 text-left text-sm transition hover:bg-muted ${n.lu ? "" : "bg-primary-soft"}`}
+                  className={`group flex items-start gap-1 rounded-[8px] p-2 text-left text-sm transition hover:bg-muted ${n.lu ? "" : "bg-primary-soft"}`}
                 >
-                  <p className="font-medium">{n.titre}</p>
-                  {n.corps && <p className="truncate text-xs text-muted-foreground">{n.corps}</p>}
-                  <p className="mt-0.5 text-[10px] text-muted-foreground">
-                    {new Date(n.created_at).toLocaleString("fr-FR")}
-                  </p>
-                </button>
+                  <button
+                    onClick={() => { marquerLu(n.id); if (n.lien) window.location.href = n.lien; }}
+                    className="min-w-0 flex-1 text-left"
+                  >
+                    <p className="font-medium">{n.titre}</p>
+                    {n.corps && <p className="truncate text-xs text-muted-foreground">{n.corps}</p>}
+                    <p className="mt-0.5 text-[10px] text-muted-foreground">
+                      {new Date(n.created_at).toLocaleString("fr-FR")}
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => supprimerNotif(n.id)}
+                    aria-label="Supprimer cette notification"
+                    className="shrink-0 rounded-full p-1.5 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               ))}
               {items.length === 0 && (
                 <p className="py-6 text-center text-xs text-muted-foreground">Aucune notification pour le moment.</p>

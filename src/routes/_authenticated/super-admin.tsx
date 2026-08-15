@@ -3,14 +3,22 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
 import { DrapeauBF } from "@/components/DrapeauBF";
-import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History } from "lucide-react";
+import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper } from "lucide-react";
+
+const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
+
+async function afficheSocialeUrl(path: string | null | undefined): Promise<string | null> {
+  if (!path) return null;
+  const { data } = supabase.storage.from(AFFICHES_SOCIALES_BUCKET).getPublicUrl(path);
+  return data?.publicUrl ?? null;
+}
 
 // Mot magique requis pour confirmer une suppression sensible (établissement / admin pré-autorisé)
 const MOT_MAGIQUE_SUPPRESSION = "SUPPRIMER";
 
 // ============ Journal d'audit (historique des actions) ============
 type ActionType = "creation" | "modification" | "suppression";
-type CibleType = "etablissement" | "admin_pre_autorise" | "demande_partenariat";
+type CibleType = "etablissement" | "admin_pre_autorise" | "demande_partenariat" | "evenement_social";
 type Historique = {
   id: string;
   super_admin_email: string | null;
@@ -52,9 +60,10 @@ export const Route = createFileRoute("/_authenticated/super-admin")({
 type Etab = { id: string; nom: string; email: string | null; telephone: string | null; adresse: string | null; description: string | null; statut: string };
 type PreAdmin = { id: string; nom_complet: string; email: string; date_naissance: string; inscrit: boolean; etablissement_id: string };
 type Demande = { id: string; nom_etablissement: string; nom_contact: string; email_contact: string; telephone_contact: string | null; message: string | null; statut: string; created_at: string };
+type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean };
 
 function Dashboard() {
-  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "historique">("etabs");
+  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "evenements" | "historique">("etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -102,6 +111,7 @@ function Dashboard() {
             { k: "etabs", l: "Établissements", i: <Building2 className="icon-green h-4 w-4" /> },
             { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="icon-blue h-4 w-4" /> },
             { k: "demandes", l: "Demandes partenariat", i: <Mail className="icon-terracotta h-4 w-4" /> },
+            { k: "evenements", l: "Événements sociaux", i: <PartyPopper className="icon-gold h-4 w-4" /> },
             { k: "historique", l: "Historique", i: <History className="icon-blue h-4 w-4" /> },
           ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k as never)}
@@ -116,6 +126,7 @@ function Dashboard() {
         {tab === "etabs" && <EtablissementsPanel />}
         {tab === "preadmins" && <PreAdminsPanel />}
         {tab === "demandes" && <DemandesPanel />}
+        {tab === "evenements" && <EvenementsSociauxPanel />}
         {tab === "historique" && <HistoriquePanel />}
       </main>
     </div>
@@ -350,6 +361,165 @@ function DemandesPanel() {
   );
 }
 
+// ============ Événements sociaux (page d'accueil publique) ============
+function EvenementsSociauxPanel() {
+  const [list, setList] = useState<EvenementSocial[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [form, setForm] = useState({ titre: "", description: "", lien: "", date_evenement: "", actif: true });
+  const [file, setFile] = useState<File | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [toDelete, setToDelete] = useState<EvenementSocial | null>(null);
+
+  async function load() {
+    const { data } = await supabase.from("evenements_sociaux").select("*").order("created_at", { ascending: false });
+    const rows = (data as EvenementSocial[]) ?? [];
+    setList(rows);
+    const entries = await Promise.all(
+      rows.filter((r) => r.affiche_url).map(async (r) => [r.affiche_url as string, await afficheSocialeUrl(r.affiche_url)] as const),
+    );
+    setUrls(Object.fromEntries(entries.filter(([, u]) => u)));
+  }
+  useEffect(() => { load(); }, []);
+
+  function resetForm() {
+    setForm({ titre: "", description: "", lien: "", date_evenement: "", actif: true });
+    setFile(null); setEditing(null);
+  }
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg(null);
+    if (!form.titre.trim() || form.titre.trim().length < 2) { setMsg("Titre requis"); return; }
+    setBusy(true);
+    try {
+      let affiche_url: string | null = editing ? (list.find((e2) => e2.id === editing)?.affiche_url ?? null) : null;
+      if (file) {
+        const ext = file.name.split(".").pop() ?? "jpg";
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from(AFFICHES_SOCIALES_BUCKET).upload(path, file, { contentType: file.type });
+        if (upErr) { setMsg("Échec de l'envoi de l'affiche : " + upErr.message); setBusy(false); return; }
+        affiche_url = path;
+      }
+      const payload = {
+        titre: form.titre.trim(),
+        description: form.description.trim() || null,
+        lien: form.lien.trim() || null,
+        date_evenement: form.date_evenement || null,
+        actif: form.actif,
+        affiche_url,
+      };
+      if (editing) {
+        const { error } = await supabase.from("evenements_sociaux").update(payload).eq("id", editing);
+        if (error) { setMsg(error.message); setBusy(false); return; }
+        logAction("modification", "evenement_social", payload.titre);
+      } else {
+        const { error } = await supabase.from("evenements_sociaux").insert(payload);
+        if (error) { setMsg(error.message); setBusy(false); return; }
+        logAction("creation", "evenement_social", payload.titre);
+      }
+      resetForm();
+      await load();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function del(id: string, titre: string) {
+    await supabase.from("evenements_sociaux").delete().eq("id", id);
+    logAction("suppression", "evenement_social", titre);
+    load();
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+      {toDelete && (
+        <ConfirmDeleteModal
+          title="Supprimer un événement social"
+          itemLabel={toDelete.titre}
+          onCancel={() => setToDelete(null)}
+          onConfirm={() => { const id = toDelete.id; const titre = toDelete.titre; setToDelete(null); del(id, titre); }}
+        />
+      )}
+      <div className="card-glass rounded-xl p-6">
+        <h2 className="mb-4 text-lg font-bold">Événements sociaux ({list.length})</h2>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Affichés publiquement sur la page d'accueil. Désactivez un événement pour le masquer sans le supprimer.
+        </p>
+        {msg && <div className="mb-3 rounded bg-destructive/10 p-2 text-sm text-destructive">{msg}</div>}
+        <div className="space-y-3">
+          {list.map((ev) => {
+            const img = ev.affiche_url ? urls[ev.affiche_url] : null;
+            return (
+              <div key={ev.id} className="overflow-hidden rounded-lg border border-border bg-surface">
+                {img && <img src={img} alt={`Affiche de ${ev.titre}`} loading="lazy" className="h-32 w-full object-cover" />}
+                <div className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{ev.titre}</span>
+                      {!ev.actif && <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">masqué</span>}
+                    </div>
+                    {ev.date_evenement && (
+                      <p className="text-xs text-muted-foreground">{new Date(ev.date_evenement).toLocaleString("fr-FR")}</p>
+                    )}
+                    {ev.description && <p className="mt-1 line-clamp-2 text-sm">{ev.description}</p>}
+                    {ev.lien && <p className="mt-1 truncate text-xs text-primary">{ev.lien}</p>}
+                  </div>
+                  <div className="flex shrink-0 flex-col items-end gap-1">
+                    <button onClick={() => {
+                      setEditing(ev.id);
+                      setForm({
+                        titre: ev.titre, description: ev.description ?? "", lien: ev.lien ?? "",
+                        date_evenement: ev.date_evenement ? ev.date_evenement.slice(0, 16) : "", actif: ev.actif,
+                      });
+                      setFile(null);
+                    }} className="text-xs text-primary underline">Modifier</button>
+                    <button onClick={() => setToDelete(ev)} className="text-xs text-destructive underline">Suppr.</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {list.length === 0 && <p className="text-sm text-muted-foreground">Aucun événement social pour le moment.</p>}
+        </div>
+      </div>
+
+      <form onSubmit={save} className="card-glass space-y-3 rounded-xl p-6">
+        <h3 className="font-bold">{editing ? "Modifier" : "Ajouter"} un événement social</h3>
+        <Input label="Titre *" v={form.titre} on={(v) => setForm({ ...form, titre: v })} />
+        <div>
+          <label className="mb-1 block text-sm">Description</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+            rows={4}
+            maxLength={2000}
+            className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
+          />
+        </div>
+        <Input label="Lien (inscription / page de l'événement)" v={form.lien} on={(v) => setForm({ ...form, lien: v })} />
+        <Input label="Date & heure" v={form.date_evenement} on={(v) => setForm({ ...form, date_evenement: v })} type="datetime-local" />
+        <div>
+          <label className="mb-1 block text-sm">Affiche {editing ? "(laisser vide pour garder l'actuelle)" : ""}</label>
+          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-sm text-foreground" />
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={form.actif} onChange={(e) => setForm({ ...form, actif: e.target.checked })} />
+          Visible sur la page d'accueil
+        </label>
+        <div className="flex gap-2">
+          <button type="submit" disabled={busy} className="btn-bf-primary flex-1 disabled:opacity-60">
+            {busy ? "Envoi..." : editing ? "Enregistrer" : "Ajouter"}
+          </button>
+          {editing && <button type="button" onClick={resetForm} className="btn-bf-outline">Annuler</button>}
+        </div>
+      </form>
+    </div>
+  );
+}
+
 // ============ Historique des actions ============
 const ACTION_LABEL: Record<ActionType, string> = {
   creation: "Création",
@@ -365,6 +535,7 @@ const CIBLE_LABEL: Record<CibleType, string> = {
   etablissement: "Établissement",
   admin_pre_autorise: "Administrateur pré-autorisé",
   demande_partenariat: "Demande de partenariat",
+  evenement_social: "Événement social",
 };
 
 function HistoriquePanel() {

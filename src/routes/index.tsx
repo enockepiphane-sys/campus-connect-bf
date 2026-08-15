@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { GraduationCap, LogIn, UserPlus, Mail, Building2, Phone, MessageSquare, Send } from "lucide-react";
+import { useEffect, useState } from "react";
+import { GraduationCap, LogIn, UserPlus, Calendar, PartyPopper, ExternalLink } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import graduateHero from "@/assets/graduate-hero.png";
 import { supabase } from "@/integrations/supabase/client";
-import { z } from "zod";
+
+const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,14 +28,6 @@ export const Route = createFileRoute("/")({
     ],
   }),
   component: Home,
-});
-
-const partnerSchema = z.object({
-  nom_etablissement: z.string().trim().min(2).max(200),
-  nom_contact: z.string().trim().min(2).max(120),
-  email_contact: z.string().trim().email().max(200),
-  telephone_contact: z.string().trim().max(40).optional().or(z.literal("")),
-  message: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 function Home() {
@@ -119,8 +112,8 @@ function Home() {
         </div>
 
 
-        {/* Devenir partenaire */}
-        <PartnerSection />
+        {/* Événements sociaux */}
+        <EvenementsSociauxSection />
 
         {/* Footer */}
         <div className="mt-16 flex flex-col items-center gap-3">
@@ -134,111 +127,87 @@ function Home() {
   );
 }
 
-function PartnerSection() {
-  const [status, setStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
-  const [error, setError] = useState<string | null>(null);
+type EvenementSocial = {
+  id: string;
+  titre: string;
+  description: string | null;
+  affiche_url: string | null;
+  lien: string | null;
+  date_evenement: string | null;
+};
 
-  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setError(null);
-    const form = new FormData(e.currentTarget);
-    const parsed = partnerSchema.safeParse(Object.fromEntries(form));
-    if (!parsed.success) {
-      setError("Veuillez vérifier les informations saisies.");
-      return;
-    }
-    setStatus("sending");
-    const { error } = await supabase.from("demandes_partenariat").insert(parsed.data);
-    if (error) {
-      setStatus("error");
-      setError("Une erreur est survenue. Réessayez plus tard.");
-      return;
-    }
-    setStatus("ok");
-    (e.target as HTMLFormElement).reset();
-  }
+function EvenementsSociauxSection() {
+  const [list, setList] = useState<EvenementSocial[]>([]);
+  const [urls, setUrls] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("evenements_sociaux")
+        .select("id,titre,description,affiche_url,lien,date_evenement")
+        .eq("actif", true)
+        .order("date_evenement", { ascending: true, nullsFirst: false });
+      const rows = (data as EvenementSocial[]) ?? [];
+      setList(rows);
+      const map: Record<string, string> = {};
+      for (const r of rows) {
+        if (r.affiche_url) {
+          const { data: pub } = supabase.storage.from(AFFICHES_SOCIALES_BUCKET).getPublicUrl(r.affiche_url);
+          if (pub?.publicUrl) map[r.affiche_url] = pub.publicUrl;
+        }
+      }
+      setUrls(map);
+      setLoading(false);
+    })();
+  }, []);
+
+  if (!loading && list.length === 0) return null;
 
   return (
-    <section className="mx-auto mt-16 max-w-3xl">
-      <div className="card-glass rounded-2xl p-8">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-accent text-accent-foreground">
-            <Building2 className="h-7 w-7" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground">Devenir partenaire</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Votre établissement souhaite rejoindre CampusLink ? Envoyez-nous une demande, notre équipe vous recontactera.
-          </p>
+    <section className="mx-auto mt-16 max-w-5xl">
+      <div className="mb-8 text-center">
+        <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-xl bg-accent text-accent-foreground">
+          <PartyPopper className="h-7 w-7" />
         </div>
+        <h2 className="text-2xl font-bold text-foreground">Événements sociaux</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Des événements organisés par nos partenaires, à découvrir près de chez vous.
+        </p>
+      </div>
 
-        {status === "ok" && (
-          <div className="mb-6 rounded-lg border border-primary/30 bg-primary-soft p-4 text-primary">
-            Votre demande a bien été envoyée. Merci !
-          </div>
-        )}
-        {error && (
-          <div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-destructive">
-            {error}
-          </div>
-        )}
+      {loading && <p className="text-center text-sm text-muted-foreground">Chargement…</p>}
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <PartnerField icon={<Building2 className="h-4 w-4" />} label="Nom de l'établissement" name="nom_etablissement" required />
-          <PartnerField icon={<UserPlus className="h-4 w-4" />} label="Nom du responsable" name="nom_contact" required />
-          <PartnerField icon={<Mail className="h-4 w-4" />} label="Email professionnel" name="email_contact" type="email" required />
-          <PartnerField icon={<Phone className="h-4 w-4" />} label="Téléphone (facultatif)" name="telephone_contact" />
-          <div>
-            <label className="mb-1 flex items-center gap-2 text-sm font-medium text-foreground/80">
-              <MessageSquare className="h-4 w-4" />
-              Message (facultatif)
-            </label>
-            <textarea
-              name="message"
-              rows={4}
-              maxLength={2000}
-              className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={status === "sending"}
-            className="btn-bf-primary w-full disabled:opacity-60"
-          >
-            <Send className="h-4 w-4" />
-            {status === "sending" ? "Envoi..." : "Envoyer ma demande"}
-          </button>
-        </form>
+      <div className="grid gap-6 sm:grid-cols-2">
+        {list.map((ev) => {
+          const img = ev.affiche_url ? urls[ev.affiche_url] : null;
+          return (
+            <article key={ev.id} className="card-glass overflow-hidden rounded-2xl transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+              {img && (
+                <img src={img} alt={`Affiche de l'événement ${ev.titre}`} loading="lazy" className="h-48 w-full object-cover" />
+              )}
+              <div className="p-6">
+                <h3 className="text-lg font-bold text-foreground">{ev.titre}</h3>
+                {ev.date_evenement && (
+                  <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(ev.date_evenement).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}
+                  </p>
+                )}
+                {ev.description && (
+                  <p className="mt-3 text-sm text-muted-foreground">{ev.description}</p>
+                )}
+                {ev.lien && (
+                  <a href={ev.lien} target="_blank" rel="noopener noreferrer" className="btn-bf-primary mt-4 w-full">
+                    <ExternalLink className="h-4 w-4" />
+                    Voir l'événement
+                  </a>
+                )}
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
-  );
-}
-
-function PartnerField({
-  icon,
-  label,
-  name,
-  type = "text",
-  required,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  name: string;
-  type?: string;
-  required?: boolean;
-}) {
-  return (
-    <div>
-      <label className="mb-1 flex items-center gap-2 text-sm font-medium text-foreground/80">
-        {icon}
-        {label} {required && <span className="text-destructive">*</span>}
-      </label>
-      <input
-        name={name}
-        type={type}
-        required={required}
-        maxLength={250}
-        className="w-full rounded-lg border border-input bg-surface px-3 py-2 text-foreground outline-none focus:border-primary"
-      />
-    </div>
   );
 }

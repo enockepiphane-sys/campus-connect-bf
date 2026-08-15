@@ -221,6 +221,7 @@ function NotificationBell() {
   }, []);
 
   const toggleSubscription = async () => {
+    alert("CLIC DÉTECTÉ - début toggleSubscription");
     setLoading(true);
     try {
       if (subscribed) {

@@ -7,10 +7,14 @@ import { withTimeout, humanizeAuthError } from "@/lib/auth-timeout";
 
 export const Route = createFileRoute("/etudiant/connexion")({
   component: Page,
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirectTo: typeof search.redirectTo === "string" ? search.redirectTo : undefined,
+  }),
 });
 
 function Page() {
   const navigate = useNavigate();
+  const { redirectTo } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
@@ -68,7 +72,7 @@ function Page() {
         setError(`Ce compte est ${role}, pas étudiant.`);
         setBusy(false); return;
       }
-      navigate({ to: dashboardPathForRole(role) });
+      navigate({ to: redirectTo || dashboardPathForRole(role) });
     } catch (err) {
       setError(humanizeAuthError(err));
       setBusy(false);

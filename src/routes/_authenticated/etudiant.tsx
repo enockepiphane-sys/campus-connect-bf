@@ -225,11 +225,15 @@ function NotificationBell() {
     setLoading(true);
     try {
       if (subscribed) {
+        alert("Avant appel disablePushNotifications");
         const res = await disablePushNotifications();
+        alert("Après appel, résultat: " + JSON.stringify(res));
         if (res.status === "ok") setSubscribed(false);
         else if (res.status === "error") alert("Erreur désactivation : " + res.reason);
       } else {
+        alert("Avant appel setupPushNotifications");
         const res = await setupPushNotifications();
+        alert("Après appel, résultat: " + JSON.stringify(res));
         if (res.status === "ok") setSubscribed(true);
         else if (res.status === "denied") {
           alert("Notifications refusées. Active-les dans les réglages du navigateur pour ce site si tu changes d'avis.");
@@ -239,6 +243,8 @@ function NotificationBell() {
           alert("Notifications non supportées par ce navigateur.");
         }
       }
+    } catch (e) {
+      alert("EXCEPTION dans toggleSubscription: " + String(e));
     } finally {
       setLoading(false);
     }

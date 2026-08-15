@@ -3,7 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
+    // 0. Lien venant d'un email de notification (?verif=1) : on force une
+    // reconnexion explicite avant de laisser entrer, même si une session
+    // existe déjà sur cet appareil.
+    const params = new URLSearchParams(location.search as unknown as string);
+    if (params.get("verif") === "1") {
+      await supabase.auth.signOut();
+      const destination = location.pathname + location.search.replace(/([?&])verif=1&?/, "$1").replace(/[?&]$/, "");
+      throw redirect({ to: "/etudiant/connexion", search: { redirectTo: destination } });
+    }
+
     // 1. Vérifier si l'utilisateur est connecté
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) {

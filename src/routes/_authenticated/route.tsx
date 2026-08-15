@@ -7,10 +7,13 @@ export const Route = createFileRoute("/_authenticated")({
     // 0. Lien venant d'un email de notification (?verif=1) : on force une
     // reconnexion explicite avant de laisser entrer, même si une session
     // existe déjà sur cet appareil.
-    const params = new URLSearchParams(location.search as unknown as string);
-    if (params.get("verif") === "1") {
+    const search = location.search as Record<string, unknown>;
+    if (search?.verif === "1" || search?.verif === 1) {
       await supabase.auth.signOut();
-      const destination = location.pathname + location.search.replace(/([?&])verif=1&?/, "$1").replace(/[?&]$/, "");
+      const { verif, ...reste } = search;
+      void verif;
+      const query = new URLSearchParams(reste as Record<string, string>).toString();
+      const destination = location.pathname + (query ? `?${query}` : "");
       throw redirect({ to: "/etudiant/connexion", search: { redirectTo: destination } });
     }
 

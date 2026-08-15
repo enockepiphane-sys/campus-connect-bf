@@ -773,6 +773,17 @@ function Evenements({ niveauId }: { niveauId: string }) {
 }
 
 
+function conseilNote(valeur: number): { emoji: string; texte: string; couleur: string } {
+  const v = Number(valeur);
+  if (v < 6) return { emoji: "🚨", texte: "Très mauvais, tu dois revoir tes cours en priorité.", couleur: "icon-danger" };
+  if (v < 10) return { emoji: "⚠️", texte: "Insuffisant, tu dois retravailler encore plus.", couleur: "icon-terracotta" };
+  if (v < 12) return { emoji: "🙂", texte: "Passable, redouble d'efforts pour progresser.", couleur: "icon-gold" };
+  if (v < 14) return { emoji: "👍", texte: "Assez bien, mais tu peux faire mieux.", couleur: "icon-teal" };
+  if (v < 16) return { emoji: "🌟", texte: "Bien, continue sur cette lancée.", couleur: "icon-green" };
+  if (v < 18) return { emoji: "🎉", texte: "Très bien, tu maîtrises bien le sujet !", couleur: "icon-green" };
+  return { emoji: "🏆", texte: "Excellent, continue comme ça !", couleur: "icon-green" };
+}
+
 function Notes() {
   const [list, setList] = useState<{ id: string; valeur: number; type_evaluation: string; commentaire: string | null; matiere_id: string; created_at: string }[]>([]);
   const [matieres, setMatieres] = useState<Record<string, { nom: string; credits: number }>>({});
@@ -800,19 +811,38 @@ function Notes() {
       {Object.entries(byMat).map(([mid, notes]) => {
         const mat = matieres[mid];
         const moy = notes.reduce((s, n) => s + Number(n.valeur), 0) / notes.length;
+        const conseilMoy = conseilNote(moy);
         return (
           <div key={mid} className="card-soft p-5">
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-3 flex items-center justify-between">
               <h3 className="font-bold">{mat?.nom ?? "Matière"}</h3>
-              <div className="text-sm">Moyenne : <strong className="text-primary">{moy.toFixed(2)}</strong> {mat && <span className="text-xs text-muted-foreground">· {mat.credits} crédit{mat.credits > 1 ? "s" : ""}</span>}</div>
+              <div className="text-right">
+                <div className="text-sm">Moyenne : <strong className={conseilMoy.couleur}>{moy.toFixed(2)}</strong></div>
+                {mat && <span className="text-xs text-muted-foreground">{mat.credits} crédit{mat.credits > 1 ? "s" : ""}</span>}
+              </div>
             </div>
-            <div className="space-y-1">
-              {notes.map((n) => (
-                <div key={n.id} className="flex items-center justify-between rounded-[10px] border border-border bg-surface p-2 text-sm">
-                  <span><strong>{n.valeur}</strong> <span className="text-xs text-muted-foreground">({n.type_evaluation})</span> <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{appreciation(Number(n.valeur))}</span></span>
-                  <span className="text-xs text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
-                </div>
-              ))}
+            <div className="mb-3 flex items-center gap-2 rounded-[10px] bg-primary-soft p-2.5">
+              <span className="text-lg leading-none">{conseilMoy.emoji}</span>
+              <p className="text-xs font-medium text-foreground">{conseilMoy.texte}</p>
+            </div>
+            <div className="space-y-2">
+              {notes.map((n) => {
+                const c = conseilNote(Number(n.valeur));
+                return (
+                  <div key={n.id} className="flex items-center gap-3 rounded-[10px] border border-border bg-surface p-3">
+                    <span className="text-xl leading-none">{c.emoji}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-base font-bold ${c.couleur}`}>{n.valeur}</span>
+                        <span className="text-xs text-muted-foreground">/20 · {n.type_evaluation}</span>
+                        <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{appreciation(Number(n.valeur))}</span>
+                      </div>
+                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{c.texte}</p>
+                    </div>
+                    <span className="shrink-0 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         );

@@ -19,10 +19,10 @@ self.addEventListener("push", (event) => {
   try {
     payload = event.data.json();
   } catch {
-    payload = { title: "CampusLink", body: event.data.text() };
+    payload = { title: "CampusLink-bf", body: event.data.text() };
   }
 
-  const title = payload.title || "CampusLink";
+  const title = payload.title || "CampusLink-bf";
   const options = {
     body: payload.body || "",
     icon: "/icon-192.png",

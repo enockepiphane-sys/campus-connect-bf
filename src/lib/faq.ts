@@ -600,3 +600,51 @@ export function rechercherFaq(items: FaqItem[], requete: string): FaqItem[] {
     return haystack.includes(q);
   });
 }
+
+const MOTS_VIDES = new Set([
+  "le", "la", "les", "un", "une", "des", "de", "du", "et", "ou", "que", "qui", "quoi",
+  "je", "tu", "il", "elle", "on", "nous", "vous", "ils", "elles", "mon", "ma", "mes",
+  "ton", "ta", "tes", "son", "sa", "ses", "pourquoi", "comment", "est", "ce", "cette",
+  "pour", "avec", "dans", "sur", "pas", "ne", "n", "d", "l", "à", "au", "aux", "quand",
+]);
+
+function motsSignificatifs(texte: string): string[] {
+  return texte
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // enlève les accents
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((m) => m.length > 2 && !MOTS_VIDES.has(m));
+}
+
+/**
+ * Classe les questions de la FAQ par pertinence par rapport à une question
+ * tapée librement par l'utilisateur (recherche par mots-clés partagés,
+ * pas juste une sous-chaîne exacte). Retourne les meilleurs résultats,
+ * du plus pertinent au moins pertinent ; un score de 0 est exclu.
+ */
+export function trouverMeilleuresReponses(items: FaqItem[], question: string, limite = 3): FaqItem[] {
+  const motsRequete = motsSignificatifs(question);
+  if (motsRequete.length === 0) return [];
+
+  const scored = items.map((item) => {
+    const cibles = [item.question, ...(item.variantes ?? [])];
+    let meilleurScore = 0;
+    for (const cible of cibles) {
+      const motsCible = new Set(motsSignificatifs(cible));
+      let communs = 0;
+      for (const m of motsRequete) if (motsCible.has(m)) communs++;
+      // Bonus si la requête est une sous-chaîne quasi exacte d'une question/variante.
+      const bonusExact = cible.toLowerCase().includes(question.trim().toLowerCase()) && question.trim().length > 4 ? 3 : 0;
+      const score = communs + bonusExact;
+      if (score > meilleurScore) meilleurScore = score;
+    }
+    return { item, score: meilleurScore };
+  });
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limite)
+    .map((s) => s.item);
+}

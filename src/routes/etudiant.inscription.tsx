@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { getSiteUrl } from "@/lib/site-url";
-import { humanizeDbError } from "@/lib/auth-timeout";
-import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
+import { ResendConfirmationEmail } from "@/components/ResendConfirmationEmail";
 
 type Etab = { id: string; nom: string };
 type Filiere = { id: string; nom: string };
@@ -27,6 +26,7 @@ function Page() {
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showResend, setShowResend] = useState(false);
+  const [existantNonConfirme, setExistantNonConfirme] = useState(false);
 
 
   useEffect(() => {
@@ -51,7 +51,7 @@ function Page() {
       _nom_complet: form.nom_complet, _email: form.email, _date_naissance: form.date_naissance,
     });
     setBusy(false);
-    if (error) { setError(humanizeDbError(error)); return; }
+    if (error) { setError(error.message); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-inscrit pour ce niveau. Contactez votre administration."); return; }
     const row = data[0] as { deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet étudiant est déjà inscrit. Utilisez la page de connexion."); return; }
@@ -73,33 +73,14 @@ function Page() {
       (!se && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
 
     if (existant) {
-      // Le compte existe déjà côté Supabase. Deux cas possibles :
-      // - il n'a jamais été confirmé (aucun clic sur le lien) → on peut
-      //   renvoyer un email de confirmation, ça fonctionnera.
-      // - il a été confirmé (lien cliqué) mais la finalisation ne s'est
-      //   jamais faite côté application (l'utilisateur a quitté la page
-      //   avant de retaper son mot de passe) → Supabase refuse de renvoyer
-      //   un email de confirmation puisque, pour lui, c'est déjà fait, et
-      //   l'utilisateur reste bloqué indéfiniment. Dans ce cas, on le
-      //   redirige vers "mot de passe oublié" : ce flux (ResetPasswordFlow)
-      //   définit un nouveau mot de passe puis finalise automatiquement
-      //   l'inscription (voir resolveUserRole), ce qui débloque le compte.
-      const { error: re } = await resendSignupEmail(form.email, emailRedirectTo);
-      if (re && /déjà confirmé|already confirmed/i.test(re)) {
-        setInfo(null);
-        setError(
-          "Un compte existe déjà avec cet email et a déjà été confirmé, mais l'inscription n'a pas pu être finalisée. " +
-          "Utilisez « Mot de passe oublié » sur la page de connexion : cela définira un nouveau mot de passe et activera votre compte.",
-        );
-        setBusy(false);
-        return;
-      }
-      setShowResend(true);
-      if (re) { setError(re); setInfo(null); setBusy(false); return; }
-      setInfo("Un compte existe déjà avec cet email mais n'était pas confirmé. Un nouvel email de confirmation vient de vous être envoyé.");
+      setInfo(
+        "Un compte existe déjà avec cet email mais n'a pas pu être confirmé. " +
+        "Rendez-vous sur « Mot de passe oublié » pour réinitialiser votre mot de passe : cela confirmera votre compte et vous donnera accès à votre espace."
+      );
+      setExistantNonConfirme(true);
       setBusy(false); return;
     }
-    if (se) { setError(humanizeDbError(se)); setBusy(false); return; }
+    if (se) { setError(se.message); setBusy(false); return; }
     if (data.session) {
       await supabase.auth.signOut();
     }
@@ -109,17 +90,13 @@ function Page() {
 
   return (
     <PageShell title="Inscription étudiant">
-      {error && (
-        <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-          {error.includes("Mot de passe oublié") && (
-            <Link to="/etudiant/mot-de-passe-oublie" className="mt-2 block font-semibold underline">
-              Aller à « Mot de passe oublié »
-            </Link>
-          )}
-        </div>
-      )}
+      {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
+      {existantNonConfirme && (
+        <Link to="/etudiant/mot-de-passe-oublie" className="btn-bf-primary mb-4 inline-block text-center">
+          Réinitialiser mon mot de passe
+        </Link>
+      )}
       {showResend && (
         <ResendConfirmationEmail
           email={form.email}

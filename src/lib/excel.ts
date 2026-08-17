@@ -269,7 +269,13 @@ export async function parseExcelNotes(file: File): Promise<ResultatParsingNotesE
 
   const colIdentifiant = colEmail ?? colMatricule!;
   const parIdentifiant: "email" | "matricule" = colEmail ? "email" : "matricule";
-  const colonnesMatieres = entetesOriginaux.filter((h) => h !== colIdentifiant);
+  const colNomComplet = trouverColonne(headersNormalises, ALIAS_NOM_COMPLET);
+  const colNom = trouverColonne(headersNormalises, ALIAS_NOM);
+  const colPrenom = trouverColonne(headersNormalises, ["prenom", "prénom", "first name", "firstname"]);
+  const colTelephone = trouverColonne(headersNormalises, ALIAS_TELEPHONE);
+  const colDateNaissance = trouverColonne(headersNormalises, ALIAS_DATE_NAISSANCE);
+  const colonnesAExclure = new Set([colIdentifiant, colNomComplet, colNom, colPrenom, colTelephone, colDateNaissance].filter(Boolean));
+  const colonnesMatieres = entetesOriginaux.filter((h) => !colonnesAExclure.has(h));
 
   const valides: LigneNoteImport[] = [];
   const rejetees: LigneRejetee[] = [];

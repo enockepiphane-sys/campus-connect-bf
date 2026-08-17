@@ -1,17 +1,27 @@
 import { useMemo, useState } from "react";
-import { HelpCircle, X, Search, Mail } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { Headset, X, Search, Mail } from "lucide-react";
 import { FAQ, rechercherFaq, type Public } from "@/lib/faq";
 
 export function AideFlottante() {
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
-  const [filtre, setFiltre] = useState<Public | "tous">("tous");
   const [ouvert, setOuvert] = useState<string | null>(null);
 
+  // Le contenu dépend de la zone de l'app, jamais d'un choix libre de l'utilisateur :
+  // les questions "administrateur" (gestion étudiants, import Excel, configuration...)
+  // ne doivent apparaître que dans les pages admin/super-admin — jamais sur l'accueil
+  // public ni côté étudiant, pour ne pas exposer publiquement comment l'établissement
+  // est géré en interne.
+  const contexte: Public = location.pathname.startsWith("/admin") || location.pathname.startsWith("/super-admin")
+    ? "admin"
+    : "etudiant";
+
   const items = useMemo(() => {
-    const parPublic = filtre === "tous" ? FAQ : FAQ.filter((f) => f.publicCible === filtre || f.publicCible === "tous");
-    return rechercherFaq(parPublic, q);
-  }, [q, filtre]);
+    const parContexte = FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous");
+    return rechercherFaq(parContexte, q);
+  }, [q, contexte]);
 
   const categories = useMemo(() => {
     const map = new Map<string, typeof items>();
@@ -32,7 +42,7 @@ export function AideFlottante() {
         className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[var(--shadow-elegant)] transition hover:scale-105 sm:bottom-6"
         style={{ background: "linear-gradient(135deg, #0F8A44 0%, #D9A61A 100%)" }}
       >
-        <HelpCircle className="h-6 w-6" />
+        <Headset className="h-6 w-6" />
       </button>
 
       {open && (
@@ -40,15 +50,18 @@ export function AideFlottante() {
           <div className="flex h-[85vh] w-full max-w-2xl flex-col rounded-t-2xl bg-surface shadow-2xl sm:h-[80vh] sm:rounded-2xl">
             <div className="flex items-center justify-between border-b border-border p-4">
               <div className="flex items-center gap-2">
-                <span className="grid h-9 w-9 place-items-center rounded-full bg-primary-soft text-primary"><HelpCircle className="h-5 w-5" /></span>
-                <h2 className="font-bold">Centre d'aide</h2>
+                <span className="grid h-9 w-9 place-items-center rounded-full bg-primary-soft text-primary"><Headset className="h-5 w-5" /></span>
+                <div>
+                  <h2 className="font-bold leading-tight">Centre d'aide</h2>
+                  <p className="text-xs text-muted-foreground">{contexte === "admin" ? "Espace administrateur" : "Espace étudiant"}</p>
+                </div>
               </div>
               <button onClick={() => setOpen(false)} aria-label="Fermer" className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-3 border-b border-border p-4">
+            <div className="border-b border-border p-4">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
@@ -58,21 +71,6 @@ export function AideFlottante() {
                   className="input-soft w-full pl-9"
                   autoFocus
                 />
-              </div>
-              <div className="flex gap-2">
-                {[
-                  { k: "tous" as const, l: "Tout" },
-                  { k: "etudiant" as const, l: "Étudiant" },
-                  { k: "admin" as const, l: "Administrateur" },
-                ].map((f) => (
-                  <button
-                    key={f.k}
-                    onClick={() => setFiltre(f.k)}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${filtre === f.k ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
-                  >
-                    {f.l}
-                  </button>
-                ))}
               </div>
             </div>
 

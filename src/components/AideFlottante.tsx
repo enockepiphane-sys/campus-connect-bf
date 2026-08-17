@@ -1,13 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Headset, X, Search, Mail } from "lucide-react";
-import { FAQ, rechercherFaq, type Public } from "@/lib/faq";
+import { Headset, X, Mail, SendHorizontal } from "lucide-react";
+import { FAQ, trouverMeilleuresReponses, type Public } from "@/lib/faq";
 
 export function AideFlottante() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
-  const [q, setQ] = useState("");
-  const [ouvert, setOuvert] = useState<string | null>(null);
+  const [question, setQuestion] = useState("");
+  const [recherche, setRecherche] = useState(""); // version "débouncée" de la saisie
 
   // Le contenu dépend de la zone de l'app, jamais d'un choix libre de l'utilisateur :
   // les questions "administrateur" (gestion étudiants, import Excel, configuration...)
@@ -18,31 +18,54 @@ export function AideFlottante() {
     ? "admin"
     : "etudiant";
 
-  const items = useMemo(() => {
-    const parContexte = FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous");
-    return rechercherFaq(parContexte, q);
-  }, [q, contexte]);
+  const banqueFaq = useMemo(
+    () => FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous"),
+    [contexte],
+  );
 
-  const categories = useMemo(() => {
-    const map = new Map<string, typeof items>();
-    for (const item of items) {
-      const arr = map.get(item.categorie) ?? [];
-      arr.push(item);
-      map.set(item.categorie, arr);
-    }
-    return Array.from(map.entries());
-  }, [items]);
+  // La recherche se met à jour au fur et à mesure que l'utilisateur tape (avec un
+  // petit délai pour éviter de recalculer à chaque lettre), pas seulement à l'envoi.
+  useEffect(() => {
+    const t = setTimeout(() => setRecherche(question), 300);
+    return () => clearTimeout(t);
+  }, [question]);
+
+  // L'étudiant/l'admin pose sa propre question en langage libre ; les questions
+  // pré-écrites de la FAQ ne sont jamais affichées comme une liste à parcourir —
+  // elles servent uniquement, en coulisse, à faire remonter la bonne réponse.
+  const resultats = useMemo(() => {
+    if (recherche.trim().length < 3) return [];
+    return trouverMeilleuresReponses(banqueFaq, recherche, 3);
+  }, [recherche, banqueFaq]);
+
+  function poserQuestion(e: React.FormEvent) {
+    e.preventDefault();
+    setRecherche(question); // envoi immédiat, sans attendre le débounce
+  }
+
+  function fermer() {
+    setOpen(false);
+    setQuestion("");
+    setRecherche("");
+  }
 
   return (
     <>
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Ouvrir l'aide"
-        className="fixed bottom-24 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[var(--shadow-elegant)] transition hover:scale-105 sm:bottom-6"
-        style={{ background: "linear-gradient(135deg, #0F8A44 0%, #D9A61A 100%)" }}
+        aria-label="Ouvrir l'aide et le support"
+        className="fixed bottom-6 right-4 z-50 flex flex-col items-center gap-1"
       >
-        <Headset className="h-6 w-6" />
+        <span
+          className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[var(--shadow-elegant)] transition hover:scale-105"
+          style={{ background: "linear-gradient(135deg, #0F8A44 0%, #D9A61A 100%)" }}
+        >
+          <Headset className="h-6 w-6" />
+        </span>
+        <span className="rounded-full bg-foreground/80 px-2 py-0.5 text-[10px] font-semibold text-white shadow-sm">
+          Aide &amp; Support
+        </span>
       </button>
 
       {open && (
@@ -52,71 +75,62 @@ export function AideFlottante() {
               <div className="flex items-center gap-2">
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-primary-soft text-primary"><Headset className="h-5 w-5" /></span>
                 <div>
-                  <h2 className="font-bold leading-tight">Centre d'aide</h2>
+                  <h2 className="font-bold leading-tight">Aide & Support</h2>
                   <p className="text-xs text-muted-foreground">{contexte === "admin" ? "Espace administrateur" : "Espace étudiant"}</p>
                 </div>
               </div>
-              <button onClick={() => setOpen(false)} aria-label="Fermer" className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
+              <button onClick={fermer} aria-label="Fermer" className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="border-b border-border p-4">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  value={q}
-                  onChange={(e) => setQ(e.target.value)}
-                  placeholder="Rechercher une question…"
-                  className="input-soft w-full pl-9"
-                  autoFocus
-                />
-              </div>
-            </div>
-
             <div className="flex-1 overflow-y-auto p-4">
-              {categories.length === 0 && (
+              {resultats.length === 0 && recherche.trim().length < 3 && (
+                <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
+                  <Headset className="h-8 w-8 text-primary/50" />
+                  <p>Pose ta question ci-dessous, en tes propres mots.</p>
+                  <p className="text-xs">Exemple : « pourquoi je ne vois pas mes notes ? »</p>
+                </div>
+              )}
+
+              {recherche.trim().length >= 3 && resultats.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">Voici ce qui correspond le mieux à ta question :</p>
+                  {resultats.map((item) => (
+                    <div key={item.id} className="rounded-xl border border-border bg-background/40 p-4">
+                      <p className="mb-1.5 text-sm font-semibold">{item.question}</p>
+                      <p className="whitespace-pre-line text-sm text-muted-foreground">{item.reponse}</p>
+                    </div>
+                  ))}
+                  <p className="pt-1 text-center text-xs text-muted-foreground">
+                    Ce n'est pas ce que tu cherchais ?{" "}
+                    <a href="mailto:team@campuslink-bf.app" className="font-semibold text-primary">Écris au support</a>
+                  </p>
+                </div>
+              )}
+
+              {recherche.trim().length >= 3 && resultats.length === 0 && (
                 <div className="py-10 text-center text-sm text-muted-foreground">
-                  <p>Aucun résultat pour cette recherche.</p>
+                  <p>Je n'ai pas trouvé de réponse à cette question.</p>
                   <a href="mailto:team@campuslink-bf.app" className="btn-bf-primary mt-4 inline-flex">
                     <Mail className="h-4 w-4" />Contacter le support
                   </a>
                 </div>
               )}
-              <div className="space-y-5">
-                {categories.map(([cat, list]) => (
-                  <div key={cat}>
-                    <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{cat}</h3>
-                    <div className="space-y-1.5">
-                      {list.map((item) => {
-                        const isOpen = ouvert === item.id;
-                        return (
-                          <div key={item.id} className="overflow-hidden rounded-xl border border-border bg-background/40">
-                            <button
-                              onClick={() => setOuvert(isOpen ? null : item.id)}
-                              className="flex w-full items-center justify-between gap-2 px-4 py-3 text-left text-sm font-medium"
-                            >
-                              {item.question}
-                              <span className="shrink-0 text-muted-foreground">{isOpen ? "−" : "+"}</span>
-                            </button>
-                            {isOpen && (
-                              <p className="whitespace-pre-line border-t border-border px-4 py-3 text-sm text-muted-foreground">
-                                {item.reponse}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
 
-            <div className="border-t border-border p-4 text-center text-xs text-muted-foreground">
-              Toujours bloqué ?{" "}
-              <a href="mailto:team@campuslink-bf.app" className="font-semibold text-primary">team@campuslink-bf.app</a>
-            </div>
+            <form onSubmit={poserQuestion} className="flex items-center gap-2 border-t border-border p-4">
+              <input
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                placeholder="Écris ta question ici…"
+                className="input-soft flex-1"
+                autoFocus
+              />
+              <button type="submit" aria-label="Envoyer la question" className="btn-bf-primary shrink-0 px-4">
+                <SendHorizontal className="h-4 w-4" />
+              </button>
+            </form>
           </div>
         </div>
       )}

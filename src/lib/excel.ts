@@ -220,3 +220,82 @@ export async function parseExcelEtudiants(
 
   return { valides, rejetees };
 }
+
+// =========================================================
+// Import Excel des notes
+// =========================================================
+
+export type LigneNoteImport = {
+  identifiant: string; // email ou matricule, selon la colonne trouvée
+  parIdentifiant: "email" | "matricule";
+  notesParMatiere: Record<string, number>; // clé = nom de colonne (nom de matière), valeur = note /20
+};
+
+export type ResultatParsingNotesExcel = {
+  valides: LigneNoteImport[];
+  rejetees: LigneRejetee[];
+  colonnesMatieres: string[]; // en-têtes de colonnes détectées comme des matières (à faire correspondre ensuite)
+};
+
+/**
+ * Parse un fichier Excel de notes. Format attendu : une ligne par étudiant,
+ * une colonne d'identification (email ou matricule), puis une colonne par
+ * matière contenant la note /20. Les colonnes non reconnues comme
+ * identifiant sont considérées comme des colonnes de matière.
+ *
+ * Exemple de fichier :
+ *   | Email                  | Statistique | Algèbre |
+ *   | etudiant1@example.com  | 14          | 12.5    |
+ */
+export async function parseExcelNotes(file: File): Promise<ResultatParsingNotesExcel> {
+  const buffer = await file.arrayBuffer();
+  const classeur = XLSX.read(buffer, { type: "array", cellDates: false });
+  const feuille = classeur.Sheets[classeur.SheetNames[0]];
+  if (!feuille) return { valides: [], rejetees: [], colonnesMatieres: [] };
+
+  const lignesBrutes: Record<string, unknown>[] = XLSX.utils.sheet_to_json(feuille, { defval: "", raw: true });
+  if (lignesBrutes.length === 0) return { valides: [], rejetees: [], colonnesMatieres: [] };
+
+  const entetesOriginaux = Object.keys(lignesBrutes[0]);
+  const headersNormalises = new Map<string, string>();
+  for (const h of entetesOriginaux) headersNormalises.set(normaliserEnTete(h), h);
+
+  const colEmail = trouverColonne(headersNormalises, ALIAS_EMAIL);
+  const colMatricule = trouverColonne(headersNormalises, ALIAS_MATRICULE);
+
+  if (!colEmail && !colMatricule) {
+    return { valides: [], rejetees: [{ ligne: 1, raison: "Aucune colonne Email ou Matricule trouvée pour identifier les étudiants", donnees: {} }], colonnesMatieres: [] };
+  }
+
+  const colIdentifiant = colEmail ?? colMatricule!;
+  const parIdentifiant: "email" | "matricule" = colEmail ? "email" : "matricule";
+  const colonnesMatieres = entetesOriginaux.filter((h) => h !== colIdentifiant);
+
+  const valides: LigneNoteImport[] = [];
+  const rejetees: LigneRejetee[] = [];
+
+  lignesBrutes.forEach((ligne, idx) => {
+    const numeroLigne = idx + 2;
+    const identifiant = String(ligne[colIdentifiant] ?? "").trim();
+    if (!identifiant) {
+      rejetees.push({ ligne: numeroLigne, raison: `${parIdentifiant === "email" ? "Email" : "Matricule"} manquant`, donnees: ligne });
+      return;
+    }
+    const notesParMatiere: Record<string, number> = {};
+    for (const col of colonnesMatieres) {
+      const brut = ligne[col];
+      if (brut === "" || brut === null || brut === undefined) continue;
+      const val = Number(String(brut).replace(",", "."));
+      if (!Number.isNaN(val) && val >= 0 && val <= 20) {
+        notesParMatiere[col] = val;
+      }
+    }
+    if (Object.keys(notesParMatiere).length === 0) {
+      rejetees.push({ ligne: numeroLigne, raison: "Aucune note valide sur cette ligne", donnees: ligne });
+      return;
+    }
+    valides.push({ identifiant: parIdentifiant === "email" ? identifiant.toLowerCase() : identifiant, parIdentifiant, notesParMatiere });
+  });
+
+  return { valides, rejetees, colonnesMatieres };
+}

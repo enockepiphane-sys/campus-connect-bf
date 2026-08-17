@@ -8,7 +8,7 @@ import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upl
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
-import { parseExcelEtudiants, type ChampsOptionnels } from "@/lib/excel";
+import { parseExcelEtudiants, parseExcelNotes, type ChampsOptionnels } from "@/lib/excel";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: Dashboard,
@@ -815,6 +815,88 @@ function MatieresPanel({ etabId }: { etabId: string }) {
     }
   }
 
+  const [importBusy, setImportBusy] = useState(false);
+  const [showImportNotes, setShowImportNotes] = useState(false);
+  const [importResultat, setImportResultat] = useState<{ importees: number; ignorees: { raison: string; detail: string }[] } | null>(null);
+
+  async function importerNotesExcel(file: File) {
+    if (!niveauId) return;
+    setImportBusy(true);
+    setImportResultat(null);
+    try {
+      const { valides, rejetees, colonnesMatieres } = await parseExcelNotes(file);
+      const ignorees: { raison: string; detail: string }[] = rejetees.map((r) => ({ raison: r.raison, detail: `Ligne ${r.ligne}` }));
+
+      if (valides.length === 0) {
+        setImportResultat({ importees: 0, ignorees: ignorees.length ? ignorees : [{ raison: "Fichier vide ou illisible", detail: "" }] });
+        return;
+      }
+
+      // Correspondance colonne du fichier -> matière existante (par nom, insensible à la casse/accents)
+      const normaliser = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const matiereParNomNormalise = new Map(matieres.map((m) => [normaliser(m.nom), m]));
+      const colonneVersMatiere = new Map<string, { id: string; nom: string }>();
+      for (const col of colonnesMatieres) {
+        const m = matiereParNomNormalise.get(normaliser(col));
+        if (m) colonneVersMatiere.set(col, m);
+        else ignorees.push({ raison: "Colonne non reconnue comme matière du niveau", detail: `"${col}"` });
+      }
+
+      if (colonneVersMatiere.size === 0) {
+        setImportResultat({ importees: 0, ignorees: [{ raison: "Aucune colonne du fichier ne correspond à une matière existante de ce niveau", detail: "Vérifiez l'orthographe des noms de matières dans le fichier." }] });
+        return;
+      }
+
+      // Correspondance identifiant (email/matricule) -> étudiant existant
+      const { data: etuData } = await supabase
+        .from("etudiants_pre_inscrits")
+        .select("user_id,email,matricule,nom_complet")
+        .eq("niveau_id", niveauId)
+        .eq("inscrit", true)
+        .is("deleted_at", null);
+      const parEmail = new Map((etuData ?? []).filter((e) => e.email).map((e) => [e.email!.toLowerCase(), e]));
+      const parMatricule = new Map((etuData ?? []).filter((e) => e.matricule).map((e) => [e.matricule!, e]));
+
+      const lignesAInserer: { etudiant_user_id: string; matiere_id: string; valeur: number }[] = [];
+      for (const ligne of valides) {
+        const etu = ligne.parIdentifiant === "email" ? parEmail.get(ligne.identifiant) : parMatricule.get(ligne.identifiant);
+        if (!etu || !etu.user_id) {
+          ignorees.push({ raison: "Étudiant non trouvé (ou non encore inscrit) dans ce niveau", detail: ligne.identifiant });
+          continue;
+        }
+        for (const [col, valeur] of Object.entries(ligne.notesParMatiere)) {
+          const mat = colonneVersMatiere.get(col);
+          if (!mat) continue;
+          lignesAInserer.push({ etudiant_user_id: etu.user_id, matiere_id: mat.id, valeur });
+        }
+      }
+
+      if (lignesAInserer.length > 0) {
+        const { error } = await supabase.from("notes").upsert(lignesAInserer, { onConflict: "etudiant_user_id,matiere_id" });
+        if (error) throw error;
+        await supabase.rpc("enregistrer_audit", {
+          _etablissement_id: etabId,
+          _action: "creation",
+          _table_name: "notes",
+          _record_id: null,
+          _description: `Import Excel de ${lignesAInserer.length} note(s) pour le niveau "${niveaux.find((n) => n.niveau_id === niveauId)?.label ?? ""}"`,
+          _ancienne_valeur: null,
+          _nouvelle_valeur: JSON.stringify({ count: lignesAInserer.length }),
+        });
+      }
+
+      setImportResultat({ importees: lignesAInserer.length, ignorees });
+      if (selMat) {
+        const { data } = await supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire,session").eq("matiere_id", selMat).is("deleted_at", null);
+        setNotes((data as never) ?? []);
+      }
+    } catch (err) {
+      setImportResultat({ importees: 0, ignorees: [{ raison: err instanceof Error ? err.message : "Échec de l'import", detail: "" }] });
+    } finally {
+      setImportBusy(false);
+    }
+  }
+
   async function reloadMatieresEtUe() {
     if (!niveauId) return;
     const [{ data: mats }, { data: ueData }] = await Promise.all([
@@ -1027,12 +1109,56 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                 <Pill>{matieres.length}</Pill>
               </div>
               {matieres.length > 0 && etudiants.length > 0 && (
-                <button onClick={exporterNotesExcel} disabled={exportBusy} className="btn-bf-outline text-sm">
-                  <Upload className="icon-tinted h-4 w-4 rotate-180" />{exportBusy ? "Génération…" : "Exporter les notes (Excel)"}
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="btn-forest cursor-pointer text-sm">
+                    <Upload className="h-4 w-4" />{importBusy ? "Import…" : "Importer des notes (Excel)"}
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="hidden"
+                      disabled={importBusy}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) { setShowImportNotes(true); importerNotesExcel(f); }
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <button onClick={exporterNotesExcel} disabled={exportBusy} className="btn-bf-outline text-sm">
+                    <Upload className="icon-tinted h-4 w-4 rotate-180" />{exportBusy ? "Génération…" : "Exporter les notes (Excel)"}
+                  </button>
+                </div>
               )}
             </div>
             <div className="p-6">
+              {showImportNotes && (
+                <div className="mb-5 space-y-2 rounded-xl border border-primary bg-primary-soft/30 p-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-bold">Import Excel des notes</h4>
+                    <button onClick={() => { setShowImportNotes(false); setImportResultat(null); }} className="text-xs text-muted-foreground underline">Fermer</button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Format attendu : une colonne Email (ou Matricule), puis une colonne par matière portant exactement le nom de la matière, avec la note /20.
+                  </p>
+                  {importBusy && <p className="text-xs text-muted-foreground">Import en cours…</p>}
+                  {importResultat && (
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-primary">{importResultat.importees} note(s) importée(s)/mise(s) à jour.</p>
+                      {importResultat.ignorees.length > 0 && (
+                        <details className="text-xs text-muted-foreground">
+                          <summary className="cursor-pointer font-medium">{importResultat.ignorees.length} ligne(s) ignorée(s) — voir détails</summary>
+                          <ul className="mt-1 max-h-40 space-y-0.5 overflow-y-auto pl-4">
+                            {importResultat.ignorees.map((r, i) => (
+                              <li key={i}>• {r.raison}{r.detail ? ` (${r.detail})` : ""}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Gestion des UE (Unités d'Enseignement) */}
               <div className="mb-5 rounded-xl border border-border bg-muted/40 p-4">
                 <h4 className="mb-2 text-sm font-bold">Unités d'enseignement (UE)</h4>

@@ -785,8 +785,10 @@ function conseilNote(valeur: number): { emoji: string; texte: string; couleur: s
 }
 
 function Notes() {
-  const [list, setList] = useState<{ id: string; valeur: number; type_evaluation: string; commentaire: string | null; matiere_id: string; created_at: string }[]>([]);
-  const [matieres, setMatieres] = useState<Record<string, { nom: string; credits: number }>>({});
+  const [list, setList] = useState<{ id: string; valeur: number; type_evaluation: string; commentaire: string | null; matiere_id: string; created_at: string; session: string }[]>([]);
+  const [matieres, setMatieres] = useState<Record<string, { nom: string; credits: number; ue_id: string | null }>>({});
+  const [ues, setUes] = useState<Record<string, { nom: string; code: string | null }>>({});
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("notes").select("*").order("created_at", { ascending: false });
@@ -794,10 +796,18 @@ function Notes() {
       setList(rows);
       const ids = Array.from(new Set(rows.map((n) => n.matiere_id)));
       if (ids.length) {
-        const { data: mats } = await supabase.from("matieres").select("id,nom,credits").in("id", ids);
-        const m: Record<string, { nom: string; credits: number }> = {};
-        (mats ?? []).forEach((x) => { m[x.id] = { nom: x.nom, credits: Number(x.credits) }; });
+        const { data: mats } = await supabase.from("matieres").select("id,nom,credits,ue_id").in("id", ids);
+        const m: Record<string, { nom: string; credits: number; ue_id: string | null }> = {};
+        (mats ?? []).forEach((x) => { m[x.id] = { nom: x.nom, credits: Number(x.credits), ue_id: x.ue_id }; });
         setMatieres(m);
+
+        const ueIds = Array.from(new Set(Object.values(m).map((x) => x.ue_id).filter(Boolean))) as string[];
+        if (ueIds.length) {
+          const { data: ueData } = await supabase.from("unites_enseignement").select("id,nom,code").in("id", ueIds);
+          const u: Record<string, { nom: string; code: string | null }> = {};
+          (ueData ?? []).forEach((x) => { u[x.id] = { nom: x.nom, code: x.code }; });
+          setUes(u);
+        }
       }
     })();
   }, []);
@@ -806,47 +816,100 @@ function Notes() {
     (acc[n.matiere_id] ??= [] as never).push(n); return acc;
   }, {});
 
-  return (
-    <div className="space-y-4">
-      {Object.entries(byMat).map(([mid, notes]) => {
-        const mat = matieres[mid];
-        const moy = notes.reduce((s, n) => s + Number(n.valeur), 0) / notes.length;
-        const conseilMoy = conseilNote(moy);
-        return (
-          <div key={mid} className="card-soft p-5">
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="font-bold">{mat?.nom ?? "Matière"}</h3>
-              <div className="text-right">
-                <div className="text-sm">Moyenne : <strong className={conseilMoy.couleur}>{moy.toFixed(2)}</strong></div>
-                {mat && <span className="text-xs text-muted-foreground">{mat.credits} crédit{mat.credits > 1 ? "s" : ""}</span>}
-              </div>
-            </div>
-            <div className="mb-3 flex items-center gap-2 rounded-[10px] bg-primary-soft p-2.5">
-              <span className="text-lg leading-none">{conseilMoy.emoji}</span>
-              <p className="text-xs font-medium text-foreground">{conseilMoy.texte}</p>
-            </div>
-            <div className="space-y-2">
-              {notes.map((n) => {
-                const c = conseilNote(Number(n.valeur));
-                return (
-                  <div key={n.id} className="flex items-center gap-3 rounded-[10px] border border-border bg-surface p-3">
-                    <span className="text-xl leading-none">{c.emoji}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`text-base font-bold ${c.couleur}`}>{n.valeur}</span>
-                        <span className="text-xs text-muted-foreground">/20 · {n.type_evaluation}</span>
-                        <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{appreciation(Number(n.valeur))}</span>
-                      </div>
-                      <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{c.texte}</p>
-                    </div>
-                    <span className="shrink-0 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
+  // Regroupe les matières (avec au moins une note) par UE
+  const matiereIdsAvecNotes = Object.keys(byMat);
+  const parUe: Record<string, string[]> = {};
+  const matieresLibres: string[] = [];
+  matiereIdsAvecNotes.forEach((mid) => {
+    const ueId = matieres[mid]?.ue_id;
+    if (ueId) { (parUe[ueId] ??= []).push(mid); }
+    else { matieresLibres.push(mid); }
+  });
+
+  function blocMatiere(mid: string) {
+    const notes = byMat[mid];
+    const mat = matieres[mid];
+    const moy = notes.reduce((s, n) => s + Number(n.valeur), 0) / notes.length;
+    const conseilMoy = conseilNote(moy);
+    return (
+      <div key={mid} className="card-soft p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="font-bold">{mat?.nom ?? "Matière"}</h3>
+          <div className="text-right">
+            <div className="text-sm">Moyenne : <strong className={conseilMoy.couleur}>{moy.toFixed(2)}</strong></div>
+            {mat && <span className="text-xs text-muted-foreground">{mat.credits} crédit{mat.credits > 1 ? "s" : ""}</span>}
+          </div>
+        </div>
+        <div className="mb-3 flex items-center gap-2 rounded-[10px] bg-primary-soft p-2.5">
+          <span className="text-lg leading-none">{conseilMoy.emoji}</span>
+          <p className="text-xs font-medium text-foreground">{conseilMoy.texte}</p>
+        </div>
+        <div className="space-y-2">
+          {notes.map((n) => {
+            const c = conseilNote(Number(n.valeur));
+            return (
+              <div key={n.id} className="flex items-center gap-3 rounded-[10px] border border-border bg-surface p-3">
+                <span className="text-xl leading-none">{c.emoji}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`text-base font-bold ${c.couleur}`}>{n.valeur}</span>
+                    <span className="text-xs text-muted-foreground">/20 · {n.type_evaluation}</span>
+                    <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-medium text-accent-foreground">{appreciation(Number(n.valeur))}</span>
+                    {n.session === "rattrapage" && (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">Rattrapage</span>
+                    )}
                   </div>
-                );
-              })}
+                  <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{c.texte}</p>
+                </div>
+                <span className="shrink-0 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleDateString("fr-FR")}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      {Object.entries(parUe).map(([ueId, mids]) => {
+        const ue = ues[ueId];
+        let totalPondere = 0, creditsTotal = 0, aRattrapage = false;
+        mids.forEach((mid) => {
+          const notes = byMat[mid];
+          const mat = matieres[mid];
+          const moy = notes.reduce((s, n) => s + Number(n.valeur), 0) / notes.length;
+          totalPondere += moy * (mat?.credits ?? 0);
+          creditsTotal += mat?.credits ?? 0;
+          if (notes.some((n) => n.session === "rattrapage")) aRattrapage = true;
+        });
+        const moyenneUe = creditsTotal > 0 ? Math.round((totalPondere / creditsTotal) * 100) / 100 : 0;
+        const statut = moyenneUe >= 10 ? (aRattrapage ? "VC" : "VA") : "NV";
+        const statutLabel = statut === "VA" ? "Validé" : statut === "VC" ? "Validé par compensation" : "Non validé";
+        const statutStyle = statut === "VA" ? "bg-primary-soft text-primary" : statut === "VC" ? "bg-accent text-accent-foreground" : "bg-destructive/15 text-destructive";
+        return (
+          <div key={ueId} className="overflow-hidden rounded-[14px] border border-border">
+            <div className="flex flex-wrap items-center justify-between gap-2 bg-muted/60 px-4 py-3">
+              <div className="min-w-0">
+                <h3 className="font-bold">{ue?.code && <span className="mr-1.5 font-mono text-xs text-muted-foreground">{ue.code}</span>}{ue?.nom ?? "Unité d'enseignement"}</h3>
+                <p className="text-xs text-muted-foreground">Moyenne UE : <strong>{moyenneUe}/20</strong> · {creditsTotal} crédit{creditsTotal > 1 ? "s" : ""}</p>
+              </div>
+              <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${statutStyle}`}>{statut} · {statutLabel}</span>
+            </div>
+            <div className="space-y-3 bg-app p-3">
+              {mids.map((mid) => blocMatiere(mid))}
             </div>
           </div>
         );
       })}
+
+      {matieresLibres.length > 0 && (
+        <div className="space-y-4">
+          {ues && Object.keys(parUe).length > 0 && <p className="text-sm font-medium text-muted-foreground">Matières hors UE</p>}
+          {matieresLibres.map((mid) => blocMatiere(mid))}
+        </div>
+      )}
+
       {list.length === 0 && (
         <div className="card-soft flex flex-col items-center gap-2 px-6 py-12 text-center">
           <GraduationCap className="icon-violet h-8 w-8 opacity-60" />

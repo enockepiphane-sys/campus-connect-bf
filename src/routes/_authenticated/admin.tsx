@@ -69,7 +69,7 @@ function Dashboard() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-              <span className="whitespace-nowrap text-white">Campus<span className="text-[#FDE9B0]">Link</span></span>
+              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
               <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px]" />
             </div>
           </div>

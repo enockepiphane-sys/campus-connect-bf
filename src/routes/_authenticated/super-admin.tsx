@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
+import { humanizeDbError } from "@/lib/auth-timeout";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw } from "lucide-react";
 
@@ -173,11 +174,11 @@ function EtablissementsPanel() {
     };
     if (editing) {
       const { error } = await supabase.from("etablissements").update(payload).eq("id", editing);
-      if (error) { setMsg(error.message); return; }
+      if (error) { setMsg(humanizeDbError(error)); return; }
       logAction("modification", "etablissement", payload.nom);
     } else {
       const { error } = await supabase.from("etablissements").insert(payload);
-      if (error) { setMsg(error.message); return; }
+      if (error) { setMsg(humanizeDbError(error)); return; }
       logAction("creation", "etablissement", payload.nom);
     }
     setForm({ statut: "actif" }); setEditing(null); load();
@@ -268,7 +269,7 @@ function PreAdminsPanel() {
     const { error } = await supabase.from("admins_pre_autorises").insert({
       etablissement_id: selEtab, ...form, email: form.email.trim().toLowerCase(),
     });
-    if (error) { setMsg(error.message); return; }
+    if (error) { setMsg(humanizeDbError(error)); return; }
     logAction("creation", "admin_pre_autorise", form.nom_complet, `Email : ${form.email.trim().toLowerCase()}`);
     setForm({ nom_complet: "", email: "", date_naissance: "" });
     const { data } = await supabase.from("admins_pre_autorises").select("*").eq("etablissement_id", selEtab).is("deleted_at", null).order("nom_complet");
@@ -411,7 +412,7 @@ function EvenementsSociauxPanel() {
         const ext = file.name.split(".").pop() ?? "jpg";
         const path = `${crypto.randomUUID()}.${ext}`;
         const { error: upErr } = await supabase.storage.from(AFFICHES_SOCIALES_BUCKET).upload(path, file, { contentType: file.type });
-        if (upErr) { setMsg("Échec de l'envoi de l'affiche : " + upErr.message); setBusy(false); return; }
+        if (upErr) { setMsg("Échec de l'envoi de l'affiche : " + humanizeDbError(upErr)); setBusy(false); return; }
         affiche_url = path;
       }
       const payload = {
@@ -424,11 +425,11 @@ function EvenementsSociauxPanel() {
       };
       if (editing) {
         const { error } = await supabase.from("evenements_sociaux").update(payload).eq("id", editing);
-        if (error) { setMsg(error.message); setBusy(false); return; }
+        if (error) { setMsg(humanizeDbError(error)); setBusy(false); return; }
         logAction("modification", "evenement_social", payload.titre);
       } else {
         const { error } = await supabase.from("evenements_sociaux").insert(payload);
-        if (error) { setMsg(error.message); setBusy(false); return; }
+        if (error) { setMsg(humanizeDbError(error)); setBusy(false); return; }
         logAction("creation", "evenement_social", payload.titre);
       }
       resetForm();

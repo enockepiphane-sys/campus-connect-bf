@@ -171,6 +171,10 @@ function StructurePanel({ etabId }: { etabId: string }) {
   const [nfil, setNfil] = useState("");
   const [nniv, setNniv] = useState({ filiere_id: "", nom: "", ordre: "1" });
   const [filASupprimer, setFilASupprimer] = useState<Filiere | null>(null);
+  const [filEnEdition, setFilEnEdition] = useState<string | null>(null);
+  const [editFilNom, setEditFilNom] = useState("");
+  const [nivEnEdition, setNivEnEdition] = useState<string | null>(null);
+  const [editNiv, setEditNiv] = useState({ nom: "", ordre: "1" });
 
   async function load() {
     const { data: f } = await supabase.from("filieres").select("id,nom").eq("etablissement_id", etabId).is("deleted_at", null).order("nom");
@@ -188,6 +192,20 @@ function StructurePanel({ etabId }: { etabId: string }) {
     if (!nfil.trim()) return;
     await supabase.from("filieres").insert({ etablissement_id: etabId, nom: nfil.trim() });
     setNfil(""); load();
+  }
+  async function enregistrerEditionFil(f: Filiere) {
+    if (!editFilNom.trim()) return;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "modification",
+      _table_name: "filieres",
+      _record_id: f.id,
+      _description: `Modification de la filière "${f.nom}" → "${editFilNom.trim()}"`,
+      _ancienne_valeur: f,
+      _nouvelle_valeur: { nom: editFilNom.trim() },
+    });
+    await supabase.from("filieres").update({ nom: editFilNom.trim() }).eq("id", f.id);
+    setFilEnEdition(null); load();
   }
   async function confirmerDelFil() {
     if (!filASupprimer) return;
@@ -210,6 +228,21 @@ function StructurePanel({ etabId }: { etabId: string }) {
     if (!nniv.filiere_id || !nniv.nom.trim()) return;
     await supabase.from("niveaux").insert({ filiere_id: nniv.filiere_id, nom: nniv.nom.trim(), ordre: Number(nniv.ordre) || 1 });
     setNniv({ filiere_id: nniv.filiere_id, nom: "", ordre: "1" }); load();
+  }
+  async function enregistrerEditionNiv(n: Niveau) {
+    if (!editNiv.nom.trim()) return;
+    const payload = { nom: editNiv.nom.trim(), ordre: Number(editNiv.ordre) || 1 };
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "modification",
+      _table_name: "niveaux",
+      _record_id: n.id,
+      _description: `Modification du niveau "${n.nom}"`,
+      _ancienne_valeur: n,
+      _nouvelle_valeur: payload,
+    });
+    await supabase.from("niveaux").update(payload).eq("id", n.id);
+    setNivEnEdition(null); load();
   }
   const [nivASupprimer, setNivASupprimer] = useState<Niveau | null>(null);
   async function confirmerDelNiv() {
@@ -245,9 +278,22 @@ function StructurePanel({ etabId }: { etabId: string }) {
           </form>
           <ul className="space-y-2">
             {filieres.map((f) => (
-              <li key={f.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
-                <span className="truncate font-medium">{f.nom}</span>
-                <ActionBtn onClick={() => setFilASupprimer(f)} variant="danger" icon={Trash2} label="Supprimer la filière" />
+              <li key={f.id}>
+                {filEnEdition === f.id ? (
+                  <div className="flex min-w-0 items-center gap-2 rounded-xl border border-primary bg-primary-soft px-4 py-3 text-sm">
+                    <input value={editFilNom} onChange={(e) => setEditFilNom(e.target.value)} className="input-soft min-w-0 flex-1" />
+                    <button onClick={() => enregistrerEditionFil(f)} className="btn-forest text-sm">Valider</button>
+                    <button onClick={() => setFilEnEdition(null)} className="btn-bf-outline text-sm">Annuler</button>
+                  </div>
+                ) : (
+                  <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
+                    <span className="truncate font-medium">{f.nom}</span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <ActionBtn onClick={() => { setFilEnEdition(f.id); setEditFilNom(f.nom); }} variant="default" icon={Pencil} label="Modifier la filière" />
+                      <ActionBtn onClick={() => setFilASupprimer(f)} variant="danger" icon={Trash2} label="Supprimer la filière" />
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
             {filieres.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune filière pour le moment.</p>}
@@ -286,12 +332,28 @@ function StructurePanel({ etabId }: { etabId: string }) {
                   </div>
                   <div className="space-y-1.5">
                     {niveauxFiliere.map((n) => (
-                      <div key={n.id} className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
-                        <span className="flex min-w-0 items-center gap-2 truncate">
-                          <Pill tone="gold">{n.ordre}</Pill>
-                          <span className="truncate font-medium">{n.nom}</span>
-                        </span>
-                        <ActionBtn onClick={() => setNivASupprimer(n)} variant="danger" icon={Trash2} label="Supprimer le niveau" />
+                      <div key={n.id}>
+                        {nivEnEdition === n.id ? (
+                          <div className="grid grid-cols-2 gap-2 rounded-xl border border-primary bg-primary-soft p-3 sm:grid-cols-[minmax(0,1fr)_5rem_auto_auto]">
+                            <input value={editNiv.nom} onChange={(e) => setEditNiv({ ...editNiv, nom: e.target.value })}
+                              className="input-soft col-span-2 min-w-0 sm:col-span-1" placeholder="Nom" />
+                            <input type="number" value={editNiv.ordre} onChange={(e) => setEditNiv({ ...editNiv, ordre: e.target.value })}
+                              className="input-soft min-w-0" />
+                            <button onClick={() => enregistrerEditionNiv(n)} className="btn-forest text-sm">Valider</button>
+                            <button onClick={() => setNivEnEdition(null)} className="btn-bf-outline text-sm">Annuler</button>
+                          </div>
+                        ) : (
+                          <div className="flex min-w-0 items-center justify-between gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-sm shadow-sm transition hover:shadow-md">
+                            <span className="flex min-w-0 items-center gap-2 truncate">
+                              <Pill tone="gold">{n.ordre}</Pill>
+                              <span className="truncate font-medium">{n.nom}</span>
+                            </span>
+                            <div className="flex shrink-0 items-center gap-1">
+                              <ActionBtn onClick={() => { setNivEnEdition(n.id); setEditNiv({ nom: n.nom, ordre: String(n.ordre) }); }} variant="default" icon={Pencil} label="Modifier le niveau" />
+                              <ActionBtn onClick={() => setNivASupprimer(n)} variant="danger" icon={Trash2} label="Supprimer le niveau" />
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                     {niveauxFiliere.length === 0 && <p className="py-1 text-xs text-muted-foreground">Aucun niveau.</p>}
@@ -641,43 +703,251 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 
 
                                                      // -------------- Matières & Notes --------------
+function MatiereItem({ m, selMat, matEnEdition, editMat, setEditMat, setSelMat, setSaisie, setMsg, enregistrerEditionMat, setMatEnEdition, commencerEdition, supprimerMat, ues }: {
+  m: { id: string; nom: string; credits: number; ue_id: string | null };
+  selMat: string;
+  matEnEdition: string | null;
+  editMat: { nom: string; credits: string; ue_id: string };
+  setEditMat: (v: { nom: string; credits: string; ue_id: string }) => void;
+  setSelMat: (v: string) => void;
+  setSaisie: (v: Record<string, string>) => void;
+  setMsg: (v: string | null) => void;
+  enregistrerEditionMat: (id: string) => void;
+  setMatEnEdition: (v: string | null) => void;
+  commencerEdition: (m: { id: string; nom: string; credits: number; ue_id: string | null }) => void;
+  supprimerMat: (m: { id: string; nom: string; credits: number }) => void;
+  ues: { id: string; nom: string }[];
+}) {
+  if (matEnEdition === m.id) {
+    return (
+      <li className="grid grid-cols-2 gap-2 rounded-xl border border-primary bg-primary-soft p-3 sm:grid-cols-[minmax(0,1fr)_5rem_9rem_auto_auto]">
+        <input value={editMat.nom} onChange={(e) => setEditMat({ ...editMat, nom: e.target.value })}
+          className="input-soft col-span-2 min-w-0 sm:col-span-1" placeholder="Nom" />
+        <input type="number" min="0" step="1" value={editMat.credits} onChange={(e) => setEditMat({ ...editMat, credits: e.target.value })}
+          className="input-soft min-w-0" title="Crédits" />
+        <select value={editMat.ue_id} onChange={(e) => setEditMat({ ...editMat, ue_id: e.target.value })} className="input-soft min-w-0 text-sm">
+          <option value="">Matière libre</option>
+          {ues.map((u) => <option key={u.id} value={u.id}>{u.nom}</option>)}
+        </select>
+        <button onClick={() => enregistrerEditionMat(m.id)} className="btn-forest text-sm">Valider</button>
+        <button onClick={() => setMatEnEdition(null)} className="btn-bf-outline text-sm">Annuler</button>
+      </li>
+    );
+  }
+  return (
+    <li className={`flex w-full items-center justify-between gap-2 rounded-xl border p-3 text-sm shadow-sm transition ${selMat === m.id ? "border-primary bg-primary-soft shadow-md" : "border-border bg-surface hover:shadow-md"}`}>
+      <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }} className="min-w-0 flex-1 text-left">
+        <span className="font-semibold">{m.nom}</span>{" "}
+        <Pill tone="gold">{m.credits} crédit{m.credits > 1 ? "s" : ""}</Pill>
+      </button>
+      <div className="flex shrink-0 items-center gap-1">
+        <ActionBtn variant="default" icon={Pencil} label="Modifier la matière" onClick={() => commencerEdition(m)} />
+        <ActionBtn variant="danger" icon={Trash2} label="Supprimer la matière" onClick={() => supprimerMat(m)} />
+      </div>
+    </li>
+  );
+}
+
 function MatieresPanel({ etabId }: { etabId: string }) {
   const niveaux = useNiveauxOfEtab(etabId);
   const [niveauId, setNiveauId] = useState("");
-  const [matieres, setMatieres] = useState<{ id: string; nom: string; credits: number }[]>([]);
-  const [nMat, setNMat] = useState({ nom: "", credits: "1" });
+  const [matieres, setMatieres] = useState<{ id: string; nom: string; credits: number; ue_id: string | null }[]>([]);
+  const [ues, setUes] = useState<{ id: string; nom: string; code: string | null; ordre: number }[]>([]);
+  const [nUe, setNUe] = useState({ nom: "", code: "" });
+  const [ueEnEdition, setUeEnEdition] = useState<string | null>(null);
+  const [editUe, setEditUe] = useState({ nom: "", code: "" });
+  const [nMat, setNMat] = useState({ nom: "", credits: "1", ue_id: "" });
   const [selMat, setSelMat] = useState<string>("");
+  const [matEnEdition, setMatEnEdition] = useState<string | null>(null);
+  const [editMat, setEditMat] = useState({ nom: "", credits: "1", ue_id: "" });
   const [notes, setNotes] = useState<{ id: string; etudiant_user_id: string; valeur: number; type_evaluation: string; commentaire: string | null }[]>([]);
   const [etudiants, setEtudiants] = useState<{ user_id: string; nom_complet: string; email: string }[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
   const [saisie, setSaisie] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
+
+  async function exporterNotesExcel() {
+    if (!niveauId || matieres.length === 0 || etudiants.length === 0) return;
+    setExportBusy(true);
+    try {
+      const matiereIds = matieres.map((m) => m.id);
+      const { data: toutesNotes } = await supabase
+        .from("notes")
+        .select("etudiant_user_id,matiere_id,valeur")
+        .in("matiere_id", matiereIds)
+        .is("deleted_at", null);
+
+      const notesParEtudiant = new Map<string, Map<string, number>>();
+      for (const n of (toutesNotes as { etudiant_user_id: string; matiere_id: string; valeur: number }[]) ?? []) {
+        if (!notesParEtudiant.has(n.etudiant_user_id)) notesParEtudiant.set(n.etudiant_user_id, new Map());
+        notesParEtudiant.get(n.etudiant_user_id)!.set(n.matiere_id, n.valeur);
+      }
+
+      const lignes = etudiants.map((e) => {
+        const notesEtu = notesParEtudiant.get(e.user_id);
+        const ligne: Record<string, string | number> = {
+          "Nom complet": e.nom_complet,
+          "Email": e.email,
+        };
+        let total = 0;
+        let creditsTotal = 0;
+        for (const m of matieres) {
+          const val = notesEtu?.get(m.id);
+          ligne[`${m.nom} (/20)`] = val !== undefined ? val : "";
+          if (val !== undefined) {
+            total += val * m.credits;
+            creditsTotal += m.credits;
+          }
+        }
+        ligne["Moyenne générale"] = creditsTotal > 0 ? Math.round((total / creditsTotal) * 100) / 100 : "";
+        return ligne;
+      });
+
+      const XLSX = await import("xlsx");
+      const feuille = XLSX.utils.json_to_sheet(lignes);
+      const classeur = XLSX.utils.book_new();
+      const nomNiveau = niveaux.find((n) => n.niveau_id === niveauId)?.label ?? "Niveau";
+      XLSX.utils.book_append_sheet(classeur, feuille, "Notes");
+      XLSX.writeFile(classeur, `Notes_${nomNiveau.replace(/[^a-zA-Z0-9]/g, "_")}.xlsx`);
+    } finally {
+      setExportBusy(false);
+    }
+  }
+
+  async function reloadMatieresEtUe() {
+    if (!niveauId) return;
+    const [{ data: mats }, { data: ueData }] = await Promise.all([
+      supabase.from("matieres").select("id,nom,credits,ue_id").eq("niveau_id", niveauId).is("deleted_at", null).order("nom"),
+      supabase.from("unites_enseignement").select("id,nom,code,ordre").eq("niveau_id", niveauId).is("deleted_at", null).order("ordre"),
+    ]);
+    setMatieres((mats as never) ?? []);
+    setUes((ueData as never) ?? []);
+  }
 
   useEffect(() => {
-    if (!niveauId) { setMatieres([]); setEtudiants([]); setSelMat(""); setNotes([]); setSaisie({}); return; }
+    if (!niveauId) { setMatieres([]); setUes([]); setEtudiants([]); setSelMat(""); setNotes([]); setSaisie({}); return; }
     setSelMat(""); setNotes([]); setSaisie({}); setMsg(null);
-    Promise.all([
-      supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).is("deleted_at", null).order("nom"),
-      supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true).is("deleted_at", null),
-    ]).then(([{ data: mats }, { data: etus }]) => {
-      setMatieres((mats as never) ?? []);
-      setEtudiants(((etus ?? []).filter((e) => e.user_id)) as never);
-    });
+    reloadMatieresEtUe();
+    supabase.from("etudiants_pre_inscrits").select("user_id,nom_complet,email").eq("niveau_id", niveauId).eq("inscrit", true).is("deleted_at", null)
+      .then(({ data: etus }) => setEtudiants(((etus ?? []).filter((e) => e.user_id)) as never));
   }, [niveauId]);
 
+  const [notesUe, setNotesUe] = useState<{ etudiant_user_id: string; matiere_id: string; valeur: number; session: string }[]>([]);
+
   useEffect(() => {
-    if (!selMat) { setNotes([]); return; }
-    supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire").eq("matiere_id", selMat).is("deleted_at", null)
+    if (!selMat) { setNotes([]); setNotesUe([]); return; }
+    supabase.from("notes").select("id,etudiant_user_id,valeur,type_evaluation,commentaire,session").eq("matiere_id", selMat).is("deleted_at", null)
       .then(({ data }) => setNotes((data as never) ?? []));
-  }, [selMat]);
+
+    const matiereSel = matieres.find((m) => m.id === selMat);
+    if (matiereSel?.ue_id) {
+      const idsMatieresUe = matieres.filter((m) => m.ue_id === matiereSel.ue_id).map((m) => m.id);
+      supabase.from("notes").select("etudiant_user_id,matiere_id,valeur,session").in("matiere_id", idsMatieresUe).is("deleted_at", null)
+        .then(({ data }) => setNotesUe((data as never) ?? []));
+    } else {
+      setNotesUe([]);
+    }
+  }, [selMat, matieres]);
+
+  function statutUe(etudiantUserId: string): { moyenne: number; statut: "VA" | "VC" | "NV"; creditsTotal: number } | null {
+    const matiereSel = matieres.find((m) => m.id === selMat);
+    if (!matiereSel?.ue_id) return null;
+    const matieresUe = matieres.filter((m) => m.ue_id === matiereSel.ue_id);
+    let totalPondere = 0, creditsTotal = 0, nbNotes = 0, aRattrapage = false;
+    for (const m of matieresUe) {
+      const n = notesUe.find((x) => x.matiere_id === m.id && x.etudiant_user_id === etudiantUserId);
+      if (n) { totalPondere += n.valeur * m.credits; creditsTotal += m.credits; nbNotes++; if (n.session === "rattrapage") aRattrapage = true; }
+    }
+    if (nbNotes < matieresUe.length || creditsTotal === 0) return null;
+    const moyenne = Math.round((totalPondere / creditsTotal) * 100) / 100;
+    const statut = moyenne >= 10 ? (aRattrapage ? "VC" : "VA") : "NV";
+    return { moyenne, statut, creditsTotal };
+  }
+
+  async function addUe(e: React.FormEvent) {
+    e.preventDefault();
+    if (!niveauId || !nUe.nom.trim()) return;
+    const ordre = ues.length > 0 ? Math.max(...ues.map((u) => u.ordre)) + 1 : 1;
+    await supabase.from("unites_enseignement").insert({ niveau_id: niveauId, nom: nUe.nom.trim(), code: nUe.code.trim() || null, ordre });
+    setNUe({ nom: "", code: "" });
+    reloadMatieresEtUe();
+  }
+
+  async function enregistrerEditionUe(id: string) {
+    if (!editUe.nom.trim()) return;
+    await supabase.from("unites_enseignement").update({ nom: editUe.nom.trim(), code: editUe.code.trim() || null }).eq("id", id);
+    setUeEnEdition(null);
+    reloadMatieresEtUe();
+  }
+
+  async function supprimerUe(ue: { id: string; nom: string }) {
+    const matieresLiees = matieres.filter((m) => m.ue_id === ue.id).length;
+    const confirmMsg = matieresLiees > 0
+      ? `Supprimer l'UE "${ue.nom}" ? Les ${matieresLiees} matière(s) qu'elle contient ne seront pas supprimées, mais deviendront des matières libres (hors UE).`
+      : `Supprimer l'UE "${ue.nom}" ?`;
+    if (!confirm(confirmMsg)) return;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "unites_enseignement",
+      _record_id: ue.id,
+      _description: `Suppression de l'UE "${ue.nom}"`,
+      _ancienne_valeur: ue,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("unites_enseignement").update({ deleted_at: new Date().toISOString() }).eq("id", ue.id);
+    reloadMatieresEtUe();
+  }
 
   async function addMat(e: React.FormEvent) {
     e.preventDefault();
     if (!niveauId || !nMat.nom.trim()) return;
-    await supabase.from("matieres").insert({ niveau_id: niveauId, nom: nMat.nom.trim(), credits: Number(nMat.credits) || 0 });
-    setNMat({ nom: "", credits: "1" });
-    const { data } = await supabase.from("matieres").select("id,nom,credits").eq("niveau_id", niveauId).is("deleted_at", null).order("nom");
-    setMatieres((data as never) ?? []);
+    await supabase.from("matieres").insert({
+      niveau_id: niveauId, nom: nMat.nom.trim(), credits: Number(nMat.credits) || 0,
+      ue_id: nMat.ue_id || null,
+    });
+    setNMat({ nom: "", credits: "1", ue_id: "" });
+    reloadMatieresEtUe();
+  }
+
+  function commencerEdition(m: { id: string; nom: string; credits: number; ue_id: string | null }) {
+    setMatEnEdition(m.id);
+    setEditMat({ nom: m.nom, credits: String(m.credits), ue_id: m.ue_id ?? "" });
+  }
+
+  async function enregistrerEditionMat(id: string) {
+    if (!editMat.nom.trim()) return;
+    const avant = matieres.find((m) => m.id === id);
+    const payload = { nom: editMat.nom.trim(), credits: Number(editMat.credits) || 0, ue_id: editMat.ue_id || null };
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "modification",
+      _table_name: "matieres",
+      _record_id: id,
+      _description: `Modification de la matière "${avant?.nom ?? id}"`,
+      _ancienne_valeur: avant,
+      _nouvelle_valeur: payload,
+    });
+    await supabase.from("matieres").update(payload).eq("id", id);
+    setMatEnEdition(null);
+    reloadMatieresEtUe();
+  }
+
+  async function supprimerMat(m: { id: string; nom: string; credits: number }) {
+    if (!confirm(`Déplacer la matière "${m.nom}" vers la corbeille ? Les notes associées resteront enregistrées.`)) return;
+    await supabase.rpc("enregistrer_audit", {
+      _etablissement_id: etabId,
+      _action: "suppression",
+      _table_name: "matieres",
+      _record_id: m.id,
+      _description: `Mise en corbeille de la matière "${m.nom}"`,
+      _ancienne_valeur: m,
+      _nouvelle_valeur: null,
+    });
+    await supabase.from("matieres").update({ deleted_at: new Date().toISOString() }).eq("id", m.id);
+    if (selMat === m.id) { setSelMat(""); setNotes([]); }
+    reloadMatieresEtUe();
   }
 
   const noteOf = (uid: string) => notes.find((n) => n.etudiant_user_id === uid);
@@ -750,31 +1020,105 @@ function MatieresPanel({ etabId }: { etabId: string }) {
       {niveauId && (
         <div className="grid min-w-0 gap-6 lg:grid-cols-2">
           <div className="card-soft min-w-0 overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><GraduationCap className="h-4 w-4" /></span>
-              <h3 className="font-bold">Matières</h3>
-              <Pill>{matieres.length}</Pill>
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
+              <div className="flex items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><GraduationCap className="h-4 w-4" /></span>
+                <h3 className="font-bold">Matières</h3>
+                <Pill>{matieres.length}</Pill>
+              </div>
+              {matieres.length > 0 && etudiants.length > 0 && (
+                <button onClick={exporterNotesExcel} disabled={exportBusy} className="btn-bf-outline text-sm">
+                  <Upload className="icon-tinted h-4 w-4 rotate-180" />{exportBusy ? "Génération…" : "Exporter les notes (Excel)"}
+                </button>
+              )}
             </div>
             <div className="p-6">
-              <form onSubmit={addMat} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
+              {/* Gestion des UE (Unités d'Enseignement) */}
+              <div className="mb-5 rounded-xl border border-border bg-muted/40 p-4">
+                <h4 className="mb-2 text-sm font-bold">Unités d'enseignement (UE)</h4>
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Optionnel : regroupe plusieurs matières. Si la moyenne pondérée de l'UE atteint 10/20, elle est validée dans son ensemble, même si une matière individuelle est en dessous.
+                </p>
+                <form onSubmit={addUe} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-[6rem_minmax(0,1fr)_auto]">
+                  <input value={nUe.code} onChange={(e) => setNUe({ ...nUe, code: e.target.value })} placeholder="Code (ex: GES1242)"
+                    className="input-soft min-w-0" />
+                  <input value={nUe.nom} onChange={(e) => setNUe({ ...nUe, nom: e.target.value })} placeholder="Nom de l'UE (ex: Gestion 2)"
+                    className="input-soft col-span-2 min-w-0 sm:col-span-1" />
+                  <button className="btn-forest col-span-2 sm:col-span-1 text-sm"><Plus className="h-4 w-4" />Ajouter</button>
+                </form>
+                <ul className="space-y-1.5">
+                  {ues.map((u) => (
+                    <li key={u.id}>
+                      {ueEnEdition === u.id ? (
+                        <div className="grid grid-cols-2 gap-2 rounded-lg border border-primary bg-primary-soft p-2 sm:grid-cols-[6rem_minmax(0,1fr)_auto_auto]">
+                          <input value={editUe.code} onChange={(e) => setEditUe({ ...editUe, code: e.target.value })} className="input-soft min-w-0 text-sm" placeholder="Code" />
+                          <input value={editUe.nom} onChange={(e) => setEditUe({ ...editUe, nom: e.target.value })} className="input-soft col-span-2 min-w-0 text-sm sm:col-span-1" placeholder="Nom" />
+                          <button onClick={() => enregistrerEditionUe(u.id)} className="btn-forest text-xs">Valider</button>
+                          <button onClick={() => setUeEnEdition(null)} className="btn-bf-outline text-xs">Annuler</button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm">
+                          <span className="truncate">{u.code && <span className="mr-1.5 font-mono text-xs text-muted-foreground">{u.code}</span>}<span className="font-medium">{u.nom}</span></span>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <ActionBtn variant="default" icon={Pencil} label="Modifier l'UE" onClick={() => { setUeEnEdition(u.id); setEditUe({ nom: u.nom, code: u.code ?? "" }); }} />
+                            <ActionBtn variant="danger" icon={Trash2} label="Supprimer l'UE" onClick={() => supprimerUe(u)} />
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                  {ues.length === 0 && <p className="text-xs text-muted-foreground">Aucune UE créée pour ce niveau — les matières restent gérées individuellement.</p>}
+                </ul>
+              </div>
+
+              <form onSubmit={addMat} className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_9rem_auto]">
                 <input value={nMat.nom} onChange={(e) => setNMat({ ...nMat, nom: e.target.value })} placeholder="Nom"
                   className="input-soft col-span-2 min-w-0 sm:col-span-1" />
                 <input type="number" min="0" step="1" value={nMat.credits} onChange={(e) => setNMat({ ...nMat, credits: e.target.value })}
                   className="input-soft min-w-0" title="Crédits" placeholder="Crédits" />
+                <select value={nMat.ue_id} onChange={(e) => setNMat({ ...nMat, ue_id: e.target.value })} className="input-soft min-w-0 text-sm">
+                  <option value="">Matière libre (hors UE)</option>
+                  {ues.map((u) => <option key={u.id} value={u.id}>{u.nom}</option>)}
+                </select>
                 <button className="btn-forest col-span-2 sm:col-span-1"><Plus className="h-4 w-4" />Ajouter</button>
               </form>
-              <ul className="space-y-1.5">
-                {matieres.map((m) => (
-                  <li key={m.id}>
-                    <button onClick={() => { setSelMat(m.id); setSaisie({}); setMsg(null); }}
-                      className={`w-full rounded-xl border p-3 text-left text-sm shadow-sm transition ${selMat === m.id ? "border-primary bg-primary-soft shadow-md" : "border-border bg-surface hover:shadow-md"}`}>
-                      <span className="font-semibold">{m.nom}</span>{" "}
-                      <Pill tone="gold">{m.credits} crédit{m.credits > 1 ? "s" : ""}</Pill>
-                    </button>
-                  </li>
-                ))}
-                {matieres.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune matière.</p>}
-              </ul>
+
+              {ues.map((ue) => {
+                const matieresUe = matieres.filter((m) => m.ue_id === ue.id);
+                if (matieresUe.length === 0) return null;
+                const creditsTotal = matieresUe.reduce((s, m) => s + m.credits, 0);
+                return (
+                  <div key={ue.id} className="mb-3 overflow-hidden rounded-xl border border-border">
+                    <div className="flex items-center justify-between gap-2 bg-accent/40 px-3 py-2">
+                      <span className="text-sm font-bold">{ue.code && <span className="mr-1.5 font-mono text-xs text-muted-foreground">{ue.code}</span>}{ue.nom}</span>
+                      <Pill tone="gold">{creditsTotal} crédit{creditsTotal > 1 ? "s" : ""}</Pill>
+                    </div>
+                    <ul className="space-y-1.5 p-2">
+                      {matieresUe.map((m) => (
+                        <MatiereItem key={m.id} m={m} selMat={selMat} matEnEdition={matEnEdition} editMat={editMat}
+                          setEditMat={setEditMat} setSelMat={setSelMat} setSaisie={setSaisie} setMsg={setMsg}
+                          enregistrerEditionMat={enregistrerEditionMat} setMatEnEdition={setMatEnEdition}
+                          commencerEdition={commencerEdition} supprimerMat={supprimerMat} ues={ues} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+
+              {matieres.filter((m) => !m.ue_id).length > 0 && (
+                <div className="mb-2">
+                  {ues.length > 0 && <p className="mb-1.5 text-xs font-medium text-muted-foreground">Matières libres (hors UE)</p>}
+                  <ul className="space-y-1.5">
+                    {matieres.filter((m) => !m.ue_id).map((m) => (
+                      <MatiereItem key={m.id} m={m} selMat={selMat} matEnEdition={matEnEdition} editMat={editMat}
+                        setEditMat={setEditMat} setSelMat={setSelMat} setSaisie={setSaisie} setMsg={setMsg}
+                        enregistrerEditionMat={enregistrerEditionMat} setMatEnEdition={setMatEnEdition}
+                        commencerEdition={commencerEdition} supprimerMat={supprimerMat} ues={ues} />
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {matieres.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Aucune matière.</p>}
             </div>
           </div>
 
@@ -800,6 +1144,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                     const value = saisie[e.user_id] ?? (existing ? String(existing.valeur) : "");
                     const num = Number(String(value).replace(",", "."));
                     const appr = value !== "" && !Number.isNaN(num) ? appreciation(num) : null;
+                    const stUe = statutUe(e.user_id);
                     return (
                       <div key={e.user_id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 rounded-xl border border-border bg-surface p-3 text-sm shadow-sm">
                         <div className="min-w-0">
@@ -807,6 +1152,18 @@ function MatieresPanel({ etabId }: { etabId: string }) {
                           <p className="truncate text-xs text-muted-foreground">
                             {e.email}{appr ? ` · ${appr}` : ""}
                           </p>
+                          {stUe && (
+                            <p className="mt-1 flex items-center gap-1.5 text-xs">
+                              <span className="text-muted-foreground">UE : {stUe.moyenne}/20</span>
+                              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                                stUe.statut === "VA" ? "bg-primary-soft text-primary" :
+                                stUe.statut === "VC" ? "bg-accent text-accent-foreground" :
+                                "bg-destructive/15 text-destructive"
+                              }`}>
+                                {stUe.statut} · {stUe.creditsTotal} crédit{stUe.creditsTotal > 1 ? "s" : ""}
+                              </span>
+                            </p>
+                          )}
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <input type="number" min="0" max="20" step="0.25" value={value} placeholder="/20"

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
+import { humanizeDbError } from "@/lib/auth-timeout";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Pencil, Search } from "lucide-react";
@@ -473,7 +474,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
       matricule: config.matricule ? (form.matricule.trim() || null) : null,
       telephone: config.telephone ? (form.telephone.trim() || null) : null,
     });
-    if (error) { setMsg(error.message); return; }
+    if (error) { setMsg(humanizeDbError(error)); return; }
     setForm({ nom_complet: "", email: "", date_naissance: "", matricule: "", telephone: "" }); load();
   }
 
@@ -502,7 +503,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
         console.warn("Lignes rejetées à l'import Excel :", rejetees);
       }
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Échec de l'import Excel");
+      setMsg(humanizeDbError(err));
     } finally {
       setBusy(false);
       load();
@@ -540,7 +541,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
 
       setMsg(`${ids.length} étudiant(s) déplacé(s) vers la corbeille.`);
     } catch (err: any) {
-      setMsg(`Erreur lors de la suppression : ${err.message || "Échec de l'opération"}`);
+      setMsg(humanizeDbError(err));
     } finally {
       setBusy(false);
       setConfirmerToutSupprimer(false);
@@ -891,7 +892,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
         setNotes((data as never) ?? []);
       }
     } catch (err) {
-      setImportResultat({ importees: 0, ignorees: [{ raison: err instanceof Error ? err.message : "Échec de l'import", detail: "" }] });
+      setImportResultat({ importees: 0, ignorees: [{ raison: humanizeDbError(err), detail: "" }] });
     } finally {
       setImportBusy(false);
     }
@@ -1062,12 +1063,12 @@ function MatieresPanel({ etabId }: { etabId: string }) {
         });
       }
       const { error } = await supabase.from("notes").update(payload).eq("id", existing.id);
-      return error?.message ?? null;
+      return error ? humanizeDbError(error) : null;
     }
     const { error } = await supabase.from("notes").insert({
       etudiant_user_id: uid, matiere_id: selMat, type_evaluation: "evaluation", ...payload,
     });
-    return error?.message ?? null;
+    return error ? humanizeDbError(error) : null;
   }
 
   async function saveOne(uid: string) {
@@ -1548,14 +1549,14 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
       const ext = file.name.split(".").pop() ?? "jpg";
       const path = `${niveauId}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from(AFFICHES_BUCKET).upload(path, file, { contentType: file.type });
-      if (error) { setErr("Échec de l'envoi de l'affiche : " + error.message); setBusy(false); return; }
+      if (error) { setErr("Échec de l'envoi de l'affiche : " + humanizeDbError(error)); setBusy(false); return; }
       affiche = path;
     }
     const { error } = await supabase.from("evenements").insert({
       niveau_id: niveauId, titre: form.titre.trim(), description: form.description.trim() || null,
       date_evenement: form.date_evenement, lieu: form.lieu.trim() || null, affiche_url: affiche,
     });
-    if (error) setErr(error.message);
+    if (error) setErr(humanizeDbError(error));
     else { setForm({ titre: "", description: "", date_evenement: "", lieu: "" }); setFile(null); await load(); }
     setBusy(false);
   }

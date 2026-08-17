@@ -49,3 +49,37 @@ export function humanizeAuthError(err: unknown): string {
   }
   return "Une erreur est survenue. Vérifiez les informations saisies et réessayez.";
 }
+
+/**
+ * Traduit les erreurs de base de données (Postgres/Supabase, hors Auth)
+ * en messages compréhensibles pour l'utilisateur — évite d'afficher un
+ * message technique brut (code de contrainte SQL, nom de colonne, etc.).
+ */
+export function humanizeDbError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err ?? "");
+  const code = (err as { code?: string } | null)?.code ?? "";
+  if (!raw) return "Erreur inconnue.";
+
+  if (code === "23505" || /duplicate key value violates unique constraint/i.test(raw)) {
+    return "Cette valeur existe déjà (doublon). Vérifiez les informations saisies.";
+  }
+  if (code === "23503" || /violates foreign key constraint/i.test(raw)) {
+    return "Cette action est impossible car l'élément est lié à d'autres données existantes.";
+  }
+  if (code === "23502" || /null value in column .* violates not-null constraint/i.test(raw)) {
+    return "Un champ obligatoire est manquant. Vérifiez que tous les champs requis sont remplis.";
+  }
+  if (code === "23514" || /violates check constraint/i.test(raw)) {
+    return "Une des valeurs saisies ne respecte pas les règles autorisées.";
+  }
+  if (code === "42501" || /permission denied|row-level security/i.test(raw)) {
+    return "Vous n'avez pas les droits nécessaires pour effectuer cette action.";
+  }
+  if (/Failed to fetch|NetworkError|network/i.test(raw)) {
+    return "Impossible de contacter le serveur. Vérifiez votre connexion ou réessayez dans quelques secondes.";
+  }
+  if (/JWT expired|invalid.*jwt/i.test(raw)) {
+    return "Votre session a expiré. Merci de vous reconnecter.";
+  }
+  return "Une erreur est survenue lors de l'enregistrement. Vérifiez les informations saisies et réessayez.";
+}

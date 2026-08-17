@@ -3,8 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { getSiteUrl } from "@/lib/site-url";
-import { humanizeDbError } from "@/lib/auth-timeout";
-import { ResendConfirmationEmail, resendSignupEmail } from "@/components/ResendConfirmationEmail";
+import { ResendConfirmationEmail } from "@/components/ResendConfirmationEmail";
 
 type Etab = { id: string; nom: string };
 
@@ -21,6 +20,7 @@ function Page() {
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showResend, setShowResend] = useState(false);
+  const [existantNonConfirme, setExistantNonConfirme] = useState(false);
 
   useEffect(() => {
     supabase.from("etablissements").select("id,nom").eq("statut", "actif").order("nom")
@@ -36,7 +36,7 @@ function Page() {
       _date_naissance: form.date_naissance,
     });
     setBusy(false);
-    if (error) { setError(humanizeDbError(error)); return; }
+    if (error) { setError(error.message); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."); return; }
     const row = data[0] as { deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet administrateur est déjà inscrit. Utilisez la page de connexion."); return; }
@@ -58,13 +58,14 @@ function Page() {
       (!se && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
 
     if (existant) {
-      const { error: re } = await resendSignupEmail(form.email, emailRedirectTo);
-      setShowResend(true);
-      if (re) { setError(re); setInfo(null); setBusy(false); return; }
-      setInfo("Un compte existe déjà avec cet email mais n'était pas confirmé. Un nouvel email de confirmation vient de vous être envoyé.");
+      setInfo(
+        "Un compte existe déjà avec cet email mais n'a pas pu être confirmé. " +
+        "Rendez-vous sur « Mot de passe oublié » pour réinitialiser votre mot de passe : cela confirmera votre compte et vous donnera accès à votre espace."
+      );
+      setExistantNonConfirme(true);
       setBusy(false); return;
     }
-    if (se) { setError(humanizeDbError(se)); setBusy(false); return; }
+    if (se) { setError(se.message); setBusy(false); return; }
     if (data.session) {
       await supabase.auth.signOut();
     }
@@ -76,6 +77,11 @@ function Page() {
     <PageShell title="Inscription administrateur">
       {error && <div className="mb-4 rounded bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
       {info && <div className="mb-4 rounded bg-primary-soft p-3 text-sm text-primary">{info}</div>}
+      {existantNonConfirme && (
+        <Link to="/admin/mot-de-passe-oublie" className="btn-bf-primary mb-4 inline-block text-center">
+          Réinitialiser mon mot de passe
+        </Link>
+      )}
       {showResend && (
         <ResendConfirmationEmail
           email={form.email}

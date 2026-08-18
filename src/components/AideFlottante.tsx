@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { Headset, X, Mail, SendHorizontal } from "lucide-react";
 import { FAQ, trouverMeilleuresReponses, type Public } from "@/lib/faq";
@@ -7,11 +7,76 @@ type Message =
   | { role: "user"; texte: string }
   | { role: "assistant"; resultats: ReturnType<typeof trouverMeilleuresReponses> };
 
+const MARGE = 8; // distance minimale gardée par rapport aux bords de l'écran
+const STOCKAGE_POSITION = "campuslink-aide-position";
+
 export function AideFlottante() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
+
+  // Position du bouton flottant, en pixels depuis le bord bas-droit de
+  // l'écran (comme le placement d'origine), pour que l'utilisateur puisse
+  // le faire glisser où il veut. Mémorisée d'une visite à l'autre.
+  const [pos, setPos] = useState<{ right: number; bottom: number }>({ right: 16, bottom: 24 });
+  const [dragging, setDragging] = useState(false);
+  const dragInfo = useRef<{ startX: number; startY: number; startRight: number; startBottom: number; moved: boolean } | null>(null);
+  const boutonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STOCKAGE_POSITION);
+      if (saved) setPos(JSON.parse(saved));
+    } catch {
+      // Position par défaut conservée si la lecture échoue.
+    }
+  }, []);
+
+  function clampPosition(right: number, bottom: number) {
+    const largeur = boutonRef.current?.offsetWidth ?? 56;
+    const hauteur = boutonRef.current?.offsetHeight ?? 76; // bouton + étiquette
+    const maxRight = window.innerWidth - largeur - MARGE;
+    const maxBottom = window.innerHeight - hauteur - MARGE;
+    return {
+      right: Math.min(Math.max(right, MARGE), Math.max(maxRight, MARGE)),
+      bottom: Math.min(Math.max(bottom, MARGE), Math.max(maxBottom, MARGE)),
+    };
+  }
+
+  function onPointerDown(e: React.PointerEvent) {
+    (e.target as Element).setPointerCapture(e.pointerId);
+    dragInfo.current = { startX: e.clientX, startY: e.clientY, startRight: pos.right, startBottom: pos.bottom, moved: false };
+    setDragging(true);
+  }
+
+  function onPointerMove(e: React.PointerEvent) {
+    if (!dragInfo.current) return;
+    const dx = e.clientX - dragInfo.current.startX;
+    const dy = e.clientY - dragInfo.current.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragInfo.current.moved = true;
+    const next = clampPosition(dragInfo.current.startRight - dx, dragInfo.current.startBottom - dy);
+    setPos(next);
+  }
+
+  function onPointerUp() {
+    setDragging(false);
+    if (dragInfo.current) {
+      try {
+        localStorage.setItem(STOCKAGE_POSITION, JSON.stringify(pos));
+      } catch {
+        // Pas grave si la sauvegarde échoue : la position reste active pour la session.
+      }
+    }
+    dragInfo.current = null;
+  }
+
+  function onBoutonClick() {
+    // N'ouvre le panneau que si le geste n'était pas un déplacement —
+    // sinon un simple glissement rouvrirait le chat à chaque fois.
+    if (dragInfo.current?.moved) return;
+    setOpen(true);
+  }
 
   // Le contenu dépend de la zone de l'app, jamais d'un choix libre de l'utilisateur :
   // les questions "administrateur" (gestion étudiants, import Excel, configuration...)
@@ -46,10 +111,16 @@ export function AideFlottante() {
   return (
     <>
       <button
+        ref={boutonRef}
         type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Ouvrir l'aide et le support"
-        className="fixed bottom-6 right-4 z-50 flex flex-col items-center gap-1"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onClick={onBoutonClick}
+        aria-label="Ouvrir l'aide et le support (déplaçable)"
+        className={`fixed z-50 flex touch-none select-none flex-col items-center gap-1 ${dragging ? "cursor-grabbing" : "cursor-grab"}`}
+        style={{ right: pos.right, bottom: pos.bottom }}
       >
         <span
           className="flex h-14 w-14 items-center justify-center rounded-full text-white shadow-[var(--shadow-elegant)] transition hover:scale-105"

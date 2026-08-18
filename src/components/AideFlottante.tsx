@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { Headset, X, Mail, SendHorizontal } from "lucide-react";
 import { FAQ, trouverMeilleuresReponses, type Public } from "@/lib/faq";
+
+type Message =
+  | { role: "user"; texte: string }
+  | { role: "assistant"; resultats: ReturnType<typeof trouverMeilleuresReponses> };
 
 export function AideFlottante() {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   const [question, setQuestion] = useState("");
-  const [recherche, setRecherche] = useState(""); // version "débouncée" de la saisie
+  const [messages, setMessages] = useState<Message[]>([]);
 
   // Le contenu dépend de la zone de l'app, jamais d'un choix libre de l'utilisateur :
   // les questions "administrateur" (gestion étudiants, import Excel, configuration...)
@@ -18,35 +22,25 @@ export function AideFlottante() {
     ? "admin"
     : "etudiant";
 
-  const banqueFaq = useMemo(
-    () => FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous"),
-    [contexte],
-  );
+  const banqueFaq = FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous");
 
-  // La recherche se met à jour au fur et à mesure que l'utilisateur tape (avec un
-  // petit délai pour éviter de recalculer à chaque lettre), pas seulement à l'envoi.
-  useEffect(() => {
-    const t = setTimeout(() => setRecherche(question), 300);
-    return () => clearTimeout(t);
-  }, [question]);
-
-  // L'étudiant/l'admin pose sa propre question en langage libre ; les questions
-  // pré-écrites de la FAQ ne sont jamais affichées comme une liste à parcourir —
-  // elles servent uniquement, en coulisse, à faire remonter la bonne réponse.
-  const resultats = useMemo(() => {
-    if (recherche.trim().length < 3) return [];
-    return trouverMeilleuresReponses(banqueFaq, recherche, 3);
-  }, [recherche, banqueFaq]);
-
+  // La réponse n'apparaît qu'une fois la question envoyée (comme un vrai
+  // échange de chat) — jamais pendant la frappe. Les questions pré-écrites
+  // de la FAQ ne sont jamais affichées comme une liste à parcourir ; elles
+  // servent uniquement, en coulisse, à faire remonter la meilleure réponse.
   function poserQuestion(e: React.FormEvent) {
     e.preventDefault();
-    setRecherche(question); // envoi immédiat, sans attendre le débounce
+    const texte = question.trim();
+    if (!texte) return;
+    const resultats = trouverMeilleuresReponses(banqueFaq, texte, 3);
+    setMessages((prev) => [...prev, { role: "user", texte }, { role: "assistant", resultats }]);
+    setQuestion("");
   }
 
   function fermer() {
     setOpen(false);
     setQuestion("");
-    setRecherche("");
+    setMessages([]);
   }
 
   return (
@@ -84,8 +78,8 @@ export function AideFlottante() {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4">
-              {resultats.length === 0 && recherche.trim().length < 3 && (
+            <div className="flex-1 space-y-3 overflow-y-auto p-4">
+              {messages.length === 0 && (
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
                   <Headset className="h-8 w-8 text-primary/50" />
                   <p>Pose ta question ci-dessous, en tes propres mots.</p>
@@ -93,29 +87,42 @@ export function AideFlottante() {
                 </div>
               )}
 
-              {recherche.trim().length >= 3 && resultats.length > 0 && (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground">Voici ce qui correspond le mieux à ta question :</p>
-                  {resultats.map((item) => (
-                    <div key={item.id} className="rounded-xl border border-border bg-background/40 p-4">
-                      <p className="mb-1.5 text-sm font-semibold">{item.question}</p>
-                      <p className="whitespace-pre-line text-sm text-muted-foreground">{item.reponse}</p>
+              {messages.map((m, i) =>
+                m.role === "user" ? (
+                  <div key={i} className="flex justify-end">
+                    <p className="max-w-[85%] rounded-2xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                      {m.texte}
+                    </p>
+                  </div>
+                ) : (
+                  <div key={i} className="flex justify-start">
+                    <div className="max-w-[85%] space-y-2">
+                      {m.resultats.length > 0 ? (
+                        <>
+                          {m.resultats.map((item) => (
+                            <div key={item.id} className="rounded-2xl rounded-bl-sm border border-border bg-background/40 p-4">
+                              <p className="mb-1.5 text-sm font-semibold">{item.question}</p>
+                              <p className="whitespace-pre-line text-sm text-muted-foreground">{item.reponse}</p>
+                            </div>
+                          ))}
+                          <p className="px-1 text-xs text-muted-foreground">
+                            Ce n'est pas ce que tu cherchais ?{" "}
+                            <a href="mailto:team@campuslink-bf.app" className="font-semibold text-primary">Écris au support</a>
+                          </p>
+                        </>
+                      ) : (
+                        <div className="rounded-2xl rounded-bl-sm border border-border bg-background/40 p-4">
+                          <p className="text-sm text-muted-foreground">
+                            Je n'ai pas trouvé de réponse à cette question.
+                          </p>
+                          <a href="mailto:team@campuslink-bf.app" className="btn-bf-primary mt-3 inline-flex">
+                            <Mail className="h-4 w-4" />Contacter le support
+                          </a>
+                        </div>
+                      )}
                     </div>
-                  ))}
-                  <p className="pt-1 text-center text-xs text-muted-foreground">
-                    Ce n'est pas ce que tu cherchais ?{" "}
-                    <a href="mailto:team@campuslink-bf.app" className="font-semibold text-primary">Écris au support</a>
-                  </p>
-                </div>
-              )}
-
-              {recherche.trim().length >= 3 && resultats.length === 0 && (
-                <div className="py-10 text-center text-sm text-muted-foreground">
-                  <p>Je n'ai pas trouvé de réponse à cette question.</p>
-                  <a href="mailto:team@campuslink-bf.app" className="btn-bf-primary mt-4 inline-flex">
-                    <Mail className="h-4 w-4" />Contacter le support
-                  </a>
-                </div>
+                  </div>
+                ),
               )}
             </div>
 

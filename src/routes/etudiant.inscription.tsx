@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageShell } from "@/components/PageShell";
 import { getSiteUrl } from "@/lib/site-url";
+import { humanizeAuthError } from "@/lib/auth-timeout";
 import { ResendConfirmationEmail } from "@/components/ResendConfirmationEmail";
 
 type Etab = { id: string; nom: string };
@@ -51,7 +52,7 @@ function Page() {
       _nom_complet: form.nom_complet, _email: form.email, _date_naissance: form.date_naissance,
     });
     setBusy(false);
-    if (error) { setError(error.message); return; }
+    if (error) { setError(humanizeAuthError(error)); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-inscrit pour ce niveau. Contactez votre administration."); return; }
     const row = data[0] as { deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet étudiant est déjà inscrit. Utilisez la page de connexion."); return; }
@@ -80,7 +81,7 @@ function Page() {
       setExistantNonConfirme(true);
       setBusy(false); return;
     }
-    if (se) { setError(se.message); setBusy(false); return; }
+    if (se) { setError(humanizeAuthError(se)); setBusy(false); return; }
     if (data.session) {
       await supabase.auth.signOut();
     }

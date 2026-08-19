@@ -60,7 +60,11 @@ function Page() {
     // connu de personne. Le vrai mot de passe ne sera défini qu'après le
     // clic sur le lien de confirmation reçu par email, ce qui garantit que
     // seul le titulaire de la boîte mail peut activer le compte.
-    const motDePasseAleatoire = crypto.randomUUID() + crypto.randomUUID();
+    // Génère un mot de passe aléatoire garanti conforme aux règles
+    // Supabase (minuscule + majuscule + chiffre), en insérant explicitement
+    // un caractère de chaque catégorie plutôt que de compter sur le hasard.
+    const motDePasseAleatoire =
+      "Aa1" + crypto.randomUUID().replace(/-/g, "");
     const emailRedirectTo = `${getSiteUrl()}/etudiant/connexion`;
     const { data: suData, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: motDePasseAleatoire,

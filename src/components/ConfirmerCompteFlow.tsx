@@ -69,14 +69,33 @@ export function ConfirmerCompteFlow() {
       return;
     }
     try {
-      // On utilise la session ouverte par verifyOtp pour définir le
-      // mot de passe pour la première fois — pas signInWithPassword,
-      // qui supposerait qu'un mot de passe utilisable existe déjà.
-      const { error: ue } = await withTimeout(
-        supabase.auth.updateUser({ password }),
+      // On appelle une Edge Function (API admin côté serveur) plutôt que
+      // supabase.auth.updateUser({ password }) directement : updateUser
+      // déclenche systématiquement l'email natif Supabase "Votre mot de
+      // passe a été modifié", qui n'a aucun sens ici puisque c'est la
+      // toute première définition du mot de passe, pas un changement.
+      // La session ouverte par verifyOtp fournit le token qui identifie
+      // sans ambiguïté le compte à mettre à jour, côté serveur.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        setError("Session expirée. Recommencez la procédure depuis le lien reçu par email.");
+        setBusy(false);
+        return;
+      }
+
+      const { data: fnData, error: fnError } = await withTimeout(
+        supabase.functions.invoke("set-initial-password", {
+          body: { password },
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }),
         10000, "la définition du mot de passe",
       );
-      if (ue) { setError(humanizeAuthError(ue)); setBusy(false); return; }
+      if (fnError || (fnData && fnData.error)) {
+        setError(humanizeAuthError(fnError ?? new Error(fnData.error)));
+        setBusy(false);
+        return;
+      }
 
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {

@@ -97,6 +97,19 @@ export function ConfirmerCompteFlow() {
         return;
       }
 
+      // L'Edge Function vient de définir le mot de passe côté serveur
+      // (API admin), sans que la session du navigateur soit informée. On
+      // rafraîchit explicitement la session ici pour obtenir un token à
+      // jour avant d'appeler resolveUserRole (qui repose sur auth.uid()
+      // côté base) — sans ce rafraîchissement, le rôle peut ne pas être
+      // trouvé alors que le compte est parfaitement valide.
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        setError(humanizeAuthError(refreshError));
+        setBusy(false);
+        return;
+      }
+
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();
@@ -148,4 +161,5 @@ export function ConfirmerCompteFlow() {
       )}
     </PageShell>
   );
-}
+  }
+        

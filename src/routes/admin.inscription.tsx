@@ -14,9 +14,9 @@ export const Route = createFileRoute("/admin/inscription")({
 
 function Page() {
   const [etabs, setEtabs] = useState<Etab[]>([]);
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState<1 | 2>(1);
   const [etabId, setEtabId] = useState("");
-  const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "", password: "", password2: "" });
+  const [form, setForm] = useState({ nom_complet: "", email: "", date_naissance: "" });
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -29,34 +29,31 @@ function Page() {
   }, []);
 
   async function verifier(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setBusy(true);
+    e.preventDefault(); setError(null); setInfo(null); setBusy(true);
     const { data, error } = await supabase.rpc("verifier_admin_pre_autorise", {
       _etablissement_id: etabId,
       _nom_complet: form.nom_complet,
       _email: form.email,
       _date_naissance: form.date_naissance,
     });
-    setBusy(false);
-    if (error) { setError(humanizeAuthError(error)); return; }
-    if (!data || data.length === 0) { setError("Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."); return; }
+    if (error) { setError(humanizeAuthError(error)); setBusy(false); return; }
+    if (!data || data.length === 0) { setError("Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."); setBusy(false); return; }
     const row = data[0] as { deja_inscrit: boolean };
-    if (row.deja_inscrit) { setError("Cet administrateur est déjà inscrit. Utilisez la page de connexion."); return; }
-    setStep(3);
-  }
+    if (row.deja_inscrit) { setError("Cet administrateur est déjà inscrit. Utilisez la page de connexion."); setBusy(false); return; }
 
-  async function inscrire(e: React.FormEvent) {
-    e.preventDefault(); setError(null); setInfo(null);
-    if (form.password.length < 6) { setError("Mot de passe : 6 caractères minimum."); return; }
-    if (form.password !== form.password2) { setError("Les mots de passe ne correspondent pas."); return; }
-    setBusy(true);
+    // Aucun mot de passe n'est demandé ici : on en génère un aléatoire,
+    // connu de personne. Le vrai mot de passe ne sera défini qu'après le
+    // clic sur le lien de confirmation reçu par email, ce qui garantit que
+    // seul le titulaire de la boîte mail peut activer le compte.
+    const motDePasseAleatoire = crypto.randomUUID() + crypto.randomUUID();
     const emailRedirectTo = `${getSiteUrl()}/admin/connexion`;
-    const { data, error: se } = await supabase.auth.signUp({
-      email: form.email.trim(), password: form.password,
+    const { data: suData, error: se } = await supabase.auth.signUp({
+      email: form.email.trim(), password: motDePasseAleatoire,
       options: { emailRedirectTo },
     });
     const existant =
       (se && /already registered|already been registered|User already/i.test(se.message)) ||
-      (!se && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+      (!se && suData.user && Array.isArray(suData.user.identities) && suData.user.identities.length === 0);
 
     if (existant) {
       setInfo(
@@ -67,10 +64,10 @@ function Page() {
       setBusy(false); return;
     }
     if (se) { setError(humanizeAuthError(se)); setBusy(false); return; }
-    if (data.session) {
+    if (suData.session) {
       await supabase.auth.signOut();
     }
-    setInfo("Compte créé. Confirmez votre email puis connectez-vous — votre rôle sera activé automatiquement.");
+    setInfo("Vérifiez votre boîte mail : cliquez sur le lien de confirmation pour définir votre mot de passe et activer votre compte.");
     setBusy(false);
   }
 
@@ -107,24 +104,15 @@ function Page() {
         </form>
       )}
 
-      {step === 2 && (
+      {step === 2 && !info && (
         <form onSubmit={verifier} className="space-y-4">
           <Field label="Nom complet" v={form.nom_complet} on={(v) => setForm({ ...form, nom_complet: v })} />
           <Field label="Email" type="email" v={form.email} on={(v) => setForm({ ...form, email: v })} />
           <Field label="Date de naissance" type="date" v={form.date_naissance} on={(v) => setForm({ ...form, date_naissance: v })} />
           <div className="flex gap-2">
             <button type="button" onClick={() => setStep(1)} className="btn-bf-outline">Retour</button>
-            <button disabled={busy} className="btn-bf-primary flex-1">{busy ? "..." : "Vérifier"}</button>
+            <button disabled={busy} className="btn-bf-primary flex-1">{busy ? "..." : "Créer mon compte"}</button>
           </div>
-        </form>
-      )}
-
-      {step === 3 && (
-        <form onSubmit={inscrire} className="space-y-4">
-          <p className="text-sm text-primary">✓ Vérification réussie. Créez votre mot de passe.</p>
-          <Field label="Mot de passe" type="password" v={form.password} on={(v) => setForm({ ...form, password: v })} />
-          <Field label="Confirmez le mot de passe" type="password" v={form.password2} on={(v) => setForm({ ...form, password2: v })} />
-          <button disabled={busy} className="btn-bf-primary w-full">{busy ? "..." : "Créer mon compte"}</button>
         </form>
       )}
 

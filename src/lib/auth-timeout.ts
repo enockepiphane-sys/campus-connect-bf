@@ -17,10 +17,10 @@ export function humanizeAuthError(err: unknown): string {
   const msg = err instanceof Error ? err.message : String(err ?? "");
   if (!msg) return "Erreur inconnue.";
   if (/Failed to fetch|NetworkError|network/i.test(msg)) {
-    return "Impossible de contacter le serveur d'authentification. Vérifiez votre connexion ou réessayez dans quelques secondes.";
+    return "Une erreur s'est produite. Vérifiez votre connexion ou réessayez dans quelques secondes.";
   }
   if (/Invalid API key|Invalid api key/i.test(msg)) {
-    return "Clé API invalide côté serveur. Contactez l'administrateur (variables d'environnement Vercel manquantes).";
+    return "Une erreur s'est produite. Contactez l'administrateur.";
   }
   if (/Invalid login credentials/i.test(msg)) {
     return "Email ou mot de passe incorrect.";
@@ -41,7 +41,7 @@ export function humanizeAuthError(err: unknown): string {
   if (/Email rate limit exceeded|rate limit/i.test(msg)) {
     return "Trop de tentatives. Merci de patienter quelques minutes avant de réessayer.";
   }
-  if (/Token has expired|otp_expired|invalid.*token|token.*not found/i.test(msg)) {
+  if (/Token has expired|otp_expired|invalid.*token|token.*not found|expired|invalid_grant|Email link is invalid or has expired/i.test(msg)) {
     return "Ce lien a expiré ou a déjà été utilisé. Recommencez la procédure depuis le début.";
   }
   if (/User already registered/i.test(msg)) {

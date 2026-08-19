@@ -1,28 +1,36 @@
 /**
- * Edge Function `resend-email`
+ * Edge Function `set-initial-password`
  *
- * Envoie un email transactionnel via l'API Resend en utilisant une adresse
- * d'expéditeur appartenant EXACTEMENT au domaine vérifié sur Resend
- * (`campuslink-bf.app`). C'est indispensable pour l'alignement SPF/DKIM/DMARC :
- * si le `from` ne correspond pas au domaine vérifié, Gmail peut accepter en
- * "best effort" mais Yahoo / Outlook / iCloud rejettent ou classent en spam.
+ * Définit le mot de passe d'un compte pour la toute première fois, juste
+ * après que l'utilisateur ait cliqué sur son lien de confirmation
+ * d'inscription (voir ConfirmerCompteFlow.tsx).
  *
- * Variables d'environnement (Dashboard → Edge Functions → Secrets) :
- *   - RESEND_API_KEY   : clé API Resend (obligatoire)
- *   - RESEND_FROM      : (optionnel) surcharge du "from", ex:
- *                        "CampusLink <team@campuslink-bf.app>"
+ * Pourquoi ne pas utiliser supabase.auth.updateUser({ password }) côté
+ * client : cet appel déclenche systématiquement l'email natif Supabase
+ * "Your password was changed" (Votre mot de passe a été modifié), qui n'a
+ * aucun sens ici puisqu'il s'agit d'une première définition, pas d'un
+ * changement — l'utilisateur n'a jamais eu de mot de passe utilisable
+ * avant cet instant (le compte a été créé avec un mot de passe aléatoire
+ * généré côté serveur, voir etudiant.inscription.tsx / admin.inscription.tsx).
  *
- * Le "from" par défaut est construit à partir du domaine vérifié et respecte
- * la syntaxe RFC 5322 : `Nom affiché <adresse@domaine>`.
+ * L'API admin (auth.admin.updateUserById), utilisée ici avec la clé
+ * service_role, ne déclenche PAS cet email : c'est la bonne façon de
+ * définir un mot de passe initial sans notification trompeuse.
+ *
+ * Sécurité : cette fonction exige un token d'accès utilisateur valide
+ * (obtenu via verifyOtp côté client juste avant l'appel) et ne modifie
+ * que le mot de passe du compte correspondant à ce token — jamais un
+ * autre compte, même avec la clé service_role.
+ *
+ * Variables d'environnement requises (Dashboard → Edge Functions → Secrets,
+ * généralement déjà présentes par défaut sur tout projet Supabase) :
+ *   - SUPABASE_URL
+ *   - SUPABASE_SERVICE_ROLE_KEY
  */
 
 // @ts-nocheck  (environnement Deno — types résolus au déploiement Supabase)
 
-const RESEND_ENDPOINT = "https://api.resend.com/emails";
-
-// Domaine vérifié sur Resend + adresse d'envoi correspondante.
-const VERIFIED_DOMAIN = "campuslink-bf.app";
-const DEFAULT_FROM = `CampusLink <team@${VERIFIED_DOMAIN}>`;
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,95 +46,58 @@ function json(body: unknown, status = 200) {
   });
 }
 
-/**
- * Valide que l'adresse "from" contient bien une adresse du domaine vérifié.
- * Accepte les deux formats : `adresse@domaine` ou `Nom <adresse@domaine>`.
- */
-function isFromOnVerifiedDomain(from: string): boolean {
-  const match = from.match(/<([^>]+)>/);
-  const address = (match ? match[1] : from).trim().toLowerCase();
-  return address.endsWith(`@${VERIFIED_DOMAIN}`);
-}
-
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
   if (req.method !== "POST") {
-    return json({ error: "Méthode non autorisée. Utilisez POST." }, 405);
+    return json({ error: "Méthode non autorisée." }, 405);
   }
 
-  const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-  if (!RESEND_API_KEY) {
-    console.error("[resend-email] RESEND_API_KEY manquant.");
+  const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+  const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
     return json({ error: "Configuration serveur incomplète." }, 500);
   }
 
-  let payload: {
-    to?: string | string[];
-    subject?: string;
-    html?: string;
-    text?: string;
-    from?: string;
-    replyTo?: string;
-  };
+  let password: string;
   try {
-    payload = await req.json();
+    const bodyJson = await req.json();
+    password = bodyJson?.password;
   } catch {
-    return json({ error: "Corps de requête JSON invalide." }, 400);
+    return json({ error: "Requête invalide." }, 400);
   }
 
-  const { to, subject, html, text, replyTo } = payload;
-  if (!to || !subject || (!html && !text)) {
-    return json(
-      { error: "Champs requis manquants : 'to', 'subject' et 'html' ou 'text'." },
-      400,
-    );
+  if (!password || typeof password !== "string" || password.length < 6) {
+    return json({ error: "Mot de passe invalide (6 caractères minimum)." }, 400);
   }
 
-  // "from" : priorité au secret RESEND_FROM, sinon adresse par défaut du domaine.
-  const from = (Deno.env.get("RESEND_FROM") || DEFAULT_FROM).trim();
-
-  if (!isFromOnVerifiedDomain(from)) {
-    console.error(
-      `[resend-email] "from" (${from}) hors du domaine vérifié ${VERIFIED_DOMAIN}.`,
-    );
-    return json(
-      {
-        error: `L'adresse d'expéditeur doit appartenir au domaine vérifié ${VERIFIED_DOMAIN}.`,
-      },
-      500,
-    );
+  // Le token de l'appelant identifie SANS AMBIGUÏTÉ quel compte est
+  // concerné : on ne fait jamais confiance à un user_id envoyé dans le
+  // corps de la requête, on le déduit uniquement du token d'accès fourni.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  const accessToken = authHeader.replace(/^Bearer\s+/i, "");
+  if (!accessToken) {
+    return json({ error: "Authentification requise." }, 401);
   }
 
-  const body: Record<string, unknown> = {
-    from,
-    to: Array.isArray(to) ? to : [to],
-    subject,
-  };
-  if (html) body.html = html;
-  if (text) body.text = text;
-  if (replyTo) body.reply_to = replyTo;
+  const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
 
-  try {
-    const res = await fetch(RESEND_ENDPOINT, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      console.error("[resend-email] Erreur Resend:", res.status, data);
-      return json({ error: "Échec de l'envoi de l'email.", details: data }, 502);
-    }
-
-    return json({ ok: true, id: data?.id ?? null });
-  } catch (err) {
-    console.error("[resend-email] Exception:", err);
-    return json({ error: "Erreur réseau lors de l'appel à Resend." }, 502);
+  const { data: userData, error: getUserError } =
+    await supabaseAdmin.auth.getUser(accessToken);
+  if (getUserError || !userData?.user) {
+    return json({ error: "Session invalide ou expirée." }, 401);
   }
+
+  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+    userData.user.id,
+    { password },
+  );
+  if (updateError) {
+    return json({ error: updateError.message }, 400);
+  }
+
+  return json({ success: true });
 });

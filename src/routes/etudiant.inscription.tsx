@@ -53,7 +53,7 @@ function Page() {
     });
     if (error) { setError(humanizeAuthError(error)); setBusy(false); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-inscrit pour ce niveau. Contactez votre administration."); setBusy(false); return; }
-    const row = data[0] as { deja_inscrit: boolean };
+    const row = data[0] as { pre_inscription_id: string; deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet étudiant est déjà inscrit. Utilisez la page de connexion."); setBusy(false); return; }
 
     // Aucun mot de passe n'est demandé ici : on en génère un aléatoire,
@@ -68,7 +68,7 @@ function Page() {
     const emailRedirectTo = `${getSiteUrl()}/etudiant/connexion`;
     const { data: suData, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: motDePasseAleatoire,
-      options: { emailRedirectTo },
+      options: { emailRedirectTo, data: { pre_inscription_id: row.pre_inscription_id } },
     });
     const existant =
       (se && /already registered|already been registered|User already/i.test(se.message)) ||

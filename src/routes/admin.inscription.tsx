@@ -38,7 +38,7 @@ function Page() {
     });
     if (error) { setError(humanizeAuthError(error)); setBusy(false); return; }
     if (!data || data.length === 0) { setError("Vous n'êtes pas pré-autorisé comme administrateur pour cet établissement."); setBusy(false); return; }
-    const row = data[0] as { deja_inscrit: boolean };
+    const row = data[0] as { pre_autorisation_id: string; deja_inscrit: boolean };
     if (row.deja_inscrit) { setError("Cet administrateur est déjà inscrit. Utilisez la page de connexion."); setBusy(false); return; }
 
     // Aucun mot de passe n'est demandé ici : on en génère un aléatoire,
@@ -53,7 +53,7 @@ function Page() {
     const emailRedirectTo = `${getSiteUrl()}/admin/connexion`;
     const { data: suData, error: se } = await supabase.auth.signUp({
       email: form.email.trim(), password: motDePasseAleatoire,
-      options: { emailRedirectTo },
+      options: { emailRedirectTo, data: { pre_autorisation_id: row.pre_autorisation_id } },
     });
     const existant =
       (se && /already registered|already been registered|User already/i.test(se.message)) ||

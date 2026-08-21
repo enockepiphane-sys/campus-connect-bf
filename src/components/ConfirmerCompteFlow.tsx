@@ -76,12 +76,26 @@ export function ConfirmerCompteFlow() {
       // toute première définition du mot de passe, pas un changement.
       // La session ouverte par verifyOtp fournit le token qui identifie
       // sans ambiguïté le compte à mettre à jour, côté serveur.
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      //
+      // La session issue de verifyOtp() a une durée de vie courte. Si la
+      // personne corrige une faute de frappe sur son mot de passe (ex :
+      // les deux champs ne correspondaient pas), l'access token peut avoir
+      // expiré entre-temps même si le lien lui-même reste valide une
+      // seule fois. On tente donc de rafraîchir la session avant
+      // d'abandonner : le refresh token, lui, reste valide plus longtemps.
+      let { data: sessionData } = await supabase.auth.getSession();
+      let accessToken = sessionData.session?.access_token;
       if (!accessToken) {
-        setError("Session expirée. Recommencez la procédure depuis le lien reçu par email.");
-        setBusy(false);
-        return;
+        const { data: refreshed, error: refreshErr } = await supabase.auth.refreshSession();
+        if (refreshErr || !refreshed.session?.access_token) {
+          setError(
+            "Votre session a expiré avant l'enregistrement du mot de passe. Le lien de cet email a déjà été utilisé et ne fonctionnera plus. " +
+            "Retournez sur la page d'inscription et recommencez avec la même adresse email : un nouveau lien de confirmation vous sera envoyé."
+          );
+          setBusy(false);
+          return;
+        }
+        accessToken = refreshed.session.access_token;
       }
 
       const { data: fnData, error: fnError } = await withTimeout(
@@ -98,14 +112,19 @@ export function ConfirmerCompteFlow() {
       }
 
       // L'Edge Function vient de définir le mot de passe côté serveur
-      // (API admin), sans que la session du navigateur soit informée. On
-      // rafraîchit explicitement la session ici pour obtenir un token à
-      // jour avant d'appeler resolveUserRole (qui repose sur auth.uid()
-      // côté base) — sans ce rafraîchissement, le rôle peut ne pas être
-      // trouvé alors que le compte est parfaitement valide.
-      const { error: refreshError } = await supabase.auth.refreshSession();
-      if (refreshError) {
-        setError(humanizeAuthError(refreshError));
+      // (API admin). Ce changement invalide très probablement la session
+      // ouverte par verifyOtp (comportement standard de Supabase à tout
+      // changement de mot de passe) : tenter de la "rafraîchir" échoue
+      // alors même que le compte et le mot de passe sont parfaitement
+      // valides, ce qui affichait à tort "lien expiré". La bonne méthode
+      // est de se reconnecter directement avec le nouveau mot de passe,
+      // qui ouvre une session neuve et valide.
+      const { error: signInError } = await withTimeout(
+        supabase.auth.signInWithPassword({ email, password }),
+        10000, "la connexion",
+      );
+      if (signInError) {
+        setError(humanizeAuthError(signInError));
         setBusy(false);
         return;
       }
@@ -113,7 +132,10 @@ export function ConfirmerCompteFlow() {
       const role = await withTimeout(resolveUserRole(), 10000, "la vérification du rôle");
       if (!role) {
         await supabase.auth.signOut();
-        setError("Compte confirmé, mais aucun espace trouvé. Contactez l'administration.");
+        setError(
+          "Votre adresse email a bien été vérifiée, mais elle ne correspond à aucune pré-inscription ou pré-autorisation enregistrée par un établissement. " +
+          "Vérifiez que vous avez utilisé la même adresse email que celle transmise à votre administration, ou contactez-la pour qu'elle vous inscrive."
+        );
         setBusy(false);
         return;
       }
@@ -161,5 +183,4 @@ export function ConfirmerCompteFlow() {
       )}
     </PageShell>
   );
-  }
-        
+}

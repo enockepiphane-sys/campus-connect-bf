@@ -27,29 +27,23 @@ export async function resolveUserRole(): Promise<UserRole> {
   const email = (user.email ?? "").trim().toLowerCase();
   if (!email) return null;
 
-  const { data: preAdminRows } = await supabase.rpc(
-    "trouver_pre_autorisation_admin_par_email",
-    { _email: email },
-  );
-  const preAdmin = preAdminRows && preAdminRows.length > 0 ? preAdminRows[0] : null;
-  if (preAdmin) {
-    await supabase.rpc("finaliser_inscription_admin", {
-      _pre_autorisation_id: preAdmin.pre_autorisation_id,
-    });
-    return "admin";
-  }
+  // Priorité à la finalisation par identifiant exact (pre_inscription_id /
+  // pre_autorisation_id transmis lors du signUp) : c'est la méthode sûre
+  // en cas d'email dupliqué entre plusieurs pré-inscriptions. On ne se
+  // rabat sur la recherche par email seul (moins sûre, gardée pour les
+  // comptes créés avant ce correctif) que si ces fonctions ne trouvent
+  // rien.
+  const { data: estAdminParId } = await supabase.rpc("finaliser_inscription_admin_par_id_securise");
+  if (estAdminParId) return "admin";
 
-  const { data: preEtuRows } = await supabase.rpc(
-    "trouver_pre_inscription_etudiant_par_email",
-    { _email: email },
-  );
-  const preEtu = preEtuRows && preEtuRows.length > 0 ? preEtuRows[0] : null;
-  if (preEtu) {
-    await supabase.rpc("finaliser_inscription_etudiant", {
-      _pre_inscription_id: preEtu.pre_inscription_id,
-    });
-    return "etudiant";
-  }
+  const { data: estEtudiantParId } = await supabase.rpc("finaliser_inscription_etudiant_par_id_securise");
+  if (estEtudiantParId) return "etudiant";
+
+  const { data: estAdmin } = await supabase.rpc("finaliser_inscription_admin_par_email");
+  if (estAdmin) return "admin";
+
+  const { data: estEtudiant } = await supabase.rpc("finaliser_inscription_etudiant_par_email");
+  if (estEtudiant) return "etudiant";
 
   return null;
 }

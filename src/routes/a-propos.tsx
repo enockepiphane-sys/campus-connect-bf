@@ -70,10 +70,12 @@ function Page() {
       <p className="mt-4">
         Pour toute question :{" "}
         <a
-          href="mailto:campuslink226@gmail.com"
+          href="https://wa.me/22657476724"
+          target="_blank"
+          rel="noopener noreferrer"
           className="font-medium text-primary underline"
         >
-          team@campuslink-bf.app
+          WhatsApp : +226 57 47 67 24
         </a>
       </p>
 

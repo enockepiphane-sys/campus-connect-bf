@@ -427,6 +427,19 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [config, setConfig] = useState<ChampsOptionnels>({ matricule: false, telephone: false });
   const [showImportExcel, setShowImportExcel] = useState(false);
   const [recherche, setRecherche] = useState("");
+  const [modePromotion, setModePromotion] = useState(false);
+  const [redoublants, setRedoublants] = useState<Set<string>>(new Set());
+  const [confirmerPromotion, setConfirmerPromotion] = useState(false);
+  const [promotionMsg, setPromotionMsg] = useState<string | null>(null);
+  const niveauSuivant = useMemo(() => {
+    if (!niv) return null;
+    // niv.label est "Filière — Nom du niveau" ; on cherche, dans la même
+    // filière, le niveau dont l'ordre suit immédiatement niveauId.
+    const filiereLabel = niv.label.split(" — ")[0];
+    const memesFiliere = niveaux.filter((n) => n.label.startsWith(`${filiereLabel} — `));
+    const idx = memesFiliere.findIndex((n) => n.niveau_id === niveauId);
+    return idx >= 0 && idx < memesFiliere.length - 1 ? memesFiliere[idx + 1] : null;
+  }, [niv, niveaux, niveauId]);
   const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   const filteredList = useMemo(() => {
@@ -566,6 +579,39 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     load();
   }
 
+  async function lancerPromotion() {
+    if (!niveauSuivant) return;
+    setBusy(true);
+    setPromotionMsg(null);
+    try {
+      const idsAPromouvoir = list.filter((e) => !redoublants.has(e.id)).map((e) => e.id);
+      const { data, error } = await supabase.rpc("promouvoir_niveau", {
+        _niveau_source_id: niveauId,
+        _etudiant_ids: idsAPromouvoir,
+      });
+      if (error) throw error;
+      const res = Array.isArray(data) ? data[0] : data;
+      await supabase.rpc("enregistrer_audit", {
+        _etablissement_id: etabId,
+        _action: "modification",
+        _table_name: "etudiants_pre_inscrits",
+        _record_id: null,
+        _description: `Promotion de ${idsAPromouvoir.length} étudiant(s) de "${niv?.label ?? ""}" vers "${res?.niveau_cible_nom ?? niveauSuivant.label}"`,
+        _ancienne_valeur: JSON.stringify({ niveau_id: niveauId, count: idsAPromouvoir.length }),
+        _nouvelle_valeur: JSON.stringify({ niveau_id: res?.niveau_cible_id }),
+      });
+      setPromotionMsg(`${res?.nb_promus ?? idsAPromouvoir.length} étudiant(s) promu(s) vers ${res?.niveau_cible_nom ?? niveauSuivant.label}. Les redoublants restent sur ce niveau.`);
+      setModePromotion(false);
+      setRedoublants(new Set());
+      load();
+    } catch (err: any) {
+      setPromotionMsg(humanizeDbError(err));
+    } finally {
+      setBusy(false);
+      setConfirmerPromotion(false);
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="card-soft p-6">
@@ -585,7 +631,18 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
                 <button onClick={() => setShowImportExcel((v) => !v)} className="btn-bf-outline text-sm">
                   <Upload className="icon-tinted h-4 w-4" />Import Excel
                 </button>
-                {list.length > 0 && (
+                {niveauSuivant && list.length > 0 && !modePromotion && (
+                  <button onClick={() => { setModePromotion(true); setRedoublants(new Set()); }} className="btn-bf-outline text-sm">
+                    <GraduationCap className="icon-tinted h-4 w-4" />Promouvoir vers {niveauSuivant.label.split(" — ")[1] ?? niveauSuivant.label}
+                  </button>
+                )}
+                {modePromotion && (
+                  <>
+                    <ActionBtn onClick={() => setConfirmerPromotion(true)} icon={GraduationCap} label={`Valider la promotion (${list.length - redoublants.size})`} />
+                    <button onClick={() => { setModePromotion(false); setRedoublants(new Set()); }} className="btn-bf-outline text-sm">Annuler</button>
+                  </>
+                )}
+                {list.length > 0 && !modePromotion && (
                   <ActionBtn onClick={() => setConfirmerToutSupprimer(true)} variant="danger" icon={Trash2} label="Supprimer tous les étudiants" />
                 )}
               </div>
@@ -617,6 +674,12 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
               )}
 
               {msg && <div className="mb-3 rounded-lg bg-primary-soft p-2.5 text-sm text-primary">{msg}</div>}
+              {promotionMsg && <div className="mb-3 rounded-lg bg-primary-soft p-2.5 text-sm text-primary">{promotionMsg}</div>}
+              {modePromotion && (
+                <div className="mb-3 rounded-lg border border-border bg-muted p-3 text-xs text-muted-foreground">
+                  Décochez les étudiants qui redoublent : ils resteront sur ce niveau. Tous les autres seront promus vers {niveauSuivant?.label}.
+                </div>
+              )}
 
               {list.length > 0 && (
                 <div className="relative mb-3">
@@ -634,7 +697,23 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
                 {filteredList.map((e) => (
                   <div key={e.id} className="rounded-xl border border-border bg-surface p-4 shadow-sm transition hover:shadow-md">
                     <div className="mb-2 flex items-start justify-between gap-2">
-                      <h4 className="font-semibold leading-tight">{e.nom_complet}</h4>
+                      <div className="flex items-center gap-2">
+                        {modePromotion && (
+                          <input
+                            type="checkbox"
+                            checked={!redoublants.has(e.id)}
+                            onChange={(ev) => {
+                              setRedoublants((prev) => {
+                                const next = new Set(prev);
+                                if (ev.target.checked) next.delete(e.id); else next.add(e.id);
+                                return next;
+                              });
+                            }}
+                            title="Coché = passe au niveau suivant, décoché = redouble"
+                          />
+                        )}
+                        <h4 className="font-semibold leading-tight">{e.nom_complet}</h4>
+                      </div>
                       <Pill tone={e.inscrit ? "green" : "muted"}>{e.inscrit ? "✓ Inscrit" : "En attente"}</Pill>
                     </div>
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
@@ -695,6 +774,17 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
           motAttendu="SUPPRIMER TOUT"
           onConfirm={confirmerSuppressionTotale}
           onCancel={() => setConfirmerToutSupprimer(false)}
+        />
+      )}
+      {confirmerPromotion && niveauSuivant && (
+        <ConfirmationSaisie
+          titre="Confirmer la promotion ?"
+          message={`${list.length - redoublants.size} étudiant(s) de "${niv?.label ?? ""}" seront promus vers "${niveauSuivant.label}". ${redoublants.size} redoublant(s) resteront sur ce niveau.`}
+          motAttendu="PROMOUVOIR"
+          variant="default"
+          labelConfirmer="Promouvoir"
+          onConfirm={lancerPromotion}
+          onCancel={() => setConfirmerPromotion(false)}
         />
       )}
     </div>
@@ -1867,6 +1957,24 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
       _nouvelle_valeur: null,
     });
     await supabase.from(conf.table).delete().eq("id", item.id);
+
+    // L'étudiant possède un compte auth.users (créé lors de son inscription)
+    // qui n'est jamais retiré par la suppression ci-dessus, car elle ne
+    // touche que la table métier. Sans cet appel, l'email reste "déjà
+    // utilisé" indéfiniment côté Supabase Auth, même après suppression
+    // définitive complète côté admin.
+    if (tab === "etudiants" && item.raw?.email) {
+      try {
+        await supabase.functions.invoke("delete-auth-user", {
+          body: { email: item.raw.email, etablissementId: etabId },
+        });
+      } catch {
+        // La fiche métier est déjà supprimée ; si l'appel échoue (réseau,
+        // fonction indisponible…), on ne bloque pas l'admin. Le compte
+        // auth orphelin pourra être nettoyé manuellement si besoin.
+      }
+    }
+
     load();
   }
 
@@ -2031,22 +2139,27 @@ function HistoriquePanel({ etabId }: { etabId: string }) {
 
 // -------------- Confirmation par saisie (suppressions sensibles) --------------
 function ConfirmationSaisie({
-  titre, message, motAttendu, onConfirm, onCancel,
+  titre, message, motAttendu, onConfirm, onCancel, variant = "danger", labelConfirmer = "Supprimer",
 }: {
   titre: string;
   message: string;
   motAttendu: string;
   onConfirm: () => void;
   onCancel: () => void;
+  variant?: "danger" | "default";
+  labelConfirmer?: string;
 }) {
   const [saisie, setSaisie] = useState("");
   const ok = saisie.trim() === motAttendu.trim();
+  const danger = variant === "danger";
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-2xl bg-surface p-6 shadow-2xl">
         <div className="mb-3 flex items-center gap-2">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-destructive/10 text-destructive"><Trash2 className="h-4 w-4" /></span>
-          <h3 className="font-bold text-destructive">{titre}</h3>
+          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-full ${danger ? "bg-destructive/10 text-destructive" : "bg-primary-soft text-primary"}`}>
+            {danger ? <Trash2 className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
+          </span>
+          <h3 className={`font-bold ${danger ? "text-destructive" : "text-foreground"}`}>{titre}</h3>
         </div>
         <p className="mb-3 text-sm text-muted-foreground">{message}</p>
         <p className="mb-2 text-sm">
@@ -2064,9 +2177,11 @@ function ConfirmationSaisie({
           <button
             onClick={onConfirm}
             disabled={!ok}
-            className="rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition disabled:opacity-40"
+            className={danger
+              ? "rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground shadow-sm transition disabled:opacity-40"
+              : "rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition disabled:opacity-40"}
           >
-            Supprimer
+            {labelConfirmer}
           </button>
         </div>
       </div>

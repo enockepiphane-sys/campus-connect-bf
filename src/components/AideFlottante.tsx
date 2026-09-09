@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Headset, X, Mail, SendHorizontal } from "lucide-react";
+import { Headset, X, MessageCircle, SendHorizontal } from "lucide-react";
 import { FAQ, trouverMeilleuresReponses, type Public } from "@/lib/faq";
 
 type Message =
@@ -178,7 +178,7 @@ export function AideFlottante() {
                           ))}
                           <p className="px-1 text-xs text-muted-foreground">
                             Ce n'est pas ce que tu cherchais ?{" "}
-                            <a href="mailto:team@campuslink-bf.app" className="font-semibold text-primary">Écris au support</a>
+                            <a href="https://wa.me/22657476724" target="_blank" rel="noopener noreferrer" className="font-semibold text-primary">Écris au support</a>
                           </p>
                         </>
                       ) : (
@@ -186,8 +186,8 @@ export function AideFlottante() {
                           <p className="text-sm text-muted-foreground">
                             Je n'ai pas trouvé de réponse à cette question.
                           </p>
-                          <a href="mailto:team@campuslink-bf.app" className="btn-bf-primary mt-3 inline-flex">
-                            <Mail className="h-4 w-4" />Contacter le support
+                          <a href="https://wa.me/22657476724" target="_blank" rel="noopener noreferrer" className="btn-bf-primary mt-3 inline-flex">
+                            <MessageCircle className="h-4 w-4" />Contacter le support
                           </a>
                         </div>
                       )}

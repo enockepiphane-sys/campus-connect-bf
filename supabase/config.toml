@@ -5,3 +5,9 @@ project_id = "etahlugfsoxsaxcmelzq"
 # permet l'appel sans session utilisateur ; sécurisez via un secret partagé
 # ou l'appel depuis un contexte de confiance si besoin.
 verify_jwt = false
+
+[functions.delete-auth-user]
+# Supprime un compte auth.users par email. Réservé aux admins/super-admins :
+# verify_jwt = true (le JWT de l'appelant est requis et vérifié en plus du
+# contrôle de rôle fait dans le code de la fonction).
+verify_jwt = true

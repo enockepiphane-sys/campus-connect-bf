@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
 import { humanizeDbError } from "@/lib/auth-timeout";
 import { DrapeauBF } from "@/components/DrapeauBF";
+import { LoaderPleinEcran, LoaderInline } from "@/components/ChargementPremium";
 import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw } from "lucide-react";
 
 const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
@@ -90,7 +91,7 @@ function Dashboard() {
     })();
   }, []);
 
-  if (authorized === null) return <div className="p-8 text-center">Chargement…</div>;
+  if (authorized === null) return <LoaderPleinEcran />;
   if (!authorized) return null;
 
   return (
@@ -615,7 +616,7 @@ function CorbeilleSuperAdminPanel() {
         ))}
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {loading && <LoaderInline label="Chargement de la corbeille…" />}
       {!loading && items.length === 0 && <p className="text-sm text-muted-foreground">Corbeille vide.</p>}
 
       <div className="space-y-2">
@@ -690,7 +691,7 @@ function HistoriquePanel() {
         </div>
       </div>
 
-      {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+      {loading && <LoaderInline label="Chargement de l'historique…" />}
 
       {!loading && filtered.length === 0 && (
         <p className="text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>

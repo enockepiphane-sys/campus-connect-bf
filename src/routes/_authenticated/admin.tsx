@@ -431,6 +431,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
   const [redoublants, setRedoublants] = useState<Set<string>>(new Set());
   const [confirmerPromotion, setConfirmerPromotion] = useState(false);
   const [promotionMsg, setPromotionMsg] = useState<string | null>(null);
+  const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
   const niveauSuivant = useMemo(() => {
     if (!niv) return null;
     // niv.label est "Filière — Nom du niveau" ; on cherche, dans la même
@@ -440,7 +441,6 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
     const idx = memesFiliere.findIndex((n) => n.niveau_id === niveauId);
     return idx >= 0 && idx < memesFiliere.length - 1 ? memesFiliere[idx + 1] : null;
   }, [niv, niveaux, niveauId]);
-  const niv = useMemo(() => niveaux.find((n) => n.niveau_id === niveauId), [niveaux, niveauId]);
 
   const filteredList = useMemo(() => {
     const q = recherche.trim().toLowerCase();

@@ -5,6 +5,7 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
+import { LoaderInline } from "@/components/ChargementPremium";
 import graduateHero from "@/assets/graduate-hero.png";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -178,7 +179,7 @@ function EvenementsSociauxSection() {
           </div>
         </div>
 
-        {loading && <p className="text-center text-sm text-muted-foreground">Chargement…</p>}
+        {loading && <LoaderInline label="Chargement des événements…" />}
 
         {!loading && list.length === 0 && (
           <p className="rounded-xl border border-dashed border-border bg-surface/60 p-6 text-center text-sm text-muted-foreground">

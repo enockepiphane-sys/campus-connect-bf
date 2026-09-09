@@ -276,7 +276,7 @@ export const FAQ: FaqItem[] = [
       "Comment savoir si CampusLink rencontre actuellement une panne ?",
     ],
     reponse:
-      "Essaie d'abord de rafraîchir la page ou de fermer/rouvrir l'application. Vérifie aussi ta connexion internet, en changeant de réseau si possible (Wi-Fi vers données mobiles ou inversement). Si le problème persiste sur plusieurs appareils ou réseaux différents, il est probable que ce soit un problème du côté de CampusLink — contacte le support à team@campuslink-bf.app en décrivant ce qui se passe.",
+      "Essaie d'abord de rafraîchir la page ou de fermer/rouvrir l'application. Vérifie aussi ta connexion internet, en changeant de réseau si possible (Wi-Fi vers données mobiles ou inversement). Si le problème persiste sur plusieurs appareils ou réseaux différents, il est probable que ce soit un problème du côté de CampusLink — contacte le support sur WhatsApp (+226 57 47 67 24) en décrivant ce qui se passe.",
   },
 
   // ============ ADMIN — Compte administrateur ============
@@ -573,7 +573,7 @@ export const FAQ: FaqItem[] = [
       "Est-ce que le problème vient de mon établissement ou de CampusLink ?",
     ],
     reponse:
-      "Essaie d'abord de rafraîchir la page. Si des données semblent manquantes, vérifie que tu es bien sur le bon niveau ou la bonne filière — beaucoup de sections filtrent par niveau sélectionné. Si le problème persiste sur différents réseaux ou appareils, contacte le support à team@campuslink-bf.app en précisant ce que tu faisais et ce qui s'est affiché.",
+      "Essaie d'abord de rafraîchir la page. Si des données semblent manquantes, vérifie que tu es bien sur le bon niveau ou la bonne filière — beaucoup de sections filtrent par niveau sélectionné. Si le problème persiste sur différents réseaux ou appareils, contacte le support sur WhatsApp (+226 57 47 67 24) en précisant ce que tu faisais et ce qui s'est affiché.",
   },
   {
     id: "admin-contact-support",
@@ -586,7 +586,7 @@ export const FAQ: FaqItem[] = [
       "Quelles informations dois-je fournir au support pour qu'il puisse résoudre mon problème ?",
     ],
     reponse:
-      "Écris-nous à team@campuslink-bf.app. Pour nous aider à résoudre ton problème rapidement, indique : ton établissement, si tu es étudiant ou administrateur, ce que tu essayais de faire, ce qui s'est passé (message d'erreur si possible), et une capture d'écran si tu en as une.",
+      "Écris-nous sur WhatsApp au +226 57 47 67 24. Pour nous aider à résoudre ton problème rapidement, indique : ton établissement, si tu es étudiant ou administrateur, ce que tu essayais de faire, ce qui s'est passé (message d'erreur si possible), et une capture d'écran si tu en as une.",
   },
 ];
 

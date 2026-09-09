@@ -570,6 +570,20 @@ function CorbeilleSuperAdminPanel() {
     if (!confirm(`Supprimer définitivement "${item.label}" ? Cette action est IRRÉVERSIBLE.`)) return;
     const conf = TABLES[tab];
     await supabase.from(conf.table).delete().eq("id", item.id);
+
+    // Comme pour les étudiants côté admin d'établissement : le compte
+    // auth.users du pré-admin n'est pas retiré par la suppression ci-dessus.
+    // Sans cet appel, son email reste "déjà utilisé" indéfiniment.
+    const email = (item.raw as Record<string, unknown>)?.email;
+    if (tab === "preadmins" && typeof email === "string" && email) {
+      try {
+        await supabase.functions.invoke("delete-auth-user", { body: { email } });
+      } catch {
+        // Fiche métier déjà supprimée ; on ne bloque pas le super-admin
+        // si l'appel échoue.
+      }
+    }
+
     logAction("suppression", conf.cibleType, item.label, "Suppression définitive depuis la corbeille");
     load();
   }

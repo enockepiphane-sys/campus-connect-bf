@@ -5,6 +5,7 @@ import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
 import { humanizeDbError } from "@/lib/auth-timeout";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
+import { LoaderPleinEcran, LoaderInline } from "@/components/ChargementPremium";
 import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Pencil, Search } from "lucide-react";
 import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
@@ -41,7 +42,7 @@ function Dashboard() {
     })();
   }, []);
 
-  if (ok === null) return <div className="p-8 text-center">Chargement…</div>;
+  if (ok === null) return <LoaderPleinEcran />;
   if (!etabId) return null;
 
   const sections = [
@@ -2009,7 +2010,7 @@ function CorbeillePanel({ etabId }: { etabId: string }) {
           ))}
         </div>
 
-        {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+        {loading && <LoaderInline label="Chargement de la corbeille…" />}
         {!loading && items.length === 0 && <p className="py-6 text-center text-sm text-muted-foreground">Corbeille vide.</p>}
 
         <div className="space-y-2">
@@ -2107,7 +2108,7 @@ function HistoriquePanel({ etabId }: { etabId: string }) {
         </div>
 
         <div className="p-6">
-          {loading && <p className="text-sm text-muted-foreground">Chargement…</p>}
+          {loading && <LoaderInline label="Chargement de l'historique…" />}
           {!loading && logs.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">Aucune action enregistrée pour le moment.</p>
           )}

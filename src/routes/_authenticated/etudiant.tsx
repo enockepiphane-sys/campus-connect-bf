@@ -7,6 +7,7 @@ import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
+import { LoaderPleinEcran } from "@/components/ChargementPremium";
 import { LogOut, Megaphone, Calendar, Clock, GraduationCap, Pin, TrendingUp, Award, Heart, MessageCircle, Bell, Trash2, Sun, Moon, Search } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/etudiant")({
@@ -54,7 +55,7 @@ function Dashboard() {
     })();
   }, []);
 
-  if (ok === null) return <div className="p-8 text-center">Chargement…</div>;
+  if (ok === null) return <LoaderPleinEcran />;
   if (!ctx) return null;
 
   const tabs = [

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
-import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Cours } from "@/lib/edt";
+import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, formatSemaineEdt, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls } from "@/lib/affiches";
 
@@ -430,7 +430,7 @@ function SemaineCard({ niveauId }: { niveauId: string }) {
 
   if (list.length === 0) return null;
 
-  const joursOuvres = [1, 2, 3, 4, 5];
+  const joursOuvres = JOURS;
 
   return (
     <div className="card-soft mb-6 p-5">
@@ -438,7 +438,7 @@ function SemaineCard({ niveauId }: { niveauId: string }) {
         <Calendar className="icon-gold h-5 w-5" />
         Cette semaine
       </h2>
-      <div className="grid grid-cols-5 gap-1.5">
+      <div className="grid grid-cols-6 gap-1.5">
         {joursOuvres.map((j) => {
           const coursJour = list.filter((c) => c.jour_semaine === j);
           return (
@@ -673,12 +673,16 @@ function Commentaires({ annonceId, maxComments }: { annonceId: string; maxCommen
 
 function EDT({ niveauId }: { niveauId: string }) {
   const [list, setList] = useState<Cours[]>([]);
+  const [semaineDebut, setSemaineDebut] = useState<string>("");
   useEffect(() => {
     supabase.from("cours_emploi_temps").select("*").eq("niveau_id", niveauId).order("jour_semaine").order("heure_debut")
       .then(({ data }) => setList((data as never) ?? []));
+    supabase.from("niveaux").select("edt_semaine_debut").eq("id", niveauId).maybeSingle()
+      .then(({ data }) => setSemaineDebut((data as { edt_semaine_debut: string | null } | null)?.edt_semaine_debut ?? ""));
   }, [niveauId]);
 
   const jours = JOURS.filter((j) => list.some((c) => c.jour_semaine === j));
+  const semaineLabel = formatSemaineEdt(semaineDebut);
 
   if (list.length === 0) {
     return (
@@ -691,6 +695,11 @@ function EDT({ niveauId }: { niveauId: string }) {
 
   return (
     <div className="space-y-4">
+      {semaineLabel && (
+        <div className="flex items-center gap-2 rounded-full bg-primary-soft px-4 py-2 text-xs font-semibold text-primary">
+          <Calendar className="h-3.5 w-3.5" />{semaineLabel}
+        </div>
+      )}
       {jours.map((j) => (
         <section key={j} className="card-soft min-w-0 p-5">
           <h2 className="mb-3 flex items-center gap-2 font-bold">

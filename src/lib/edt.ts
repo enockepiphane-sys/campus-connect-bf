@@ -39,3 +39,29 @@ export function coursOf(list: Cours[], jour: number, bloc: Bloc): Cours[] {
     .filter((c) => c.jour_semaine === jour && c.bloc === bloc)
     .sort((a, b) => toMinutes(a.heure_debut) - toMinutes(b.heure_debut));
 }
+
+const MOIS_COURTS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."];
+
+/**
+ * Formate la semaine d'un emploi du temps à partir de la date du lundi
+ * (stockée en base au format "YYYY-MM-DD"), ex. "Semaine du 20 au 26 oct. 2026".
+ * Retourne null si aucune date n'est fournie.
+ */
+export function formatSemaineEdt(lundiISO: string | null | undefined): string | null {
+  if (!lundiISO) return null;
+  const lundi = new Date(`${lundiISO}T00:00:00`);
+  if (Number.isNaN(lundi.getTime())) return null;
+  const samedi = new Date(lundi);
+  samedi.setDate(lundi.getDate() + 5);
+
+  const jLundi = lundi.getDate();
+  const jSamedi = samedi.getDate();
+  const mLundi = MOIS_COURTS[lundi.getMonth()];
+  const mSamedi = MOIS_COURTS[samedi.getMonth()];
+  const anneeSamedi = samedi.getFullYear();
+
+  if (lundi.getMonth() === samedi.getMonth()) {
+    return `Semaine du ${jLundi} au ${jSamedi} ${mSamedi} ${anneeSamedi}`;
+  }
+  return `Semaine du ${jLundi} ${mLundi} au ${jSamedi} ${mSamedi} ${anneeSamedi}`;
+}

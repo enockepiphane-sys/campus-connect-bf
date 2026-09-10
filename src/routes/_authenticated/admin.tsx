@@ -6,8 +6,8 @@ import { humanizeDbError } from "@/lib/auth-timeout";
 
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LoaderPleinEcran, LoaderInline } from "@/components/ChargementPremium";
-import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Pencil, Search } from "lucide-react";
-import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, type Bloc, type Cours } from "@/lib/edt";
+import { LogOut, GraduationCap, BookOpen, Users, Megaphone, Calendar, Clock, Upload, Menu, X, Heart, ImagePlus, Plus, History, Trash2, Pencil, Search, Sun, Moon } from "lucide-react";
+import { BLOCS, JOURS, JOURS_LONGS, coursOf, hhmm, formatSemaineEdt, type Bloc, type Cours } from "@/lib/edt";
 import { appreciation } from "@/lib/notes";
 import { afficheUrls, AFFICHES_BUCKET } from "@/lib/affiches";
 import { parseExcelEtudiants, parseExcelNotes, type ChampsOptionnels } from "@/lib/excel";
@@ -25,7 +25,12 @@ function Dashboard() {
   const [etabId, setEtabId] = useState<string | null>(null);
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   useEffect(() => {
     (async () => {
@@ -71,7 +76,7 @@ function Dashboard() {
               <Menu className="h-5 w-5" />
             </button>
             <div className="flex min-w-0 flex-wrap items-center gap-2 font-display text-lg font-bold sm:text-xl">
-              <span className="whitespace-nowrap">Campus<span className="text-terracotta">Link</span></span>
+              <span className="whitespace-nowrap text-foreground">Campus<span className="text-terracotta">Link</span></span>
               <DrapeauBF className="h-4 w-6 shrink-0 rounded-[2px]" />
             </div>
           </div>
@@ -82,6 +87,14 @@ function Dashboard() {
               </span>
             )}
             <span className="truncate text-sm font-semibold text-white sm:text-base">{current?.l}</span>
+            <button
+              type="button"
+              onClick={() => setDarkMode((d) => !d)}
+              aria-label="Changer de thème"
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/40 bg-white/10 text-white backdrop-blur-sm transition hover:bg-white/20"
+            >
+              {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
           </div>
         </div>
         <div className="mx-auto max-w-7xl px-4 pb-3 sm:px-6">
@@ -1733,6 +1746,8 @@ function EDTPanel({ etabId }: { etabId: string }) {
   const [form, setForm] = useState({ heure_debut: "", heure_fin: "", matiere: "", professeur: "", salle: "" });
   const [editId, setEditId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [semaineDebut, setSemaineDebut] = useState<string>("");
+  const [semaineBusy, setSemaineBusy] = useState(false);
 
   async function load() {
     if (!niveauId) { setList([]); return; }
@@ -1741,6 +1756,22 @@ function EDTPanel({ etabId }: { etabId: string }) {
     setList((data as never) ?? []);
   }
   useEffect(() => { load(); }, [niveauId]);
+
+  useEffect(() => {
+    (async () => {
+      if (!niveauId) { setSemaineDebut(""); return; }
+      const { data } = await supabase.from("niveaux").select("edt_semaine_debut").eq("id", niveauId).maybeSingle();
+      setSemaineDebut((data as { edt_semaine_debut: string | null } | null)?.edt_semaine_debut ?? "");
+    })();
+  }, [niveauId]);
+
+  async function saveSemaine(v: string) {
+    if (!niveauId || semaineBusy) return;
+    setSemaineBusy(true);
+    setSemaineDebut(v);
+    await supabase.from("niveaux").update({ edt_semaine_debut: v || null }).eq("id", niveauId);
+    setSemaineBusy(false);
+  }
 
   function openAdd(jour: number, bloc: Bloc) {
     const b = BLOCS.find((x) => x.key === bloc)!;
@@ -1801,6 +1832,24 @@ function EDTPanel({ etabId }: { etabId: string }) {
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Clock className="h-4 w-4" /></span>
             <h3 className="font-bold">Emploi du temps</h3>
             <span className="text-xs text-muted-foreground">Matin et après-midi — plusieurs cours possibles par bloc</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-b border-border bg-muted/30 px-6 py-3">
+            <label htmlFor="semaine-debut" className="text-xs font-semibold text-muted-foreground">
+              Semaine de cet emploi du temps (lundi) :
+            </label>
+            <input
+              id="semaine-debut"
+              type="date"
+              value={semaineDebut}
+              onChange={(e) => saveSemaine(e.target.value)}
+              className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs"
+            />
+            {semaineDebut && (
+              <span className="rounded-full bg-primary-soft px-3 py-1 text-[11px] font-semibold text-primary">
+                {formatSemaineEdt(semaineDebut)}
+              </span>
+            )}
           </div>
 
           <div className="overflow-x-auto">

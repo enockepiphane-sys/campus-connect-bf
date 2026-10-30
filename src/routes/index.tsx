@@ -1,16 +1,12 @@
 import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { GraduationCap, LogIn, UserPlus, Calendar, PartyPopper, ExternalLink } from "lucide-react";
+import { GraduationCap, LogIn, UserPlus } from "lucide-react";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
-import { LoaderInline } from "@/components/ChargementPremium";
+import { EvenementsSociauxSection } from "@/components/EvenementsSociauxSection";
 import graduateHero from "@/assets/graduate-hero.png";
-import { supabase } from "@/integrations/supabase/client";
-
-const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -129,100 +125,6 @@ function Home() {
           </p>
         </div>
       </main>
-    </div>
-  );
-}
-
-type EvenementSocial = {
-  id: string;
-  titre: string;
-  description: string | null;
-  affiche_url: string | null;
-  lien: string | null;
-  date_evenement: string | null;
-};
-
-function EvenementsSociauxSection() {
-  const [list, setList] = useState<EvenementSocial[]>([]);
-  const [urls, setUrls] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from("evenements_sociaux")
-        .select("id,titre,description,affiche_url,lien,date_evenement")
-        .eq("actif", true)
-        .is("deleted_at", null)
-        .order("date_evenement", { ascending: true, nullsFirst: false });
-      const rows = (data as EvenementSocial[]) ?? [];
-      setList(rows);
-      const map: Record<string, string> = {};
-      for (const r of rows) {
-        if (r.affiche_url) {
-          const { data: pub } = supabase.storage.from(AFFICHES_SOCIALES_BUCKET).getPublicUrl(r.affiche_url);
-          if (pub?.publicUrl) map[r.affiche_url] = pub.publicUrl;
-        }
-      }
-      setUrls(map);
-      setLoading(false);
-    })();
-  }, []);
-
-  return (
-    <div className="mx-auto mt-16 max-w-5xl">
-      <section className="card-glass rounded-2xl p-8">
-        <div className="mb-6 flex items-center gap-4">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-accent text-accent-foreground">
-            <PartyPopper className="h-7 w-7" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-foreground">Événements sociaux</h2>
-            <p className="text-sm text-muted-foreground">
-              Des événements organisés par nos partenaires, à découvrir près de chez vous.
-            </p>
-          </div>
-        </div>
-
-        {loading && <LoaderInline label="Chargement des événements…" />}
-
-        {!loading && list.length === 0 && (
-          <p className="rounded-xl border border-dashed border-border bg-surface/60 p-6 text-center text-sm text-muted-foreground">
-            Aucun événement pour le moment. Revenez bientôt pour découvrir les prochains événements.
-          </p>
-        )}
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          {list.map((ev) => {
-            const img = ev.affiche_url ? urls[ev.affiche_url] : null;
-            return (
-              <article key={ev.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                {img && (
-                  <img src={img} alt={`Affiche de l'événement ${ev.titre}`} loading="lazy" className="h-44 w-full object-cover" />
-                )}
-                <div className="p-5">
-                  <h3 className="text-lg font-bold text-foreground">{ev.titre}</h3>
-                  {ev.date_evenement && (
-                    <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(ev.date_evenement).toLocaleString("fr-FR", { dateStyle: "long", timeStyle: "short" })}
-                    </p>
-                  )}
-                  {ev.description && (
-                    <p className="mt-3 text-sm text-muted-foreground">{ev.description}</p>
-                  )}
-                  {ev.lien && (
-                    <a href={ev.lien} target="_blank" rel="noopener noreferrer" className="btn-bf-primary mt-4 w-full">
-                      <ExternalLink className="h-4 w-4" />
-                      Voir l'événement
-                    </a>
-                  )}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
     </div>
   );
 }

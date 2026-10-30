@@ -8,32 +8,192 @@ import { listOffres, favoriteIds, setFavorite, canManage } from "@/lib/opportuni
 import { CATEGORIES, deadlineState, type Opportunite } from "@/lib/opportunites-model";
 import { OpportuniteDetails } from "./OpportuniteDetails";
 export const offresQueryOptions = { queryKey: ["opportunites"], queryFn: () => listOffres() };
+
+// Une couleur par catégorie pour un repérage immédiat.
+const CATEGORY_COLORS: Record<string, string> = {
+  "Stages": "#0891b2",
+  "Offres d'emploi": "#ea580c",
+  "Bourses d'études": "#16a34a",
+  "Concours": "#7c3aed",
+  "Formations": "#db2777",
+  "Appels à candidatures": "#ca8a04",
+};
+const colorOf = (categorie: string) => CATEGORY_COLORS[categorie] ?? "#ea580c";
+
 export function OpportunitesList() {
-  const cache = useQueryClient(); const offres = useQuery(offresQueryOptions);
+  const cache = useQueryClient();
+  const offres = useQuery(offresQueryOptions);
   const favorites = useQuery({ queryKey: ["opportunites-favoris"], queryFn: favoriteIds });
   const manager = useQuery({ queryKey: ["opportunites-management"], queryFn: canManage });
-  const [search, setSearch] = useState(""); const [category, setCategory] = useState(""); const [onlyFav, setOnlyFav] = useState(false);
-  const [selected, setSelected] = useState<Opportunite | null>(null); const [pending, setPending] = useState<string | null>(null); const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("");
+  const [onlyFav, setOnlyFav] = useState(false);
+  const [selected, setSelected] = useState<Opportunite | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState("");
   const ids = favorites.data ?? [];
-  const filtered = (offres.data ?? []).filter(item => (!category || item.categorie === category) && (!onlyFav || ids.includes(item.id)) && `${item.titre} ${item.organisme} ${item.description}`.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr")));
-  async function toggle(item: Opportunite) { setPending(item.id); setError(""); try { await setFavorite(item.id, !ids.includes(item.id)); await cache.invalidateQueries({ queryKey: ["opportunites-favoris"] }); } catch (err) { setError(err instanceof Error ? err.message : "Impossible d’enregistrer ce favori."); } finally { setPending(null); } }
-  return <section className="mt-8 space-y-6">
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-muted-foreground">Stages, emploi, bourses et prochaines candidatures.</p>{manager.data && <Button asChild variant="outline"><Link to="/gestion-opportunites">Gérer les offres<ArrowUpRight /></Link></Button>}</div>
-    <div className="flex flex-col gap-3 sm:flex-row"><div className="relative min-w-0 flex-1"><Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" /><Input aria-label="Rechercher une opportunité" placeholder="Titre, organisme ou mot-clé" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" /></div>
-      <select aria-label="Catégorie" value={category} onChange={e => setCategory(e.target.value)} className="h-9 max-w-full rounded-md border border-input bg-background px-3 text-sm"><option value="">Toutes les catégories</option>{CATEGORIES.map(c => <option key={c}>{c}</option>)}</select>
-      <Button variant={onlyFav ? "default" : "outline"} aria-pressed={onlyFav} onClick={() => setOnlyFav(v => !v)}><Bookmark />Mes favoris</Button>
-    </div>
-    {(error || offres.error || favorites.error) && <div role="alert" className="space-y-2 text-sm text-destructive"><p>{error || offres.error?.message || favorites.error?.message}</p><Button variant="outline" onClick={() => { void offres.refetch(); void favorites.refetch(); }}>Réessayer</Button></div>}
-    {offres.isPending && <p role="status">Chargement des opportunités…</p>}
-    {!offres.isPending && !offres.error && <p className="text-sm text-muted-foreground">{filtered.length} opportunité{filtered.length !== 1 ? "s" : ""}</p>}
-    {!offres.isPending && !offres.error && filtered.length === 0 && <div className="py-12 text-center"><BriefcaseBusiness className="mx-auto mb-4 h-10 w-10 text-muted-foreground" /><h2 className="text-xl font-semibold">Aucune opportunité trouvée</h2></div>}
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{filtered.map(item => { const state = deadlineState(item.date_limite); const active = ids.includes(item.id); return <article key={item.id} className="flex min-w-0 flex-col rounded-lg border border-border bg-surface p-5">
-      <div className="mb-4 flex items-start justify-between gap-2"><span className="text-xs font-semibold uppercase text-primary">{item.categorie}</span><Button variant="ghost" size="icon" title={active ? "Retirer des favoris" : "Enregistrer l’offre"} aria-label={active ? `Retirer ${item.titre} des favoris` : `Enregistrer ${item.titre}`} aria-pressed={active} disabled={pending !== null || favorites.isPending || Boolean(favorites.error)} onClick={() => void toggle(item)}><Bookmark fill={active ? "currentColor" : "none"} /></Button></div>
-      <h2 className="break-words text-xl font-bold">{item.titre}</h2><p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"><Building2 className="h-4 w-4 shrink-0" /><span className="break-words">{item.organisme}</span></p>
-      <p className="mt-4 line-clamp-3 whitespace-pre-wrap break-words text-sm text-muted-foreground">{item.description}</p>
-      <p className={`mt-5 flex flex-wrap items-center gap-2 text-sm ${state === "expired" ? "text-muted-foreground" : state === "soon" ? "text-destructive" : "text-primary"}`}><CalendarDays className="h-4 w-4" />{new Date(item.date_limite + "T12:00:00Z").toLocaleDateString("fr-FR", { dateStyle: "medium", timeZone: "UTC" })}<span>{state === "expired" ? "Clôturée" : state === "soon" ? "Clôture prochaine" : "Candidatures ouvertes"}</span></p>
-      <Button variant="outline" className="mt-5" onClick={() => setSelected(item)}>Voir l’offre<ArrowUpRight /></Button>
-    </article>; })}</div>
-    <OpportuniteDetails offre={selected} onClose={() => setSelected(null)} />
-  </section>;
+  const filtered = (offres.data ?? []).filter(
+    (item) =>
+      (!category || item.categorie === category) &&
+      (!onlyFav || ids.includes(item.id)) &&
+      `${item.titre} ${item.organisme} ${item.description}`.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr")),
+  );
+  async function toggle(item: Opportunite) {
+    setPending(item.id);
+    setError("");
+    try {
+      await setFavorite(item.id, !ids.includes(item.id));
+      await cache.invalidateQueries({ queryKey: ["opportunites-favoris"] });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible d’enregistrer ce favori.");
+    } finally {
+      setPending(null);
+    }
+  }
+  return (
+    <section className="space-y-6">
+      {manager.data && (
+        <div className="flex justify-end">
+          <Button asChild variant="outline">
+            <Link to="/gestion-opportunites">
+              Gérer les offres
+              <ArrowUpRight />
+            </Link>
+          </Button>
+        </div>
+      )}
+
+      <div className="space-y-4 rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              aria-label="Rechercher une opportunité"
+              placeholder="Titre, organisme ou mot-clé"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 pl-9"
+            />
+          </div>
+          <Button variant={onlyFav ? "default" : "outline"} className="h-10" aria-pressed={onlyFav} onClick={() => setOnlyFav((v) => !v)}>
+            <Bookmark />
+            Mes favoris
+          </Button>
+        </div>
+        <div role="group" aria-label="Catégorie" className="flex gap-2 overflow-x-auto pb-1">
+          <button
+            type="button"
+            aria-pressed={category === ""}
+            onClick={() => setCategory("")}
+            className={`shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition ${
+              category === "" ? "border-transparent bg-foreground text-background" : "border-border bg-surface text-foreground/80 hover:bg-muted"
+            }`}
+          >
+            Toutes
+          </button>
+          {CATEGORIES.map((c) => {
+            const active = category === c;
+            const col = colorOf(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setCategory(active ? "" : c)}
+                className="shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition hover:brightness-95"
+                style={active ? { background: col, borderColor: col, color: "#fff" } : { background: `${col}14`, borderColor: `${col}55`, color: col }}
+              >
+                {c}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {(error || offres.error || favorites.error) && (
+        <div role="alert" className="space-y-2 text-sm text-destructive">
+          <p>{error || offres.error?.message || favorites.error?.message}</p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void offres.refetch();
+              void favorites.refetch();
+            }}
+          >
+            Réessayer
+          </Button>
+        </div>
+      )}
+      {offres.isPending && <p role="status">Chargement des opportunités…</p>}
+      {!offres.isPending && !offres.error && (
+        <p className="text-sm text-muted-foreground">
+          {filtered.length} opportunité{filtered.length !== 1 ? "s" : ""}
+        </p>
+      )}
+      {!offres.isPending && !offres.error && filtered.length === 0 && (
+        <div className="py-12 text-center">
+          <BriefcaseBusiness className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+          <h2 className="text-xl font-semibold">Aucune opportunité trouvée</h2>
+        </div>
+      )}
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {filtered.map((item) => {
+          const state = deadlineState(item.date_limite);
+          const active = ids.includes(item.id);
+          const col = colorOf(item.categorie);
+          return (
+            <article
+              key={item.id}
+              className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+            >
+              <div className="h-2" style={{ background: col }} />
+              <div className="flex flex-1 flex-col p-5">
+                <div className="mb-4 flex items-start justify-between gap-2">
+                  <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ background: `${col}1f`, color: col }}>
+                    {item.categorie}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    title={active ? "Retirer des favoris" : "Enregistrer l’offre"}
+                    aria-label={active ? `Retirer ${item.titre} des favoris` : `Enregistrer ${item.titre}`}
+                    aria-pressed={active}
+                    disabled={pending !== null || favorites.isPending || Boolean(favorites.error)}
+                    onClick={() => void toggle(item)}
+                  >
+                    <Bookmark fill={active ? "currentColor" : "none"} />
+                  </Button>
+                </div>
+                <h2 className="break-words font-display text-xl font-bold">{item.titre}</h2>
+                <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                  <Building2 className="h-4 w-4 shrink-0" />
+                  <span className="break-words">{item.organisme}</span>
+                </p>
+                <p className="mt-4 line-clamp-3 whitespace-pre-wrap break-words text-sm text-muted-foreground">{item.description}</p>
+                <p
+                  className={`mt-5 flex flex-wrap items-center gap-2 text-sm font-medium ${
+                    state === "expired" ? "text-muted-foreground" : state === "soon" ? "text-destructive" : "text-primary"
+                  }`}
+                >
+                  <CalendarDays className="h-4 w-4" />
+                  {new Date(item.date_limite + "T12:00:00Z").toLocaleDateString("fr-FR", { dateStyle: "medium", timeZone: "UTC" })}
+                  <span>{state === "expired" ? "Clôturée" : state === "soon" ? "Clôture prochaine" : "Candidatures ouvertes"}</span>
+                </p>
+                <Button
+                  className="mt-5 w-full text-white hover:brightness-110"
+                  style={{ background: col }}
+                  onClick={() => setSelected(item)}
+                >
+                  Voir l’offre
+                  <ArrowUpRight />
+                </Button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <OpportuniteDetails offre={selected} onClose={() => setSelected(null)} />
+    </section>
+  );
 }

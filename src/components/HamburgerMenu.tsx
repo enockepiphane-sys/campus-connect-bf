@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 
 const links = [
+  { to: "/revision-ia", label: "Révision & IA" },
+  { to: "/opportunites", label: "Opportunités" },
   { to: "/fonctionnalites", label: "Fonctionnalités" },
   { to: "/cours-en-ligne", label: "Cours en ligne" },
   { to: "/devenir-partenaire", label: "Devenir partenaire" },

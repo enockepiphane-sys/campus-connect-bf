@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bookmark, Search, CalendarDays, Building2, ArrowUpRight, BriefcaseBusiness } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listOffres, favoriteIds, setFavorite, canManage } from "@/lib/opportunites";
@@ -11,20 +12,26 @@ export const offresQueryOptions = { queryKey: ["opportunites"], queryFn: () => l
 
 // Une couleur par catégorie pour un repérage immédiat.
 const CATEGORY_COLORS: Record<string, string> = {
-  "Stages": "#0891b2",
+  "Stages": "#167d78",
   "Offres d'emploi": "#ea580c",
-  "Bourses d'études": "#16a34a",
-  "Concours": "#7c3aed",
-  "Formations": "#db2777",
-  "Appels à candidatures": "#ca8a04",
+  "Bourses d'études": "#0F8A44",
+  "Concours": "#c08a1e",
+  "Formations": "#2b3a33",
+  "Appels à candidatures": "#c2603c",
 };
 const colorOf = (categorie: string) => CATEGORY_COLORS[categorie] ?? "#ea580c";
 
 export function OpportunitesList() {
   const cache = useQueryClient();
   const offres = useQuery(offresQueryOptions);
-  const favorites = useQuery({ queryKey: ["opportunites-favoris"], queryFn: favoriteIds });
-  const manager = useQuery({ queryKey: ["opportunites-management"], queryFn: canManage });
+  // Les offres sont visibles par tous. Favoris et gestion ne concernent que les personnes connectées.
+  const session = useQuery({
+    queryKey: ["opportunites-session"],
+    queryFn: async () => Boolean((await supabase.auth.getSession()).data.session),
+  });
+  const signedIn = session.data === true;
+  const favorites = useQuery({ queryKey: ["opportunites-favoris"], queryFn: favoriteIds, enabled: signedIn });
+  const manager = useQuery({ queryKey: ["opportunites-management"], queryFn: canManage, enabled: signedIn });
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("");
   const [onlyFav, setOnlyFav] = useState(false);
@@ -75,10 +82,12 @@ export function OpportunitesList() {
               className="h-10 pl-9"
             />
           </div>
-          <Button variant={onlyFav ? "default" : "outline"} className="h-10" aria-pressed={onlyFav} onClick={() => setOnlyFav((v) => !v)}>
-            <Bookmark />
-            Mes favoris
-          </Button>
+          {signedIn && (
+            <Button variant={onlyFav ? "default" : "outline"} className="h-10" aria-pressed={onlyFav} onClick={() => setOnlyFav((v) => !v)}>
+              <Bookmark />
+              Mes favoris
+            </Button>
+          )}
         </div>
         <div role="group" aria-label="Catégorie" className="flex gap-2 overflow-x-auto pb-1">
           <button
@@ -153,17 +162,19 @@ export function OpportunitesList() {
                   <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ background: `${col}1f`, color: col }}>
                     {item.categorie}
                   </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    title={active ? "Retirer des favoris" : "Enregistrer l’offre"}
-                    aria-label={active ? `Retirer ${item.titre} des favoris` : `Enregistrer ${item.titre}`}
-                    aria-pressed={active}
-                    disabled={pending !== null || favorites.isPending || Boolean(favorites.error)}
-                    onClick={() => void toggle(item)}
-                  >
-                    <Bookmark fill={active ? "currentColor" : "none"} />
-                  </Button>
+                  {signedIn && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title={active ? "Retirer des favoris" : "Enregistrer l’offre"}
+                      aria-label={active ? `Retirer ${item.titre} des favoris` : `Enregistrer ${item.titre}`}
+                      aria-pressed={active}
+                      disabled={pending !== null || favorites.isPending || Boolean(favorites.error)}
+                      onClick={() => void toggle(item)}
+                    >
+                      <Bookmark fill={active ? "currentColor" : "none"} />
+                    </Button>
+                  )}
                 </div>
                 <h2 className="break-words font-display text-xl font-bold">{item.titre}</h2>
                 <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">

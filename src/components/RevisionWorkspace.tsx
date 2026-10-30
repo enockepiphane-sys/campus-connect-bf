@@ -7,11 +7,11 @@ import { REVISION_TOOLS, validatePdf, type RevisionTool } from "@/lib/revision-p
 const icons = { resume: FileText, assistant: MessageCircle, qcm: ListChecks, fiches: Layers, exercices: PenLine };
 // Une couleur par outil pour les reconnaître d’un coup d’œil.
 const colors: Record<RevisionTool, string> = {
-  resume: "#4f46e5",
-  assistant: "#0891b2",
-  qcm: "#7c3aed",
-  fiches: "#db2777",
-  exercices: "#ea580c",
+  resume: "#0F8A44",
+  assistant: "#167d78",
+  qcm: "#c08a1e",
+  fiches: "#c2603c",
+  exercices: "#2b3a33",
 };
 
 export function RevisionWorkspace() {

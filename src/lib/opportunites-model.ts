@@ -15,8 +15,8 @@ export function deadlineState(deadline: string, now = new Date()): "expired" | "
 export function candidatureHref(value: string): string | null {
   try { const url = new URL(value); return url.protocol === "https:" ? url.href : null; } catch { return null; }
 }
-export function safeSharedDestination(value: unknown): "/opportunites" | "/revision-ia" {
-  return value === "/revision-ia" ? value : "/opportunites";
+export function safeSharedDestination(value: unknown): "/opportunites" | "/revision-ia" | "/gestion-opportunites" {
+  return value === "/revision-ia" || value === "/gestion-opportunites" ? value : "/opportunites";
 }
 export function validateOffre(input: OffreInput): string | null {
   if (![input.titre, input.organisme, input.description, input.conditions, input.candidature].every(v => v.trim())) return "Complétez tous les champs obligatoires.";

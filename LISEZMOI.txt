@@ -1,0 +1,55 @@
+CampusLink-BF — Révision & IA + Opportunités
+
+1. Copiez chaque fichier à l'emplacement indiqué dans votre projet GitHub.
+2. Exécutez le fichier supabase/migrations/20261030172800_opportunites.sql dans votre base Supabase (SQL Editor), une seule fois.
+3. Poussez sur GitHub : Vercel mettra la plateforme à jour.
+
+Fichiers modifiés : src/routes/index.tsx, src/components/HamburgerMenu.tsx,
+src/routes/_authenticated/etudiant.tsx, admin.tsx, super-admin.tsx, AGENTS.md.
+Tous les autres fichiers sont nouveaux. Ne modifiez pas src/routeTree.gen.ts : il se régénère automatiquement.
+
+Révision & IA : l'interface et les vérifications PDF sont prêtes ; aucune IA ni clé n'est connectée.
+Opportunités : accessibles à tout utilisateur connecté, même sans établissement partenaire.
+Gestion : super-admins et administrateurs d'établissement autorisés.
+
+VÉRIFICATIONS ET LIMITES
+- Compilation de la copie complète réussie avec les nouvelles pages.
+- 5 tests métier réussis (catégories, dates, liens, redirections, PDF).
+- Permissions et création/lecture/modification/suppression testées dans une base PostgreSQL isolée : lecteurs sans rôle institutionnel, brouillons privés, favoris privés, admin autorisé, suppression en cascade, accès anonyme refusé.
+- Écrans testés avec un service simulé : favoris, détail, administration, sélection PDF, question de cours et téléphone.
+- Aucun test connecté à votre base réelle : la mise en service des offres reste à vérifier après exécution du SQL dans votre base existante. Ce fichier SQL ajoute des tables ; il ne déplace aucune donnée et ne crée aucun nouveau projet.
+- Le SQL utilise les colonnes deleted_at déjà utilisées par votre application : vérifier qu'elles existent dans etablissements et admins_pre_autorises avant exécution.
+- L'analyse TypeScript du projet entier signale des erreurs préexistantes, notamment des types de tables/fonctions manquants. Aucun diagnostic ne concerne les nouveaux fichiers. Ces erreurs n'ont pas été corrigées hors demande.
+- Un avertissement de rendu initial a été observé lors de la redirection vers la connexion dans la copie de développement ; le formulaire et les autres flux se sont affichés et ont fonctionné pendant le test simulé. À revérifier après déploiement.
+- L'inscription actuelle n'a pas été changée : elle continue d'exiger une préinscription institutionnelle. Le nouveau formulaire de connexion accepte un compte existant même sans rôle institutionnel. La création de nouveaux comptes hors établissement n'est pas ajoutée.
+- Aucun appel IA ni résumé/QCM/fiches/corrigé réel : la connexion ultérieure du fournisseur reste nécessaire.
+- Les droits de gestion sont étendus aux admins d'établissement actifs et préautorisés, ainsi qu'aux super-admins ; tous peuvent gérer les offres globales. Les accès aux données académiques ne sont pas élargis.
+- Une ancienne migration du ZIP d'origine contient des identifiants codés en dur. Elle n'est pas fournie ici. Si ces identifiants servent encore, changez-les dans votre service d'authentification.
+
+LISTE EXACTE DES FICHIERS LIVRÉS
+
+./AGENTS.md
+./LISEZMOI.txt
+./src/components/EspacesNavigation.tsx
+./src/components/EspacesShell.tsx
+./src/components/HamburgerMenu.tsx
+./src/components/OpportuniteDetails.tsx
+./src/components/OpportunitesAdmin.tsx
+./src/components/OpportunitesList.tsx
+./src/components/RevisionWorkspace.tsx
+./src/lib/opportunites-model.ts
+./src/lib/opportunites.ts
+./src/lib/revision-provider.ts
+./src/routes/_authenticated/admin.tsx
+./src/routes/_authenticated/etudiant.tsx
+./src/routes/_authenticated/super-admin.tsx
+./src/routes/_commun.gestion-opportunites.tsx
+./src/routes/_commun.opportunites.tsx
+./src/routes/_commun.revision-ia.tsx
+./src/routes/_commun.tsx
+./src/routes/connexion-espaces.tsx
+./src/routes/index.tsx
+./supabase/migrations/20261030172800_opportunites.sql
+./tests/espaces.test.ts
+./tests/permissions.integration.ts
+Le test de permissions nécessite @electric-sql/pglite dans un environnement de test isolé ; il ne se connecte jamais à votre base réelle.

@@ -1,3 +1,4 @@
+import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { GraduationCap, LogIn, UserPlus, Calendar, PartyPopper, ExternalLink } from "lucide-react";
@@ -14,6 +15,8 @@ const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "CampusLink — La plateforme des campus du Burkina Faso" },
       {
         name: "description",
@@ -112,6 +115,8 @@ function Home() {
           </section>
         </div>
 
+
+        <div className="mx-auto mt-10 max-w-2xl"><EspacesNavigation /></div>
 
         {/* Événements sociaux */}
         <EvenementsSociauxSection />

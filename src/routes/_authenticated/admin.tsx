@@ -1,3 +1,4 @@
+import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,6 +142,7 @@ function Dashboard() {
       )}
 
       <main className="mx-auto w-full max-w-7xl min-w-0 px-4 py-6 sm:px-6 sm:py-8">
+        <EspacesNavigation />
         {tab === "structure" && <StructurePanel etabId={etabId} />}
         {tab === "etudiants" && <EtudiantsPanel etabId={etabId} />}
         {tab === "matieres" && <MatieresPanel etabId={etabId} />}

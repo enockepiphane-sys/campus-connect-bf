@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { FileText, Upload, X, MessageCircle, ListChecks, Layers, PenLine, Sparkles, Loader2, Copy } from "lucide-react";
+import { FileText, Upload, X, MessageCircle, ListChecks, Layers, PenLine, Sparkles, Loader2, ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { REVISION_TOOLS, validatePdf, type RevisionTool } from "@/lib/revision-provider";
 import { supabase } from "@/integrations/supabase/client";
+import { CoursRenderer } from "@/components/CoursRenderer";
 
 // Envoie le cours (PDF) et l'outil choisi à la fonction Supabase « campuslink-ai » (Gemini).
 type RevisionAiInput = {
@@ -24,7 +25,7 @@ function toBase64(file: File): Promise<string> {
 async function runRevisionAi({ tool, question, file }: RevisionAiInput): Promise<string> {
   const pdfBase64 = file ? await toBase64(file) : undefined;
   const { data, error } = await supabase.functions.invoke("campuslink-ai", {
-    body: { tool, question, pdfBase64, mimeType: file ? "application/pdf" : undefined },
+    body: { tool, question, pdfBase64, mimeType: file ? file.type || "application/pdf" : undefined },
   });
   if (error) {
     let message = "Le service IA est indisponible. Réessaie plus tard.";
@@ -42,6 +43,23 @@ async function runRevisionAi({ tool, question, file }: RevisionAiInput): Promise
   if (typeof data?.error === "string") throw new Error(data.error);
   if (typeof data?.result !== "string" || !data.result) throw new Error("L’IA n’a pas produit de réponse. Réessaie.");
   return data.result;
+}
+
+// Réduit les photos de cahier (souvent très lourdes) avant l'envoi : 2000 px max, JPEG.
+async function compressImage(file: File): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.85));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
 }
 
 const icons = { resume: FileText, assistant: MessageCircle, qcm: ListChecks, fiches: Layers, exercices: PenLine };
@@ -74,7 +92,7 @@ export function RevisionWorkspace() {
       return;
     }
     if (tool !== "assistant" && !file) {
-      setError("Importe d’abord un cours PDF.");
+      setError("Importe d’abord un cours (PDF ou photo).");
       return;
     }
     setLoading(true);
@@ -146,13 +164,25 @@ export function RevisionWorkspace() {
             <input
               ref={input}
               id="revision-pdf"
-              aria-label="Importer un cours PDF"
+              aria-label="Importer un cours (PDF ou photo)"
               type="file"
-              accept="application/pdf,.pdf"
+              accept="application/pdf,.pdf,image/jpeg,image/png,image/webp"
               className="sr-only"
               onChange={async (e) => {
                 const selected = e.target.files?.[0];
                 if (!selected) return;
+                const isImage = /^image\/(jpeg|png|webp)$/.test(selected.type);
+                if (isImage) {
+                  const compact = await compressImage(selected);
+                  if (compact.size > 5 * 1024 * 1024) {
+                    setError("La photo est trop lourde (5 Mo maximum).");
+                    e.target.value = "";
+                    return;
+                  }
+                  setFile(compact);
+                  setError("");
+                  return;
+                }
                 const problem = validatePdf(selected) ?? (selected.size > 5 * 1024 * 1024 ? "Le PDF dépasse 5 Mo." : null);
                 if (problem) {
                   setError(problem);
@@ -172,7 +202,7 @@ export function RevisionWorkspace() {
             {file ? (
               <div className="flex min-w-0 items-center gap-4">
                 <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl text-white" style={{ background: color }}>
-                  <FileText className="h-7 w-7" />
+                  {file.type.startsWith("image/") ? <ImageIcon className="h-7 w-7" /> : <FileText className="h-7 w-7" />}
                 </span>
                 <div className="min-w-0 flex-1">
                   <p className="break-all font-semibold">{file.name}</p>
@@ -199,8 +229,8 @@ export function RevisionWorkspace() {
                 <span className="grid h-16 w-16 place-items-center rounded-full text-white shadow-lg" style={{ background: color }}>
                   <Upload className="h-8 w-8" />
                 </span>
-                <span className="font-display text-lg font-bold">Importer un cours PDF</span>
-                <span className="text-xs text-muted-foreground">Touchez pour choisir un fichier · PDF · 5 Mo maximum</span>
+                <span className="font-display text-lg font-bold">Importer un cours (PDF ou photo)</span>
+                <span className="text-xs text-muted-foreground">Touchez pour choisir un fichier · PDF ou photo (JPG, PNG) · 5 Mo maximum</span>
               </button>
             )}
           </div>
@@ -228,7 +258,7 @@ export function RevisionWorkspace() {
           )}
 
           <p role="status" className="rounded-xl border-l-4 border-gold bg-secondary p-4 text-sm">
-            Votre document est envoyé au service d’intelligence artificielle de Google (Gemini) pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Pour un cours manuscrit, prenez une photo nette et bien éclairée, une page à la fois. Votre document est envoyé au service d’intelligence artificielle de Google (Gemini) pour générer la réponse. N’y mettez pas d’informations personnelles.
           </p>
           <Button
             onClick={() => void generate()}
@@ -240,18 +270,7 @@ export function RevisionWorkspace() {
             {loading ? "L’IA travaille… (jusqu’à 1 minute)" : tool === "assistant" ? "Poser ma question" : "Générer"}
           </Button>
 
-          {result && (
-            <div className="rounded-2xl border border-border bg-background p-5 sm:p-6">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <h3 className="font-display text-lg font-bold">Résultat</h3>
-                <Button variant="outline" size="sm" onClick={() => void navigator.clipboard.writeText(result)}>
-                  <Copy />
-                  Copier
-                </Button>
-              </div>
-              <div className="whitespace-pre-wrap break-words text-sm leading-relaxed">{result}</div>
-            </div>
-          )}
+          {result && <CoursRenderer text={result} color={color} label={current?.label ?? "Résultat"} />}
         </div>
       </section>
     </div>

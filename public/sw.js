@@ -56,3 +56,6 @@ self.addEventListener("notificationclick", (event) => {
     })
   );
 });
+
+// Requis pour que le navigateur propose d'installer l'application (aucune mise en cache : le réseau reste utilisé normalement).
+self.addEventListener("fetch", () => {});

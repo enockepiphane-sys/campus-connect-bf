@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Smartphone } from "lucide-react";
+import { useInstall } from "@/components/InstallBanner";
 
 const links = [
   { to: "/revision-ia", label: "Révision & IA" },
   { to: "/opportunites", label: "Opportunités" },
+  { to: "/bibliotheque", label: "Bibliothèque" },
   { to: "/fonctionnalites", label: "Fonctionnalités" },
   { to: "/cours-en-ligne", label: "Cours en ligne" },
   { to: "/devenir-partenaire", label: "Devenir partenaire" },
@@ -14,6 +16,8 @@ const links = [
 
 export function HamburgerMenu() {
   const [open, setOpen] = useState(false);
+  const [help, setHelp] = useState(false);
+  const { canPrompt, ios, standalone, install } = useInstall();
 
   return (
     <>
@@ -58,6 +62,25 @@ export function HamburgerMenu() {
                   </Link>
                 </li>
               ))}
+              {!standalone && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => (canPrompt ? void install() : setHelp((v) => !v))}
+                    className="flex w-full items-center gap-2 rounded-lg bg-primary-soft px-4 py-3 text-left font-semibold text-primary transition hover:brightness-95"
+                  >
+                    <Smartphone className="h-4 w-4" />
+                    Installer l’application
+                  </button>
+                  {help && (
+                    <p className="mt-2 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+                      {ios
+                        ? "Dans Safari, touchez le bouton Partager, puis « Sur l’écran d’accueil »."
+                        : "Dans le menu de votre navigateur (⋮), choisissez « Installer l’application » ou « Ajouter à l’écran d’accueil »."}
+                    </p>
+                  )}
+                </li>
+              )}
             </ul>
           </nav>
         </div>

@@ -9,7 +9,7 @@ import { ESPACES } from "./espaces-themes";
 export function EspacesShell({ title, children }: { title: string; children: ReactNode }) {
   // Le thème (couleurs, icône) dépend de la page affichée : aucune autre route à modifier.
   const { pathname } = useLocation();
-  const espace = pathname.startsWith("/revision-ia") ? ESPACES.revision : ESPACES.opportunites;
+  const espace = pathname.startsWith("/revision-ia") ? ESPACES.revision : pathname.startsWith("/bibliotheque") ? ESPACES.bibliotheque : ESPACES.opportunites;
   const Icon = espace.Icon;
   const isGestion = pathname.startsWith("/gestion-opportunites");
   const subtitle = isGestion ? "Publie, modifie et retire les offres visibles par les étudiants." : espace.tagline;

@@ -2,11 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { ESPACES, type EspaceKey } from "./espaces-themes";
 
-const KEYS: EspaceKey[] = ["revision", "opportunites"];
+const KEYS: EspaceKey[] = ["revision", "opportunites", "bibliotheque"];
 
-// variant "cards"  : grandes palettes cliquables (accueil, espaces étudiant/admin)
-// variant "switch" : petit sélecteur compact (à l'intérieur des pages Révision / Opportunités)
-export function EspacesNavigation({ variant = "cards" }: { variant?: "cards" | "switch" }) {
+// variant "compact" (défaut) : trois petites palettes côte à côte (accueil, espaces étudiant et super admin)
+// variant "switch"  : sélecteur en pastilles
+// variant "cards"   : grandes cartes détaillées
+export function EspacesNavigation({ variant = "compact" }: { variant?: "compact" | "switch" | "cards" }) {
   if (variant === "switch") {
     return (
       <nav aria-label="Espaces CampusLink" className="my-5 flex flex-wrap gap-2">
@@ -29,8 +30,32 @@ export function EspacesNavigation({ variant = "cards" }: { variant?: "cards" | "
     );
   }
 
+  if (variant === "cards") {
+    return (
+      <nav aria-label="Espaces CampusLink" className="my-6 grid gap-4 sm:grid-cols-3">
+        {KEYS.map((k) => {
+          const e = ESPACES[k];
+          const Icon = e.Icon;
+          return (
+            <Link key={k} to={e.to} className="group relative isolate flex min-h-[200px] flex-col justify-between overflow-hidden rounded-3xl p-6 text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl" style={{ background: e.gradient }}>
+              <Icon aria-hidden strokeWidth={1.1} className="absolute -bottom-8 -right-6 -z-10 h-44 w-44 text-white/15" />
+              <span className="grid h-12 w-12 place-items-center rounded-2xl bg-white/20 backdrop-blur-sm">
+                <Icon className="h-6 w-6" />
+              </span>
+              <div>
+                <h2 className="font-display text-2xl font-bold">{e.label}</h2>
+                <p className="mt-1 text-sm text-white/85">{e.tagline}</p>
+              </div>
+            </Link>
+          );
+        })}
+      </nav>
+    );
+  }
+
+  // compact
   return (
-    <nav aria-label="Espaces CampusLink" className="my-6 grid gap-4 sm:grid-cols-2">
+    <nav aria-label="Espaces CampusLink" className="my-5 grid grid-cols-3 gap-2.5 sm:gap-4">
       {KEYS.map((k) => {
         const e = ESPACES[k];
         const Icon = e.Icon;
@@ -38,43 +63,18 @@ export function EspacesNavigation({ variant = "cards" }: { variant?: "cards" | "
           <Link
             key={k}
             to={e.to}
-            className="group relative isolate flex min-h-[210px] flex-col justify-between overflow-hidden rounded-3xl p-6 text-left text-white shadow-lg transition duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-[240px] sm:p-7"
+            className="group relative isolate flex min-h-[104px] flex-col justify-between overflow-hidden rounded-2xl p-3 text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-[116px] sm:p-4"
             style={{ background: e.gradient }}
           >
-            <span aria-hidden className="absolute -right-12 -top-12 -z-10 h-48 w-48 rounded-full bg-white/10" />
-            <span aria-hidden className="absolute -bottom-16 -left-10 -z-10 h-40 w-40 rounded-full bg-black/10" />
-            <Icon
-              aria-hidden
-              strokeWidth={1.1}
-              className="absolute -bottom-8 -right-6 -z-10 h-48 w-48 text-white/15 transition duration-500 group-hover:rotate-6 group-hover:scale-110"
-            />
-
-            <div className="flex items-start justify-between gap-3">
-              <span className="grid h-14 w-14 place-items-center rounded-2xl bg-white/20 shadow-inner backdrop-blur-sm">
-                <Icon className="h-7 w-7" />
-              </span>
-              <span className="rounded-full bg-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest backdrop-blur-sm">
-                Nouveau
-              </span>
-            </div>
-
-            <div className="mt-6">
-              <h2 className="font-display text-2xl font-bold sm:text-3xl">{e.label}</h2>
-              <p className="mt-2 max-w-sm text-sm text-white/85 sm:text-base">{e.tagline}</p>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex flex-wrap gap-1.5">
-                  {e.chips.map((c) => (
-                    <span key={c} className="rounded-full bg-white/15 px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm">
-                      {c}
-                    </span>
-                  ))}
-                </div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-bold text-neutral-900 transition group-hover:gap-3">
-                  Ouvrir
-                  <ArrowRight className="h-4 w-4" />
-                </span>
-              </div>
-            </div>
+            <span aria-hidden className="absolute -right-5 -top-5 -z-10 h-20 w-20 rounded-full bg-white/10" />
+            <Icon aria-hidden strokeWidth={1.2} className="absolute -bottom-3 -right-2 -z-10 h-20 w-20 text-white/15 transition duration-300 group-hover:rotate-6 group-hover:scale-110" />
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/20 backdrop-blur-sm sm:h-10 sm:w-10">
+              <Icon className="h-[18px] w-[18px] sm:h-5 sm:w-5" />
+            </span>
+            <span className="mt-2 flex items-end justify-between gap-1">
+              <span className="font-display text-[13px] font-bold leading-tight sm:text-base">{e.short}</span>
+              <ArrowRight className="hidden h-4 w-4 shrink-0 transition group-hover:translate-x-0.5 sm:block" />
+            </span>
           </Link>
         );
       })}

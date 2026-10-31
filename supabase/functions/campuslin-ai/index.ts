@@ -7,6 +7,7 @@ const MODELS = [Deno.env.get("GEMINI_MODEL"), "gemini-flash-lite-latest", "gemin
 );
 const GEMINI_TIMEOUT_MS = 55_000;
 const MAX_PDF_BASE64_LENGTH = 7_000_000; // ≈ 5 Mo
+const ALLOWED_MIME = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
 const LIMIT_REQUESTS = 8; // par visiteur
 const LIMIT_WINDOW_MS = 10 * 60 * 1000; // sur 10 minutes
 
@@ -96,14 +97,14 @@ Deno.serve(async (req: Request) => {
     }
     const q = typeof question === "string" ? question.trim().slice(0, 4000) : "";
     if (tool === "assistant" && !q) return json(req, { error: "Écris ta question sur le cours." }, 400);
-    if (tool !== "assistant" && !pdfBase64) return json(req, { error: "Importe d'abord un cours PDF." }, 400);
+    if (tool !== "assistant" && !pdfBase64) return json(req, { error: "Importe d'abord un cours (PDF ou photo)." }, 400);
 
     if (pdfBase64 !== undefined && pdfBase64 !== null) {
       if (typeof pdfBase64 !== "string" || pdfBase64.length > MAX_PDF_BASE64_LENGTH) {
         return json(req, { error: "PDF trop volumineux. Utilise un fichier de 5 Mo maximum." }, 413);
       }
-      if (mimeType && mimeType !== "application/pdf") {
-        return json(req, { error: "Seuls les documents PDF sont acceptés." }, 400);
+      if (mimeType && !ALLOWED_MIME.includes(String(mimeType))) {
+        return json(req, { error: "Formats acceptés : PDF, JPG, PNG ou WebP." }, 400);
       }
     }
 
@@ -112,17 +113,23 @@ Deno.serve(async (req: Request) => {
 ${q ? `Consigne de l'étudiant :\n${q}` : "Aucune consigne supplémentaire. Réalise directement le travail demandé à partir du document fourni."}
 
 Réponds en français, avec une présentation claire, structurée et adaptée à un étudiant.
-Utilise des titres et des listes lorsque cela améliore la lisibilité.
-Retourne uniquement un objet JSON de la forme :
-{"result":"contenu complet de ta réponse"}`;
+Format obligatoire : Markdown simple.
+- Commence par un seul titre de niveau 1 (# Titre).
+- Découpe en sections avec des titres de niveau 2 (## Section), puis des sous-titres de niveau 3 (### Sous-section) si utile.
+- Utilise des listes à puces (- ), des listes numérotées (1. ), et du **gras** pour les mots-clés et définitions importantes.
+- Si c'est pertinent, utilise des tableaux Markdown.
+- Termine par une section « ## Points clés à retenir ».
+- N'utilise JAMAIS de LaTeX ni de signes dollar : écris les formules en texte simple avec des symboles (×, ÷, ², V₀, ≥).
+- Si le document est manuscrit ou une photo, lis-le attentivement ; si un passage est illisible, signale-le au lieu de l'inventer.
+- Ne renvoie pas de JSON et n'entoure pas la réponse de balises de code.`;
 
     const parts: Array<Record<string, unknown>> = [{ text: prompt }];
     if (typeof pdfBase64 === "string" && pdfBase64) {
-      parts.push({ inline_data: { mime_type: "application/pdf", data: pdfBase64 } });
+      parts.push({ inline_data: { mime_type: typeof mimeType === "string" && ALLOWED_MIME.includes(mimeType) ? mimeType : "application/pdf", data: pdfBase64 } });
     }
     const requestBody = JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { temperature: 0.4, responseMimeType: "application/json" },
+      generationConfig: { temperature: 0.4 },
     });
 
     // deno-lint-ignore no-explicit-any
@@ -173,11 +180,14 @@ Retourne uniquement un objet JSON de la forme :
       .trim();
     if (!generated) return json(req, { error: "L'IA n'a pas produit de réponse. Réessaie." }, 502);
 
-    let result = generated;
-    try {
-      const parsed = JSON.parse(generated);
-      if (typeof parsed?.result === "string") result = parsed.result;
-    } catch { /* texte brut */ }
+    // Sécurité : si le modèle renvoie quand même du JSON {"result": ...}, on le déballe.
+    let result = generated.replace(/^```(?:markdown|md)?\s*/i, "").replace(/```\s*$/, "").trim();
+    if (/^\{\s*"result"\s*:/.test(result)) {
+      try {
+        const parsed = JSON.parse(result);
+        if (typeof parsed?.result === "string") result = parsed.result;
+      } catch { /* l'affichage de l'application s'en charge */ }
+    }
 
     return json(req, { success: true, result });
   } catch (error) {

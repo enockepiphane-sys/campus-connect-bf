@@ -1,5 +1,6 @@
 import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
+import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
@@ -25,7 +26,7 @@ function Dashboard() {
     document.documentElement.classList.toggle("dark", darkMode);
   }, [darkMode]);
   const [ctx, setCtx] = useState<{ niveauId: string; niveauLabel: string; etabNom: string; userName: string; userEmail: string } | null>(null);
-  const [tab, setTab] = useState<"annonces" | "edt" | "evenements" | "notes">("annonces");
+  const [tab, setTab] = useHistoryTab(["annonces", "edt", "evenements", "notes"] as const, "annonces");
 
   useEffect(() => {
     (async () => {

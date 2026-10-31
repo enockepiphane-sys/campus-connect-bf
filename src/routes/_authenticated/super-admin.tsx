@@ -3,6 +3,7 @@ import { BibliothequeAdmin } from "@/components/BibliothequeAdmin";
 import { VisiteursPanel } from "@/components/VisiteursPanel";
 import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
+import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndGoHome } from "@/lib/auth";
@@ -69,7 +70,7 @@ type Demande = { id: string; nom_etablissement: string; nom_contact: string; ema
 type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean; deleted_at?: string | null };
 
 function Dashboard() {
-  const [tab, setTab] = useState<"etabs" | "preadmins" | "demandes" | "evenements" | "historique" | "corbeille" | "opportunites" | "bibliotheque" | "visiteurs">("etabs");
+  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "demandes", "evenements", "historique", "corbeille", "opportunites", "bibliotheque", "visiteurs"] as const, "etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -552,7 +553,7 @@ function EvenementsSociauxPanel() {
 type ItemCorbeilleSA = { id: string; label: string; sousLabel?: string; deleted_at: string; raw: Record<string, unknown> };
 
 function CorbeilleSuperAdminPanel() {
-  const [tab, setTab] = useState<"etabs" | "preadmins" | "evenements">("etabs");
+  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "evenements"] as const, "etabs", "clSub");
   const [items, setItems] = useState<ItemCorbeilleSA[]>([]);
   const [loading, setLoading] = useState(true);
 

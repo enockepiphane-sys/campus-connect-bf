@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { resolveUserRole, signOutAndGoHome } from "@/lib/auth";
@@ -26,7 +27,7 @@ function Dashboard() {
   const [etabNom, setEtabNom] = useState<string>("");
   const [menu, setMenu] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [tab, setTab] = useState<"structure" | "etudiants" | "matieres" | "annonces" | "evenements" | "edt" | "historique" | "corbeille">("structure");
+  const [tab, setTab] = useHistoryTab(["structure", "etudiants", "matieres", "annonces", "evenements", "edt", "historique", "corbeille"] as const, "structure");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", darkMode);
@@ -1922,7 +1923,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
 type ItemCorbeille = { id: string; label: string; sousLabel?: string; deleted_at: string; raw: Record<string, unknown> };
 
 function CorbeillePanel({ etabId }: { etabId: string }) {
-  const [tab, setTab] = useState<"filieres" | "niveaux" | "etudiants" | "notes">("filieres");
+  const [tab, setTab] = useHistoryTab(["filieres", "niveaux", "etudiants", "notes"] as const, "filieres", "clSub");
   const [items, setItems] = useState<ItemCorbeille[]>([]);
   const [loading, setLoading] = useState(true);
 

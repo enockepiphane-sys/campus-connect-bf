@@ -1,6 +1,6 @@
-import { Brain, Briefcase, Library } from "lucide-react";
+import { Brain, Briefcase, Library, PartyPopper } from "lucide-react";
 
-export type EspaceKey = "revision" | "opportunites" | "bibliotheque";
+export type EspaceKey = "revision" | "opportunites" | "bibliotheque" | "evenements";
 
 // Thèmes visuels des espaces partagés : un design propre à chaque fonctionnalité.
 export const ESPACES = {
@@ -33,5 +33,15 @@ export const ESPACES = {
     gradient: "linear-gradient(135deg, #04302e 0%, #167d78 55%, #2fb6a8 100%)",
     solid: "#167d78",
     Icon: Library,
+  },
+  evenements: {
+    to: "/evenements",
+    label: "Événements",
+    short: "Événements",
+    tagline: "Concerts, conférences, rencontres et activités : l’agenda de la vie étudiante.",
+    chips: ["Concerts", "Conférences", "Rencontres", "Activités"],
+    gradient: "linear-gradient(135deg, #052e1c 0%, #0F8A44 55%, #F0C419 100%)",
+    solid: "#0F8A44",
+    Icon: PartyPopper,
   },
 } as const;

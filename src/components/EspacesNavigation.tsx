@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { ESPACES, type EspaceKey } from "./espaces-themes";
 
-const KEYS: EspaceKey[] = ["revision", "opportunites", "bibliotheque"];
+const KEYS: Exclude<EspaceKey, "evenements">[] = ["revision", "opportunites", "bibliotheque"];
 
 // variant "compact" (défaut) : trois petites palettes côte à côte (accueil, espaces étudiant et super admin)
 // variant "switch"  : sélecteur en pastilles

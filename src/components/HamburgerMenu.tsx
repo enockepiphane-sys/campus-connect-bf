@@ -7,6 +7,7 @@ const links = [
   { to: "/revision-ia", label: "Révision & IA" },
   { to: "/opportunites", label: "Opportunités" },
   { to: "/bibliotheque", label: "Bibliothèque" },
+  { to: "/evenements", label: "Événements" },
   { to: "/fonctionnalites", label: "Fonctionnalités" },
   { to: "/cours-en-ligne", label: "Cours en ligne" },
   { to: "/devenir-partenaire", label: "Devenir partenaire" },

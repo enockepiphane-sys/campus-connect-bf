@@ -1,10 +1,9 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
-import { Button } from "@/components/ui/button";
 import { ESPACES } from "./espaces-themes";
+import { RetourButtons } from "./RetourButtons";
 
 export function EspacesShell({ title, children }: { title: string; children: ReactNode }) {
   // Le thème (couleurs, icône) dépend de la page affichée : aucune autre route à modifier.
@@ -26,12 +25,7 @@ export function EspacesShell({ title, children }: { title: string; children: Rea
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <Button asChild variant="ghost" className="mb-4">
-          <Link to="/">
-            <ArrowLeft />
-            Accueil
-          </Link>
-        </Button>
+        <RetourButtons />
 
         <section
           className="relative isolate overflow-hidden rounded-3xl p-6 text-white shadow-lg sm:p-10"

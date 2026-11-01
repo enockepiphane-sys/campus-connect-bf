@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Copyright } from "@/components/Copyright";
 import {
   GraduationCap,
   Megaphone,
@@ -177,6 +178,8 @@ function Page() {
         <div className="text-center">
           <a href="/" className="btn-bf-outline">Retour à l'accueil</a>
         </div>
+
+        <Copyright className="mt-10 border-t border-border pt-6" />
       </div>
     </div>
   );

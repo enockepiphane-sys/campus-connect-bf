@@ -1,3 +1,4 @@
+import { Copyright } from "@/components/Copyright";
 import { createFileRoute } from "@tanstack/react-router";
 import { PageShell } from "@/components/PageShell";
 
@@ -81,7 +82,7 @@ function Page() {
 
       <div className="mt-10 border-t border-border pt-6 text-center">
         <p className="text-base font-semibold text-foreground">SWEE Social-Services</p>
-        <p className="mt-1 text-xs text-muted-foreground">© SAOUADOGO W. E. Epiphane</p>
+        <Copyright className="mt-1" />
       </div>
     </PageShell>
   );

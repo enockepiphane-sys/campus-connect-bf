@@ -5,6 +5,7 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
+import { Copyright } from "@/components/Copyright";
 import { EvenementsSociauxSection } from "@/components/EvenementsSociauxSection";
 import graduateHero from "@/assets/graduate-hero.png";
 
@@ -123,6 +124,7 @@ function Home() {
           <p className="text-center text-xs text-muted-foreground">
             CampusLink — Une plateforme pensée pour les campus du Burkina Faso 🇧🇫
           </p>
+          <Copyright />
         </div>
       </main>
     </div>

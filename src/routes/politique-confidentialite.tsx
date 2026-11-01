@@ -76,7 +76,7 @@ function Page() {
         </List>
         <p className="font-semibold text-foreground">Si vous êtes administrateur d’établissement</p>
         <List>
-          <li>Nom, adresse e-mail, date de naissance et établissement rattaché (pré-autorisés par le super administrateur).</li>
+          <li>Nom, adresse e-mail, date de naissance et établissement rattaché, vérifiés lors de l’inscription.</li>
         </List>
         <p className="font-semibold text-foreground">Si vous activez les notifications</p>
         <List>
@@ -140,8 +140,7 @@ function Page() {
             résultats de son établissement uniquement. Un administrateur ne peut pas consulter les données d’un autre établissement.
           </li>
           <li>
-            <strong>Le super administrateur de CampusLink :</strong> il gère la plateforme (établissements, administrateurs, bibliothèque,
-            opportunités, statistiques).
+            <strong>L’équipe CampusLink :</strong> uniquement pour faire fonctionner, entretenir et sécuriser la plateforme.
           </li>
           <li>
             <strong>Le public :</strong> seuls les contenus destinés à être publics sont visibles par tous (offres d’opportunités publiées,

@@ -19,8 +19,6 @@ import {
   PartyPopper,
   Smartphone,
   Bell,
-  BarChart3,
-  Settings2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/fonctionnalites")({
@@ -149,35 +147,6 @@ function Page() {
               desc="Les utilisateurs connectés peuvent activer les alertes de l'application pour être prévenus directement sur leur téléphone."
               from="#b7791f"
               to2="#F0C419"
-            />
-          </div>
-        </section>
-
-        {/* Nouveau : côté équipe CampusLink */}
-        <section className="mb-12">
-          <h2 className="mb-2 text-xl font-bold text-foreground">Côté équipe CampusLink</h2>
-          <p className="mb-6 max-w-2xl text-sm text-muted-foreground">Les outils de gestion qui alimentent ces nouveautés.</p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <StickerCard
-              icon={<Settings2 className="h-6 w-6" />}
-              title="Gestion des opportunités"
-              desc="Les administrateurs autorisés publient, modifient et retirent les offres visibles par les étudiants."
-              from="#9a3412"
-              to2="#e0764f"
-            />
-            <StickerCard
-              icon={<Library className="h-6 w-6" />}
-              title="Gestion de la bibliothèque"
-              desc="Le super administrateur ajoute les livres et cours par thème (PDF ou photos) et examine les livres proposés par les étudiants."
-              from="#0f5f5a"
-              to2="#2fb6a8"
-            />
-            <StickerCard
-              icon={<BarChart3 className="h-6 w-6" />}
-              title="Statistiques de fréquentation"
-              desc="Le nombre de visiteurs par jour, semaine et mois, et l'usage de chaque outil, calculés de façon anonyme."
-              from="#1f2a25"
-              to2="#4a5a52"
             />
           </div>
         </section>

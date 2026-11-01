@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Briefcase, Brain, Download, RefreshCw, Smartphone, Users } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { BookOpen, Briefcase, Brain, Download, RefreshCw, Smartphone, Trash2, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { fetchStats, type StatsPoint } from "@/lib/visites";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { describeAgent, fetchDetail, fetchStats, isNoTrack, resetVisits, setNoTrack, type StatsPoint } from "@/lib/visites";
 
 type Range = "jour" | "semaine" | "mois";
 
@@ -32,7 +33,35 @@ function Kpi({ title, value, Icon, color }: { title: string; value: number; Icon
 }
 
 export function VisiteursPanel() {
+  const cache = useQueryClient();
   const stats = useQuery({ queryKey: ["stats-visiteurs"], queryFn: fetchStats, refetchOnWindowFocus: false });
+  const [showDetail, setShowDetail] = useState(false);
+  const detail = useQuery({ queryKey: ["visiteurs-detail"], queryFn: fetchDetail, enabled: showDetail, refetchOnWindowFocus: false });
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [ignored, setIgnored] = useState(false);
+  // L'appareil du super administrateur n'est plus compté dès qu'il ouvre ce tableau de bord.
+  useEffect(() => {
+    setNoTrack(true);
+    setIgnored(isNoTrack());
+  }, []);
+  async function doReset() {
+    setBusy(true);
+    setResetError("");
+    try {
+      await resetVisits();
+      await Promise.all([cache.invalidateQueries({ queryKey: ["stats-visiteurs"] }), cache.invalidateQueries({ queryKey: ["visiteurs-detail"] })]);
+      setConfirmReset(false);
+    } catch (e) {
+      setResetError(e instanceof Error ? e.message : "La remise à zéro a échoué.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  const rows = detail.data ?? [];
+  const bots = rows.filter((r) => describeAgent(r.agent).bot).length;
+  const fmt = (iso: string) => new Date(iso).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
   const [range, setRange] = useState<Range>("jour");
   const s = stats.data;
   const series: StatsPoint[] = s ? (range === "jour" ? s.par_jour : range === "semaine" ? s.par_semaine : s.par_mois) : [];
@@ -125,12 +154,92 @@ export function VisiteursPanel() {
             </div>
           </div>
 
-          <p className="flex items-start gap-2 text-xs text-muted-foreground">
-            <Download className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            Un même téléphone qui efface ses données ou change de navigateur peut être compté une seconde fois. Les visites du super administrateur ne sont pas comptées.
-          </p>
+          <div className="card-glass rounded-2xl p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display text-lg font-bold">Vérifier les visiteurs</h3>
+                <p className="text-sm text-muted-foreground">Voir qui a été compté : appareil, première et dernière visite. Les robots sont repérés.</p>
+              </div>
+              <Button variant="outline" onClick={() => setShowDetail((v) => !v)}>
+                {showDetail ? "Masquer le détail" : "Voir le détail"}
+              </Button>
+            </div>
+            {showDetail && (
+              <div className="mt-4">
+                {detail.isPending && <p role="status">Chargement…</p>}
+                {detail.error && (
+                  <p role="alert" className="rounded-xl bg-destructive/10 p-3 text-sm text-destructive">
+                    {detail.error.message}
+                  </p>
+                )}
+                {detail.data && (
+                  <>
+                    <p className="mb-3 text-sm">
+                      <strong>{rows.length}</strong> appareil{rows.length > 1 ? "s" : ""} (100 derniers) dont <strong>{bots}</strong> robot{bots > 1 ? "s" : ""} ou visite{bots > 1 ? "s" : ""} automatique{bots > 1 ? "s" : ""}.
+                    </p>
+                    <div className="overflow-x-auto rounded-2xl border border-border">
+                      <table className="w-full min-w-[520px] border-collapse text-left text-sm">
+                        <thead>
+                          <tr className="bg-muted/60">
+                            <th className="px-3 py-2 font-semibold">Appareil</th>
+                            <th className="px-3 py-2 font-semibold">Première visite</th>
+                            <th className="px-3 py-2 font-semibold">Dernière</th>
+                            <th className="px-3 py-2 text-right font-semibold">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((r) => {
+                            const a = describeAgent(r.agent);
+                            return (
+                              <tr key={r.visiteur + r.premiere} className="border-t border-border">
+                                <td className="px-3 py-2">
+                                  <span className={a.bot ? "rounded-full bg-[#ea580c] px-2 py-0.5 text-xs font-bold text-white" : ""}>{a.label}</span>
+                                  <span className="ml-2 font-mono text-[11px] text-muted-foreground">{r.visiteur}</span>
+                                </td>
+                                <td className="px-3 py-2 tabular-nums">{fmt(r.premiere)}</td>
+                                <td className="px-3 py-2 tabular-nums">{fmt(r.derniere)}</td>
+                                <td className="px-3 py-2 text-right tabular-nums">{r.actions}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-muted-foreground">
+            <p className="flex min-w-0 flex-1 items-start gap-2">
+              <Download className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Un même téléphone qui efface ses données ou change de navigateur peut être compté une seconde fois.
+              {ignored ? " Cet appareil (le vôtre) n’est pas compté. Les robots ne sont plus comptés non plus." : ""}
+            </p>
+            <Button variant="outline" size="sm" onClick={() => setConfirmReset(true)}>
+              <Trash2 className="text-destructive" />
+              Remettre à zéro
+            </Button>
+          </div>
         </>
       )}
+
+      <AlertDialog open={confirmReset} onOpenChange={(o) => !o && !busy && setConfirmReset(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remettre le compteur à zéro ?</AlertDialogTitle>
+            <AlertDialogDescription>Toutes les visites enregistrées seront effacées définitivement. Utile pour repartir de zéro avant de promouvoir le site, sans vos tests ni les robots.</AlertDialogDescription>
+          </AlertDialogHeader>
+          {resetError && <p role="alert" className="text-sm text-destructive">{resetError}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Annuler</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); void doReset(); }}>
+              {busy ? "Remise à zéro…" : "Tout effacer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </section>
   );
 }

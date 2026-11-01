@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as CommunRouteImport } from './routes/_commun'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminAccesRouteImport } from './routes/admin-acces'
-import { Route as CoursEnLigneRouteImport } from './routes/cours-en-ligne'
+import { Route as ConfirmerCompteRouteImport } from './routes/confirmer-compte'
+import { Route as ConnexionEspacesRouteImport } from './routes/connexion-espaces'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
@@ -23,6 +25,13 @@ import { Route as SuperAdminAccesRouteImport } from './routes/super-admin-acces'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticated/etudiant'
 import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
+import { Route as CommunBibliothequeRouteImport } from './routes/_commun.bibliotheque'
+import { Route as CommunCoursEnLigneRouteImport } from './routes/_commun.cours-en-ligne'
+import { Route as CommunEvenementsRouteImport } from './routes/_commun.evenements'
+import { Route as CommunGestionOpportunitesRouteImport } from './routes/_commun.gestion-opportunites'
+import { Route as CommunGuideBachelierRouteImport } from './routes/_commun.guide-bachelier'
+import { Route as CommunOpportunitesRouteImport } from './routes/_commun.opportunites'
+import { Route as CommunRevisionIaRouteImport } from './routes/_commun.revision-ia'
 import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
 import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
 import { Route as AdminMotDePasseOublieRouteImport } from './routes/admin.mot-de-passe-oublie'
@@ -31,6 +40,7 @@ import { Route as EtudiantInscriptionRouteImport } from './routes/etudiant.inscr
 import { Route as EtudiantMotDePasseOublieRouteImport } from './routes/etudiant.mot-de-passe-oublie'
 import { Route as SuperAdminAccesMotDePasseOublieRouteImport } from './routes/super-admin-acces_.mot-de-passe-oublie'
 import { Route as ApiAdminImportCsvRouteImport } from './routes/api.admin.import-csv'
+import { Route as ApiAdminImportExcelRouteImport } from './routes/api.admin.import-excel'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,6 +49,10 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommunRoute = CommunRouteImport.update({
+  id: '/_commun',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AProposRoute = AProposRouteImport.update({
@@ -51,9 +65,14 @@ const AdminAccesRoute = AdminAccesRouteImport.update({
   path: '/admin-acces',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CoursEnLigneRoute = CoursEnLigneRouteImport.update({
-  id: '/cours-en-ligne',
-  path: '/cours-en-ligne',
+const ConfirmerCompteRoute = ConfirmerCompteRouteImport.update({
+  id: '/confirmer-compte',
+  path: '/confirmer-compte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConnexionEspacesRoute = ConnexionEspacesRouteImport.update({
+  id: '/connexion-espaces',
+  path: '/connexion-espaces',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
@@ -102,6 +121,42 @@ const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
   path: '/super-admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const CommunBibliothequeRoute = CommunBibliothequeRouteImport.update({
+  id: '/bibliotheque',
+  path: '/bibliotheque',
+  getParentRoute: () => CommunRoute,
+} as any)
+const CommunCoursEnLigneRoute = CommunCoursEnLigneRouteImport.update({
+  id: '/cours-en-ligne',
+  path: '/cours-en-ligne',
+  getParentRoute: () => CommunRoute,
+} as any)
+const CommunEvenementsRoute = CommunEvenementsRouteImport.update({
+  id: '/evenements',
+  path: '/evenements',
+  getParentRoute: () => CommunRoute,
+} as any)
+const CommunGestionOpportunitesRoute =
+  CommunGestionOpportunitesRouteImport.update({
+    id: '/gestion-opportunites',
+    path: '/gestion-opportunites',
+    getParentRoute: () => CommunRoute,
+  } as any)
+const CommunGuideBachelierRoute = CommunGuideBachelierRouteImport.update({
+  id: '/guide-bachelier',
+  path: '/guide-bachelier',
+  getParentRoute: () => CommunRoute,
+} as any)
+const CommunOpportunitesRoute = CommunOpportunitesRouteImport.update({
+  id: '/opportunites',
+  path: '/opportunites',
+  getParentRoute: () => CommunRoute,
+} as any)
+const CommunRevisionIaRoute = CommunRevisionIaRouteImport.update({
+  id: '/revision-ia',
+  path: '/revision-ia',
+  getParentRoute: () => CommunRoute,
+} as any)
 const AdminConnexionRoute = AdminConnexionRouteImport.update({
   id: '/admin/connexion',
   path: '/admin/connexion',
@@ -144,12 +199,18 @@ const ApiAdminImportCsvRoute = ApiAdminImportCsvRouteImport.update({
   path: '/api/admin/import-csv',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminImportExcelRoute = ApiAdminImportExcelRouteImport.update({
+  id: '/api/admin/import-excel',
+  path: '/api/admin/import-excel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
-  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -159,6 +220,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/bibliotheque': typeof CommunBibliothequeRoute
+  '/cours-en-ligne': typeof CommunCoursEnLigneRoute
+  '/evenements': typeof CommunEvenementsRoute
+  '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
+  '/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/opportunites': typeof CommunOpportunitesRoute
+  '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/admin/mot-de-passe-oublie': typeof AdminMotDePasseOublieRoute
@@ -167,12 +235,14 @@ export interface FileRoutesByFullPath {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
-  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -182,6 +252,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/etudiant': typeof AuthenticatedEtudiantRoute
   '/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/bibliotheque': typeof CommunBibliothequeRoute
+  '/cours-en-ligne': typeof CommunCoursEnLigneRoute
+  '/evenements': typeof CommunEvenementsRoute
+  '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
+  '/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/opportunites': typeof CommunOpportunitesRoute
+  '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/admin/mot-de-passe-oublie': typeof AdminMotDePasseOublieRoute
@@ -190,14 +267,17 @@ export interface FileRoutesByTo {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_commun': typeof CommunRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
-  '/cours-en-ligne': typeof CoursEnLigneRoute
+  '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -207,6 +287,13 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/etudiant': typeof AuthenticatedEtudiantRoute
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
+  '/_commun/bibliotheque': typeof CommunBibliothequeRoute
+  '/_commun/cours-en-ligne': typeof CommunCoursEnLigneRoute
+  '/_commun/evenements': typeof CommunEvenementsRoute
+  '/_commun/gestion-opportunites': typeof CommunGestionOpportunitesRoute
+  '/_commun/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/_commun/opportunites': typeof CommunOpportunitesRoute
+  '/_commun/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
   '/admin/mot-de-passe-oublie': typeof AdminMotDePasseOublieRoute
@@ -215,6 +302,7 @@ export interface FileRoutesById {
   '/etudiant/mot-de-passe-oublie': typeof EtudiantMotDePasseOublieRoute
   '/super-admin-acces_/mot-de-passe-oublie': typeof SuperAdminAccesMotDePasseOublieRoute
   '/api/admin/import-csv': typeof ApiAdminImportCsvRoute
+  '/api/admin/import-excel': typeof ApiAdminImportExcelRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -222,7 +310,8 @@ export interface FileRouteTypes {
     | '/'
     | '/a-propos'
     | '/admin-acces'
-    | '/cours-en-ligne'
+    | '/confirmer-compte'
+    | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
@@ -232,6 +321,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/etudiant'
     | '/super-admin'
+    | '/bibliotheque'
+    | '/cours-en-ligne'
+    | '/evenements'
+    | '/gestion-opportunites'
+    | '/guide-bachelier'
+    | '/opportunites'
+    | '/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/admin/mot-de-passe-oublie'
@@ -240,12 +336,14 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/a-propos'
     | '/admin-acces'
-    | '/cours-en-ligne'
+    | '/confirmer-compte'
+    | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
@@ -255,6 +353,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/etudiant'
     | '/super-admin'
+    | '/bibliotheque'
+    | '/cours-en-ligne'
+    | '/evenements'
+    | '/gestion-opportunites'
+    | '/guide-bachelier'
+    | '/opportunites'
+    | '/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/admin/mot-de-passe-oublie'
@@ -263,13 +368,16 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/_commun'
     | '/a-propos'
     | '/admin-acces'
-    | '/cours-en-ligne'
+    | '/confirmer-compte'
+    | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
     | '/politique-confidentialite'
@@ -279,6 +387,13 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/etudiant'
     | '/_authenticated/super-admin'
+    | '/_commun/bibliotheque'
+    | '/_commun/cours-en-ligne'
+    | '/_commun/evenements'
+    | '/_commun/gestion-opportunites'
+    | '/_commun/guide-bachelier'
+    | '/_commun/opportunites'
+    | '/_commun/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
     | '/admin/mot-de-passe-oublie'
@@ -287,14 +402,17 @@ export interface FileRouteTypes {
     | '/etudiant/mot-de-passe-oublie'
     | '/super-admin-acces_/mot-de-passe-oublie'
     | '/api/admin/import-csv'
+    | '/api/admin/import-excel'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  CommunRoute: typeof CommunRouteWithChildren
   AProposRoute: typeof AProposRoute
   AdminAccesRoute: typeof AdminAccesRoute
-  CoursEnLigneRoute: typeof CoursEnLigneRoute
+  ConfirmerCompteRoute: typeof ConfirmerCompteRoute
+  ConnexionEspacesRoute: typeof ConnexionEspacesRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
@@ -309,6 +427,7 @@ export interface RootRouteChildren {
   EtudiantMotDePasseOublieRoute: typeof EtudiantMotDePasseOublieRoute
   SuperAdminAccesMotDePasseOublieRoute: typeof SuperAdminAccesMotDePasseOublieRoute
   ApiAdminImportCsvRoute: typeof ApiAdminImportCsvRoute
+  ApiAdminImportExcelRoute: typeof ApiAdminImportExcelRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -327,6 +446,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_commun': {
+      id: '/_commun'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof CommunRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/a-propos': {
       id: '/a-propos'
       path: '/a-propos'
@@ -341,11 +467,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAccesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/cours-en-ligne': {
-      id: '/cours-en-ligne'
-      path: '/cours-en-ligne'
-      fullPath: '/cours-en-ligne'
-      preLoaderRoute: typeof CoursEnLigneRouteImport
+    '/confirmer-compte': {
+      id: '/confirmer-compte'
+      path: '/confirmer-compte'
+      fullPath: '/confirmer-compte'
+      preLoaderRoute: typeof ConfirmerCompteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/connexion-espaces': {
+      id: '/connexion-espaces'
+      path: '/connexion-espaces'
+      fullPath: '/connexion-espaces'
+      preLoaderRoute: typeof ConnexionEspacesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/devenir-partenaire': {
@@ -411,6 +544,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_commun/bibliotheque': {
+      id: '/_commun/bibliotheque'
+      path: '/bibliotheque'
+      fullPath: '/bibliotheque'
+      preLoaderRoute: typeof CommunBibliothequeRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/cours-en-ligne': {
+      id: '/_commun/cours-en-ligne'
+      path: '/cours-en-ligne'
+      fullPath: '/cours-en-ligne'
+      preLoaderRoute: typeof CommunCoursEnLigneRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/evenements': {
+      id: '/_commun/evenements'
+      path: '/evenements'
+      fullPath: '/evenements'
+      preLoaderRoute: typeof CommunEvenementsRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/gestion-opportunites': {
+      id: '/_commun/gestion-opportunites'
+      path: '/gestion-opportunites'
+      fullPath: '/gestion-opportunites'
+      preLoaderRoute: typeof CommunGestionOpportunitesRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/guide-bachelier': {
+      id: '/_commun/guide-bachelier'
+      path: '/guide-bachelier'
+      fullPath: '/guide-bachelier'
+      preLoaderRoute: typeof CommunGuideBachelierRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/opportunites': {
+      id: '/_commun/opportunites'
+      path: '/opportunites'
+      fullPath: '/opportunites'
+      preLoaderRoute: typeof CommunOpportunitesRouteImport
+      parentRoute: typeof CommunRoute
+    }
+    '/_commun/revision-ia': {
+      id: '/_commun/revision-ia'
+      path: '/revision-ia'
+      fullPath: '/revision-ia'
+      preLoaderRoute: typeof CommunRevisionIaRouteImport
+      parentRoute: typeof CommunRoute
+    }
     '/admin/connexion': {
       id: '/admin/connexion'
       path: '/admin/connexion'
@@ -467,6 +649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminImportCsvRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/import-excel': {
+      id: '/api/admin/import-excel'
+      path: '/api/admin/import-excel'
+      fullPath: '/api/admin/import-excel'
+      preLoaderRoute: typeof ApiAdminImportExcelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -485,12 +674,37 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface CommunRouteChildren {
+  CommunBibliothequeRoute: typeof CommunBibliothequeRoute
+  CommunCoursEnLigneRoute: typeof CommunCoursEnLigneRoute
+  CommunEvenementsRoute: typeof CommunEvenementsRoute
+  CommunGestionOpportunitesRoute: typeof CommunGestionOpportunitesRoute
+  CommunGuideBachelierRoute: typeof CommunGuideBachelierRoute
+  CommunOpportunitesRoute: typeof CommunOpportunitesRoute
+  CommunRevisionIaRoute: typeof CommunRevisionIaRoute
+}
+
+const CommunRouteChildren: CommunRouteChildren = {
+  CommunBibliothequeRoute: CommunBibliothequeRoute,
+  CommunCoursEnLigneRoute: CommunCoursEnLigneRoute,
+  CommunEvenementsRoute: CommunEvenementsRoute,
+  CommunGestionOpportunitesRoute: CommunGestionOpportunitesRoute,
+  CommunGuideBachelierRoute: CommunGuideBachelierRoute,
+  CommunOpportunitesRoute: CommunOpportunitesRoute,
+  CommunRevisionIaRoute: CommunRevisionIaRoute,
+}
+
+const CommunRouteWithChildren =
+  CommunRoute._addFileChildren(CommunRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  CommunRoute: CommunRouteWithChildren,
   AProposRoute: AProposRoute,
   AdminAccesRoute: AdminAccesRoute,
-  CoursEnLigneRoute: CoursEnLigneRoute,
+  ConfirmerCompteRoute: ConfirmerCompteRoute,
+  ConnexionEspacesRoute: ConnexionEspacesRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
@@ -505,6 +719,7 @@ const rootRouteChildren: RootRouteChildren = {
   EtudiantMotDePasseOublieRoute: EtudiantMotDePasseOublieRoute,
   SuperAdminAccesMotDePasseOublieRoute: SuperAdminAccesMotDePasseOublieRoute,
   ApiAdminImportCsvRoute: ApiAdminImportCsvRoute,
+  ApiAdminImportExcelRoute: ApiAdminImportExcelRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

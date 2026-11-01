@@ -2,9 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { ESPACES, type EspaceKey } from "./espaces-themes";
 
-const KEYS: Exclude<EspaceKey, "evenements">[] = ["revision", "opportunites", "bibliotheque"];
+const KEYS: Exclude<EspaceKey, "evenements">[] = ["guide", "cours", "revision", "opportunites", "bibliotheque"];
 
-// variant "compact" (défaut) : trois petites palettes côte à côte (accueil, espaces étudiant et super admin)
+// variant "compact" (défaut) : petites palettes côte à côte (accueil, espaces étudiant et super admin)
 // variant "switch"  : sélecteur en pastilles
 // variant "cards"   : grandes cartes détaillées
 export function EspacesNavigation({ variant = "compact" }: { variant?: "compact" | "switch" | "cards" }) {
@@ -32,7 +32,7 @@ export function EspacesNavigation({ variant = "compact" }: { variant?: "compact"
 
   if (variant === "cards") {
     return (
-      <nav aria-label="Espaces CampusLink" className="my-6 grid gap-4 sm:grid-cols-3">
+      <nav aria-label="Espaces CampusLink" className="my-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {KEYS.map((k) => {
           const e = ESPACES[k];
           const Icon = e.Icon;
@@ -55,15 +55,15 @@ export function EspacesNavigation({ variant = "compact" }: { variant?: "compact"
 
   // compact
   return (
-    <nav aria-label="Espaces CampusLink" className="my-5 grid grid-cols-3 gap-2.5 sm:gap-4">
-      {KEYS.map((k) => {
+    <nav aria-label="Espaces CampusLink" className="my-5 grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-4">
+      {KEYS.map((k, i) => {
         const e = ESPACES[k];
         const Icon = e.Icon;
         return (
           <Link
             key={k}
             to={e.to}
-            className="group relative isolate flex min-h-[104px] flex-col justify-between overflow-hidden rounded-2xl p-3 text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-[116px] sm:p-4"
+            className={`${i === 0 ? "col-span-2 sm:col-span-1 " : ""}group relative isolate flex min-h-[104px] flex-col justify-between overflow-hidden rounded-2xl p-3 text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-[116px] sm:p-4`}
             style={{ background: e.gradient }}
           >
             <span aria-hidden className="absolute -right-5 -top-5 -z-10 h-20 w-20 rounded-full bg-white/10" />

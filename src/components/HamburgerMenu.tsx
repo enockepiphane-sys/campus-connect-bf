@@ -1,6 +1,6 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "@tanstack/react-router";
-import { Brain, Briefcase, ChevronRight, Handshake, Info, Library, Menu, MonitorPlay, PartyPopper, ShieldCheck, Smartphone, Sparkles, X } from "lucide-react";
+import { Brain, Briefcase, ChevronRight, Compass, Handshake, Info, Library, Menu, MonitorPlay, PartyPopper, ShieldCheck, Smartphone, Sparkles, X } from "lucide-react";
 import { useInstall } from "@/components/InstallBanner";
 
 type Entry = { to: string; label: string; hint: string; Icon: ComponentType<{ className?: string }>; from: string; to2: string };
@@ -10,6 +10,8 @@ const sections: { title: string; items: Entry[] }[] = [
   {
     title: "Pour les étudiants",
     items: [
+      { to: "/guide-bachelier", label: "Guide du nouveau bachelier", hint: "Campus Faso, orientation, inscription", Icon: Compass, from: "#0b2a44", to2: "#4fb3e8" },
+      { to: "/cours-en-ligne", label: "Cours en ligne", hint: "Par filière, niveau et module", Icon: MonitorPlay, from: "#9a3412", to2: "#e0764f" },
       { to: "/revision-ia", label: "Révision & IA", hint: "Résumés, QCM et fiches", Icon: Brain, from: "#052e1c", to2: "#12A150" },
       { to: "/opportunites", label: "Opportunités", hint: "Stages, bourses, emplois", Icon: Briefcase, from: "#c2410c", to2: "#F0C419" },
       { to: "/bibliotheque", label: "Bibliothèque", hint: "Livres, romans et cours", Icon: Library, from: "#0f5f5a", to2: "#2fb6a8" },
@@ -20,7 +22,6 @@ const sections: { title: string; items: Entry[] }[] = [
     title: "Découvrir CampusLink",
     items: [
       { to: "/fonctionnalites", label: "Fonctionnalités", hint: "Tout ce que fait l’application", Icon: Sparkles, from: "#b7791f", to2: "#F0C419" },
-      { to: "/cours-en-ligne", label: "Cours en ligne", hint: "Apprendre à distance", Icon: MonitorPlay, from: "#9a3412", to2: "#e0764f" },
       { to: "/a-propos", label: "À propos de CampusLink", hint: "Qui sommes-nous ?", Icon: Info, from: "#1b4c37", to2: "#1d6fa5" },
       { to: "/devenir-partenaire", label: "Devenir partenaire", hint: "Université ou organisation", Icon: Handshake, from: "#0b6b36", to2: "#12A150" },
     ],

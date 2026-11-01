@@ -8,7 +8,7 @@ import { RetourButtons } from "./RetourButtons";
 export function EspacesShell({ title, children }: { title: string; children: ReactNode }) {
   // Le thème (couleurs, icône) dépend de la page affichée : aucune autre route à modifier.
   const { pathname } = useLocation();
-  const espace = pathname.startsWith("/revision-ia") ? ESPACES.revision : pathname.startsWith("/bibliotheque") ? ESPACES.bibliotheque : pathname.startsWith("/evenements") ? ESPACES.evenements : ESPACES.opportunites;
+  const espace = pathname.startsWith("/revision-ia") ? ESPACES.revision : pathname.startsWith("/bibliotheque") ? ESPACES.bibliotheque : pathname.startsWith("/cours-en-ligne") ? ESPACES.cours : pathname.startsWith("/guide-bachelier") ? ESPACES.guide : pathname.startsWith("/evenements") ? ESPACES.evenements : ESPACES.opportunites;
   const Icon = espace.Icon;
   const isGestion = pathname.startsWith("/gestion-opportunites");
   const subtitle = isGestion ? "Publie, modifie et retire les offres visibles par les étudiants." : espace.tagline;

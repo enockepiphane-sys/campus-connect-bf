@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Copyright } from "@/components/Copyright";
 import {
   GraduationCap,
@@ -13,6 +13,14 @@ import {
   LogIn,
   Building2,
   FileSpreadsheet,
+  Brain,
+  Briefcase,
+  Library,
+  PartyPopper,
+  Smartphone,
+  Bell,
+  BarChart3,
+  Settings2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/fonctionnalites")({
@@ -80,6 +88,96 @@ function Page() {
               title="Filières & niveaux"
               desc="Les administrateurs structurent leur établissement en filières et niveaux. Chaque niveau dispose d'un espace isolé et indépendant."
               color="gold"
+            />
+          </div>
+        </section>
+
+        {/* Nouveau : outils ouverts à tous */}
+        <section className="mb-12">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Ouvert à tous les étudiants, sans compte</h2>
+          <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
+            Même si votre université n'est pas encore partenaire de CampusLink, vous pouvez utiliser ces outils gratuitement.
+          </p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <StickerCard
+              icon={<Brain className="h-6 w-6" />}
+              title="Révision & IA"
+              desc="Importez un cours en PDF ou en photo (même manuscrit) et obtenez un résumé, un QCM, des fiches de révision ou des exercices corrigés. Posez aussi vos questions à l'assistant."
+              from="#052e1c"
+              to2="#12A150"
+              link="/revision-ia"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Briefcase className="h-6 w-6" />}
+              title="Opportunités"
+              desc="Stages, offres d'emploi, bourses d'études, concours, formations et appels à candidatures, avec la date limite. Les comptes connectés peuvent enregistrer leurs favoris."
+              from="#c2410c"
+              to2="#F0C419"
+              link="/opportunites"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Library className="h-6 w-6" />}
+              title="Bibliothèque"
+              desc="Romans, récits, supports de cours et livres classés par thème. Recherchez, lisez en ligne ou téléchargez, et proposez un livre à ajouter."
+              from="#0f5f5a"
+              to2="#2fb6a8"
+              link="/bibliotheque"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<PartyPopper className="h-6 w-6" />}
+              title="Événements sociaux"
+              desc="L'agenda des concerts, conférences et activités : recherche, filtres (cette semaine, ce mois-ci), affiches en grand format et partage en un clic."
+              from="#0b6b36"
+              to2="#F0C419"
+              link="/evenements"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Smartphone className="h-6 w-6" />}
+              title="Application installable"
+              desc="Installez CampusLink sur l'écran d'accueil de votre téléphone pour y accéder en un clic, comme une application, sans passer par le navigateur."
+              from="#0b6b36"
+              to2="#F0C419"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Bell className="h-6 w-6" />}
+              title="Notifications"
+              desc="Les utilisateurs connectés peuvent activer les alertes de l'application pour être prévenus directement sur leur téléphone."
+              from="#b7791f"
+              to2="#F0C419"
+            />
+          </div>
+        </section>
+
+        {/* Nouveau : côté équipe CampusLink */}
+        <section className="mb-12">
+          <h2 className="mb-2 text-xl font-bold text-foreground">Côté équipe CampusLink</h2>
+          <p className="mb-6 max-w-2xl text-sm text-muted-foreground">Les outils de gestion qui alimentent ces nouveautés.</p>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <StickerCard
+              icon={<Settings2 className="h-6 w-6" />}
+              title="Gestion des opportunités"
+              desc="Les administrateurs autorisés publient, modifient et retirent les offres visibles par les étudiants."
+              from="#9a3412"
+              to2="#e0764f"
+            />
+            <StickerCard
+              icon={<Library className="h-6 w-6" />}
+              title="Gestion de la bibliothèque"
+              desc="Le super administrateur ajoute les livres et cours par thème (PDF ou photos) et examine les livres proposés par les étudiants."
+              from="#0f5f5a"
+              to2="#2fb6a8"
+            />
+            <StickerCard
+              icon={<BarChart3 className="h-6 w-6" />}
+              title="Statistiques de fréquentation"
+              desc="Le nombre de visiteurs par jour, semaine et mois, et l'usage de chaque outil, calculés de façon anonyme."
+              from="#1f2a25"
+              to2="#4a5a52"
             />
           </div>
         </section>
@@ -236,5 +334,49 @@ function StepBlock({
         <p className="mt-1 text-sm text-muted-foreground">{desc}</p>
       </div>
     </div>
+  );
+}
+
+function StickerCard({
+  icon,
+  title,
+  desc,
+  from,
+  to2,
+  link,
+  badge,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  from: string;
+  to2: string;
+  link?: string;
+  badge?: string;
+}) {
+  const card = (
+    <div className="card-glass group relative h-full rounded-2xl p-6 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+      {badge && (
+        <span className="absolute right-4 top-4 rounded-full bg-[#F0C419] px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">
+          {badge}
+        </span>
+      )}
+      <div
+        className="mb-4 grid h-12 w-12 -rotate-3 place-items-center rounded-2xl text-white shadow-md ring-1 ring-black/10 transition duration-200 group-hover:rotate-0"
+        style={{ background: `linear-gradient(135deg, ${from}, ${to2})` }}
+      >
+        {icon}
+      </div>
+      <h3 className="mb-2 font-bold text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground">{desc}</p>
+      {link && <p className="mt-3 text-sm font-semibold text-primary">Découvrir →</p>}
+    </div>
+  );
+  return link ? (
+    <Link to={link} className="block h-full">
+      {card}
+    </Link>
+  ) : (
+    card
   );
 }

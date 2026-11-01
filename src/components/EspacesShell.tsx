@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Logo } from "@/components/Logo";
+import { MarqueCampusLink } from "@/components/MarqueCampusLink";
 import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ESPACES } from "./espaces-themes";
 import { RetourButtons } from "./RetourButtons";
@@ -17,9 +18,9 @@ export function EspacesShell({ title, children }: { title: string; children: Rea
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-5 sm:px-6">
-          <Link to="/" className="flex items-center gap-3 font-display text-xl font-bold">
+          <Link to="/" className="flex items-center gap-3">
             <Logo className="h-9 w-9" />
-            CampusLink
+            <MarqueCampusLink className="text-xl sm:text-2xl" />
           </Link>
           <HamburgerMenu />
         </div>

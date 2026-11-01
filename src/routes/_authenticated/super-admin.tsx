@@ -1,5 +1,7 @@
 import { OpportunitesAdmin } from "@/components/OpportunitesAdmin";
 import { BibliothequeAdmin } from "@/components/BibliothequeAdmin";
+import { CoursEnLigneAdmin } from "@/components/CoursEnLigneAdmin";
+import { GuideAdmin } from "@/components/GuideAdmin";
 import { VisiteursPanel } from "@/components/VisiteursPanel";
 import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
@@ -10,7 +12,7 @@ import { signOutAndGoHome } from "@/lib/auth";
 import { humanizeDbError } from "@/lib/auth-timeout";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LoaderPleinEcran, LoaderInline } from "@/components/ChargementPremium";
-import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw, Library, BarChart3 } from "lucide-react";
+import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw, Library, BarChart3, MonitorPlay, Compass } from "lucide-react";
 
 const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 
@@ -70,7 +72,7 @@ type Demande = { id: string; nom_etablissement: string; nom_contact: string; ema
 type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean; deleted_at?: string | null };
 
 function Dashboard() {
-  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "demandes", "evenements", "historique", "corbeille", "opportunites", "bibliotheque", "visiteurs"] as const, "etabs");
+  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "demandes", "evenements", "historique", "corbeille", "opportunites", "bibliotheque", "visiteurs", "cours", "guide"] as const, "etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -126,6 +128,8 @@ function Dashboard() {
         <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-2 sm:flex-row sm:flex-wrap sm:px-6 sm:py-2">
           {[
             { k: "visiteurs", l: "Visiteurs", i: <BarChart3 className="icon-green h-4 w-4" /> },
+            { k: "cours", l: "Cours en ligne", i: <MonitorPlay className="icon-terracotta h-4 w-4" /> },
+            { k: "guide", l: "Guide bachelier", i: <Compass className="icon-blue h-4 w-4" /> },
             { k: "bibliotheque", l: "Bibliothèque", i: <Library className="icon-teal h-4 w-4" /> },
             { k: "opportunites", l: "Opportunités", i: <Building2 className="h-4 w-4 text-primary" /> },
             { k: "etabs", l: "Établissements", i: <Building2 className="icon-green h-4 w-4" /> },
@@ -146,6 +150,8 @@ function Dashboard() {
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {tab === "visiteurs" && <VisiteursPanel />}
         {tab === "bibliotheque" && <BibliothequeAdmin />}
+        {tab === "cours" && <CoursEnLigneAdmin />}
+        {tab === "guide" && <GuideAdmin />}
         {tab === "opportunites" && <OpportunitesAdmin />}
         {tab === "etabs" && <EtablissementsPanel />}
         {tab === "preadmins" && <PreAdminsPanel />}

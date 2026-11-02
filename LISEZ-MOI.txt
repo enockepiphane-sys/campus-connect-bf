@@ -1,0 +1,12 @@
+Mise à jour CampusLink v2 — remplacer/ajouter ces fichiers sur GitHub aux mêmes emplacements :
+
+NOUVEAUX
+  src/components/PageAuth.tsx          -> présentation dédiée inscription/connexion
+  src/components/ALaUneDefilante.tsx   -> défilement des annonces "À la une" sur l'accueil
+REMPLACER
+  src/components/GuideBienvenue.tsx    -> guide qui pointe sur chaque fonctionnalité
+  src/components/EspacesNavigation.tsx -> repères pour le guide
+  src/routes/index.tsx                 -> en-tête (nom + menu) figé en haut, annonces à la une
+  src/routes/inscription.tsx           -> nouvelle page d'inscription
+  src/routes/connexion.tsx             -> nouvelle page de connexion
+Aucune modification de base de données cette fois.

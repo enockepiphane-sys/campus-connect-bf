@@ -4,7 +4,6 @@ import { CoursEnLigneAdmin } from "@/components/CoursEnLigneAdmin";
 import { GuideAdmin } from "@/components/GuideAdmin";
 import { MarcheAdmin } from "@/components/MarcheAdmin";
 import { VisiteursPanel } from "@/components/VisiteursPanel";
-import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
 import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useState } from "react";
@@ -162,10 +161,6 @@ function Dashboard() {
         {tab === "evenements" && <EvenementsSociauxPanel />}
         {tab === "corbeille" && <CorbeilleSuperAdminPanel />}
         {tab === "historique" && <HistoriquePanel />}
-        <div className="mt-10">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Voir le site</p>
-          <EspacesNavigation />
-        </div>
       </main>
     </div>
   );

@@ -1,4 +1,3 @@
-import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute } from "@tanstack/react-router";
 import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useState } from "react";
@@ -119,10 +118,6 @@ function Dashboard() {
         {tab === "edt" && <EDT niveauId={ctx.niveauId} />}
         {tab === "evenements" && <Evenements niveauId={ctx.niveauId} />}
         {tab === "notes" && <Notes />}
-        <div className="mt-10">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Explorer CampusLink</p>
-          <EspacesNavigation />
-        </div>
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface pb-[env(safe-area-inset-bottom)]">

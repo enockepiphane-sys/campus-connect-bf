@@ -2,7 +2,7 @@ import { useState, type ComponentType } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
-  BookOpen, CheckCircle2, EyeOff, FileText, Flag, Home, LogIn, MapPin, MessageCircle, Package, Phone, Plus, RotateCcw,
+  BadgeCheck, BookOpen, CheckCircle2, Star, EyeOff, FileText, Flag, Home, LogIn, MapPin, MessageCircle, Package, Phone, Plus, RotateCcw,
   Search, ShieldAlert, ShoppingBag, Trash2, User, Wrench,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,9 @@ import {
   setStatut, signaler, telLink, tempsEcoule, whatsappLink, type Annonce, type Motif,
 } from "@/lib/marche";
 import { MarchePublier } from "./MarchePublier";
+import { MarchePaiement } from "./MarchePaiement";
+import { BannieresDefilantes } from "./BannieresDefilantes";
+import { estActif, listProsActifs, trierALaUne } from "@/lib/marche-monetisation";
 
 const ICONES: Record<string, ComponentType<{ className?: string }>> = {
   "Livres": BookOpen,
@@ -38,6 +41,8 @@ export function MarcheList() {
   const userId = session.data ?? null;
   const signedIn = Boolean(userId);
   const annonces = useQuery({ queryKey: ["marche-annonces"], queryFn: listAnnonces });
+  const pros = useQuery({ queryKey: ["marche-pros"], queryFn: listProsActifs, staleTime: 5 * 60_000 });
+  const [paiement, setPaiement] = useState<{ offre: "une" | "pro"; annonce?: Annonce } | null>(null);
   const miennes = useQuery({ queryKey: ["marche-mes-annonces", userId], queryFn: mesAnnonces, enabled: signedIn });
 
   const [onglet, setOnglet] = useState<"toutes" | "miennes">("toutes");
@@ -51,7 +56,7 @@ export function MarcheList() {
 
   const source = onglet === "miennes" ? miennes.data ?? [] : annonces.data ?? [];
   const q = recherche.toLocaleLowerCase("fr");
-  const filtrees = source.filter(
+  const filtrees = trierALaUne(source).filter(
     (a) =>
       (!type || a.type_annonce === type) &&
       (!categorie || a.categorie === categorie) &&
@@ -95,10 +100,18 @@ export function MarcheList() {
           )}
         </div>
         {signedIn ? (
+          <div className="flex flex-wrap gap-2">
+          {!pros.data?.has(userId ?? "") && (
+            <Button variant="outline" onClick={() => setPaiement({ offre: "pro" })}>
+              <BadgeCheck />
+              Devenir Vendeur Pro
+            </Button>
+          )}
           <Button onClick={() => setPublier(true)}>
             <Plus />
             Publier une annonce
           </Button>
+          </div>
         ) : (
           <Button asChild>
             <Link to="/connexion-espaces" search={{ retour: "/marche" }}>
@@ -108,6 +121,8 @@ export function MarcheList() {
           </Button>
         )}
       </div>
+
+      <BannieresDefilantes />
 
       <div className="space-y-4 rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-5">
         <div className="relative">
@@ -162,6 +177,11 @@ export function MarcheList() {
                 <span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow" style={{ background: col }}>
                   {libelleDuType(a.type_annonce)}
                 </span>
+                {estActif(a.a_la_une_jusqu) && (
+                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-terracotta px-3 py-1 text-xs font-bold text-white shadow">
+                    <Star className="h-3.5 w-3.5 fill-current" />À la une
+                  </span>
+                )}
                 {(a.statut === "terminee" || a.masquee) && (
                   <span className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
                     {a.masquee ? "Masquée (modération)" : "Terminée"}
@@ -176,12 +196,21 @@ export function MarcheList() {
                   <span className="truncate">{a.ville}{a.universite ? ` · ${a.universite}` : ""}</span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">{a.categorie} · {tempsEcoule(a.created_at)}</p>
+                {pros.data?.has(a.user_id) && (
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"><BadgeCheck className="h-4 w-4" />Vendeur Pro</p>
+                )}
                 {miennesCarte ? (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <Button size="sm" variant="outline" disabled={enCours === a.id} onClick={() => void agir(a, a.statut === "active" ? "terminer" : "reactiver")}>
                       {a.statut === "active" ? <CheckCircle2 /> : <RotateCcw />}
                       {a.statut === "active" ? "Marquer terminée" : "Réactiver"}
                     </Button>
+                    {a.statut === "active" && !a.masquee && (
+                      <Button size="sm" variant="outline" onClick={() => setPaiement({ offre: "une", annonce: a })}>
+                        <Star />
+                        {estActif(a.a_la_une_jusqu) ? "Prolonger la une" : "Mettre à la une"}
+                      </Button>
+                    )}
                     <Button size="sm" variant="outline" className="text-destructive" disabled={enCours === a.id} onClick={() => void agir(a, "supprimer")}>
                       <Trash2 />
                       Supprimer
@@ -199,6 +228,7 @@ export function MarcheList() {
       </div>
 
       <AnnonceDetails annonce={choisie} userId={userId} onClose={() => setChoisie(null)} />
+      <MarchePaiement offre={paiement?.offre ?? null} annonce={paiement?.annonce ?? null} onClose={() => setPaiement(null)} />
       <MarchePublier open={publier} onClose={() => setPublier(false)} onPublished={() => { rafraichir(); setOnglet("miennes"); }} />
     </section>
   );

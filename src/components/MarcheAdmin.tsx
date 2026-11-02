@@ -6,6 +6,7 @@ import {
   MOTIFS, deleteAnnonce, formatPrix, listAnnoncesModeration, listSignalements, moderer, photoUrl, tempsEcoule,
   TYPES_ANNONCE, type Annonce,
 } from "@/lib/marche";
+import { MarcheMonetisationAdmin } from "./MarcheMonetisationAdmin";
 
 type Filtre = "signalees" | "masquees" | "toutes";
 
@@ -54,6 +55,11 @@ export function MarcheAdmin() {
 
   return (
     <section className="space-y-5">
+      <div>
+        <h2 className="font-display text-2xl font-bold">Marché étudiant — revenus</h2>
+        <p className="text-sm text-muted-foreground">Annonces à la une, abonnements Vendeur Pro et bannières publicitaires, payés par Orange Money / Moov Money.</p>
+      </div>
+      <MarcheMonetisationAdmin />
       <div>
         <h2 className="font-display text-2xl font-bold">Marché étudiant — modération</h2>
         <p className="text-sm text-muted-foreground">Une annonce signalée par 3 personnes différentes est masquée automatiquement. Tu peux la réafficher ou la supprimer.</p>

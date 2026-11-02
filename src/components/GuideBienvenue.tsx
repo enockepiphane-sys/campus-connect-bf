@@ -1,22 +1,30 @@
-import { useEffect, useState } from "react";
-import { BookOpen, Briefcase, GraduationCap, ShoppingBag, Sparkles, UserPlus } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const CLE = "campuslink-guide-vu";
 
-const ETAPES = [
-  { Icon: Sparkles, titre: "Bienvenue sur CampusLink 🇧🇫", texte: "Voici un petit tour de l’application. Tu peux le passer à tout moment." },
-  { Icon: UserPlus, titre: "Un compte, une seule fois", texte: "Crée ton compte avec ton nom de profil, ton numéro de téléphone et un mot de passe. Ensuite l’application s’ouvre directement, sans te reconnecter." },
-  { Icon: ShoppingBag, titre: "Marché étudiant", texte: "Achète, vends ou échange livres, cours, services et colocations. Tu peux aussi mettre ton annonce à la une ou devenir Vendeur Pro." },
-  { Icon: BookOpen, titre: "Bibliothèque, cours et révision", texte: "Documents, cours en ligne, guide du bachelier et révision avec l’IA : tout est accessible depuis l’accueil." },
-  { Icon: Briefcase, titre: "Opportunités", texte: "Bourses, stages, emplois et concours publiés pour les étudiants du Burkina Faso." },
-  { Icon: GraduationCap, titre: "Espace Étudiant (établissements partenaires)", texte: "L’Espace Étudiant (notes, emploi du temps, annonces) est réservé aux étudiants pré-inscrits par leur établissement. Si ton établissement n’est pas encore partenaire de CampusLink, tu ne pourras pas t’y inscrire : utilise les autres fonctionnalités en attendant." },
+// Guide interactif : chaque étape pointe (surbrillance + bulle) sur l'élément réel de l'accueil
+// repéré par l'attribut data-guide="…". Sans cible visible, la bulle s'affiche au centre.
+const ETAPES: { cible?: string; titre: string; texte: string }[] = [
+  { titre: "Bienvenue sur CampusLink 🇧🇫", texte: "Petit tour guidé : je te montre chaque fonctionnalité directement à l’écran. Tu peux passer à tout moment." },
+  { cible: "menu", titre: "Le menu", texte: "Toujours visible en haut, même quand tu descends : il donne accès à toutes les pages." },
+  { cible: "compte", titre: "Ton compte CampusLink", texte: "Crée ton compte une seule fois (nom, téléphone, mot de passe). Ensuite l’application s’ouvre directement." },
+  { cible: "marche", titre: "Marché étudiant", texte: "Achète, vends ou échange livres, cours, services et colocations. Tu peux mettre ton annonce à la une." },
+  { cible: "bibliotheque", titre: "Bibliothèque", texte: "Documents, mémoires et cours à consulter ou télécharger." },
+  { cible: "cours", titre: "Cours en ligne", texte: "Des cours structurés à suivre à ton rythme depuis ton téléphone." },
+  { cible: "revision", titre: "Révision & IA", texte: "Envoie tes cours en PDF ou en photo : l’IA te prépare résumés, QCM et fiches." },
+  { cible: "opportunites", titre: "Opportunités", texte: "Bourses, stages, emplois et concours publiés pour les étudiants du Burkina Faso." },
+  { cible: "guide", titre: "Guide du bachelier", texte: "Filières, établissements et conseils pour bien choisir après le bac." },
+  { cible: "une", titre: "Annonces à la une", texte: "Les annonces mises en avant du Marché défilent ici." },
+  { cible: "espace-etudiant", titre: "Espace Étudiant", texte: "Notes, emploi du temps et annonces : réservé aux étudiants pré-inscrits par un établissement partenaire." },
 ];
+
+type Rect = { top: number; left: number; width: number; height: number };
 
 export function GuideBienvenue() {
   const [ouvert, setOuvert] = useState(false);
   const [etape, setEtape] = useState(0);
+  const [rect, setRect] = useState<Rect | null>(null);
 
   useEffect(() => {
     try { if (!window.localStorage.getItem(CLE)) setOuvert(true); } catch { /* stockage indisponible */ }
@@ -25,33 +33,76 @@ export function GuideBienvenue() {
     return () => window.removeEventListener("campuslink:guide", relancer);
   }, []);
 
+  const e = ETAPES[etape];
+
+  const mesurer = useCallback(() => {
+    if (!e.cible) return setRect(null);
+    const el = Array.from(document.querySelectorAll<HTMLElement>(`[data-guide="${e.cible}"]`)).find((x) => x.offsetParent !== null || x.getClientRects().length);
+    if (!el) return setRect(null);
+    const r = el.getBoundingClientRect();
+    setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+  }, [e.cible]);
+
+  useLayoutEffect(() => {
+    if (!ouvert) return;
+    if (e.cible) {
+      const el = document.querySelector<HTMLElement>(`[data-guide="${e.cible}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    mesurer();
+    const t = window.setTimeout(mesurer, 450);
+    window.addEventListener("scroll", mesurer, { passive: true });
+    window.addEventListener("resize", mesurer);
+    return () => { window.clearTimeout(t); window.removeEventListener("scroll", mesurer); window.removeEventListener("resize", mesurer); };
+  }, [ouvert, etape, e.cible, mesurer]);
+
+  // Saute les étapes dont la cible n'existe pas sur la page (ex. aucune annonce à la une).
+  function aller(sens: 1 | -1) {
+    let n = etape + sens;
+    while (n > 0 && n < ETAPES.length && ETAPES[n].cible && !document.querySelector(`[data-guide="${ETAPES[n].cible}"]`)) n += sens;
+    if (n >= ETAPES.length) return fermer();
+    setEtape(Math.max(0, n));
+  }
+
   function fermer() {
     try { window.localStorage.setItem(CLE, "1"); } catch { /* ignore */ }
     setOuvert(false);
   }
-  const e = ETAPES[etape];
+
+  if (!ouvert) return null;
   const derniere = etape === ETAPES.length - 1;
+  const M = 8;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+  const enBas = rect ? rect.top + rect.height / 2 < vh / 2 : false;
+  const bulleStyle: React.CSSProperties = rect
+    ? enBas
+      ? { top: Math.min(rect.top + rect.height + M + 12, vh - 220) }
+      : { bottom: Math.max(vh - rect.top + M + 12, 12) }
+    : { top: "50%", transform: "translateY(-50%)" };
 
   return (
-    <Dialog open={ouvert} onOpenChange={(o) => { if (!o) fermer(); }}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <span className="mx-auto mb-2 grid h-14 w-14 place-items-center rounded-2xl bg-primary-soft text-primary"><e.Icon className="h-7 w-7" /></span>
-          <DialogTitle className="text-center">{e.titre}</DialogTitle>
-          <DialogDescription className="text-center text-base">{e.texte}</DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-center gap-1.5" aria-label={`Étape ${etape + 1} sur ${ETAPES.length}`}>
-          {ETAPES.map((_, i) => <span key={i} className={`h-1.5 rounded-full transition-all ${i === etape ? "w-6 bg-primary" : "w-1.5 bg-foreground/20"}`} />)}
-        </div>
-        <div className="flex items-center justify-between gap-2">
-          <Button variant="ghost" onClick={fermer}>Passer</Button>
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Guide de l’application">
+      {rect ? (
+        <div
+          className="pointer-events-none fixed rounded-2xl ring-4 ring-primary transition-all duration-300"
+          style={{ top: rect.top - M, left: rect.left - M, width: rect.width + M * 2, height: rect.height + M * 2, boxShadow: "0 0 0 9999px color-mix(in oklab, var(--foreground) 65%, transparent)" }}
+        />
+      ) : (
+        <div className="fixed inset-0 bg-foreground/65" />
+      )}
+      <div className="fixed inset-x-4 mx-auto max-w-sm rounded-2xl bg-background p-5 shadow-2xl transition-all duration-300" style={bulleStyle}>
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary">Étape {etape + 1} / {ETAPES.length}</p>
+        <h2 className="mt-1 font-display text-lg font-bold">{e.titre}</h2>
+        <p className="mt-1 text-sm text-muted-foreground">{e.texte}</p>
+        <div className="mt-4 flex items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={fermer}>Passer</Button>
           <div className="flex gap-2">
-            {etape > 0 && <Button variant="outline" onClick={() => setEtape(etape - 1)}>Précédent</Button>}
-            <Button onClick={() => (derniere ? fermer() : setEtape(etape + 1))}>{derniere ? "Terminer" : "Suivant"}</Button>
+            {etape > 0 && <Button variant="outline" size="sm" onClick={() => aller(-1)}>Précédent</Button>}
+            <Button size="sm" onClick={() => (derniere ? fermer() : aller(1))}>{derniere ? "Terminer" : "Suivant"}</Button>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
 

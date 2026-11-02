@@ -63,6 +63,7 @@ export function EspacesNavigation({ variant = "compact" }: { variant?: "compact"
           <Link
             key={k}
             to={e.to}
+            data-guide={k}
             className={`${i === 0 || (i === KEYS.length - 1 && KEYS.length % 2 === 0) ? "col-span-2 sm:col-span-1 " : ""}group relative isolate flex min-h-[104px] flex-col justify-between overflow-hidden rounded-2xl p-3 text-white shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:min-h-[116px] sm:p-4`}
             style={{ background: e.gradient }}
           >

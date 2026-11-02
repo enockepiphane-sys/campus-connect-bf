@@ -1,6 +1,6 @@
 import { useState, type ComponentType } from "react";
 import { Link } from "@tanstack/react-router";
-import { Brain, Briefcase, ChevronRight, Compass, Handshake, Info, Library, Menu, MonitorPlay, PartyPopper, ShieldCheck, Smartphone, Sparkles, X } from "lucide-react";
+import { Brain, Briefcase, ChevronRight, Compass, Handshake, Info, Library, Menu, MonitorPlay, PartyPopper, ShieldCheck, ShoppingBag, Smartphone, Sparkles, X } from "lucide-react";
 import { useInstall } from "@/components/InstallBanner";
 
 type Entry = { to: string; label: string; hint: string; Icon: ComponentType<{ className?: string }>; from: string; to2: string };
@@ -15,6 +15,7 @@ const sections: { title: string; items: Entry[] }[] = [
       { to: "/revision-ia", label: "Révision & IA", hint: "Résumés, QCM et fiches", Icon: Brain, from: "#052e1c", to2: "#12A150" },
       { to: "/opportunites", label: "Opportunités", hint: "Stages, bourses, emplois", Icon: Briefcase, from: "#c2410c", to2: "#F0C419" },
       { to: "/bibliotheque", label: "Bibliothèque", hint: "Livres, romans et cours", Icon: Library, from: "#0f5f5a", to2: "#2fb6a8" },
+      { to: "/marche", label: "Marché étudiant", hint: "Livres, services, colocation", Icon: ShoppingBag, from: "#3b0764", to2: "#f59e0b" },
       { to: "/evenements", label: "Événements", hint: "L’agenda de la vie étudiante", Icon: PartyPopper, from: "#0b6b36", to2: "#F0C419" },
     ],
   },

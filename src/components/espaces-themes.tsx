@@ -1,6 +1,6 @@
-import { Brain, Briefcase, Compass, Library, MonitorPlay, PartyPopper } from "lucide-react";
+import { Brain, Briefcase, Compass, Library, MonitorPlay, PartyPopper, ShoppingBag } from "lucide-react";
 
-export type EspaceKey = "revision" | "opportunites" | "bibliotheque" | "cours" | "guide" | "evenements";
+export type EspaceKey = "revision" | "opportunites" | "bibliotheque" | "cours" | "guide" | "evenements" | "marche";
 
 // Thèmes visuels des espaces partagés : un design propre à chaque fonctionnalité.
 export const ESPACES = {
@@ -63,5 +63,15 @@ export const ESPACES = {
     gradient: "linear-gradient(135deg, #052e1c 0%, #0F8A44 55%, #F0C419 100%)",
     solid: "#0F8A44",
     Icon: PartyPopper,
+  },
+  marche: {
+    to: "/marche",
+    label: "Marché étudiant",
+    short: "Marché étudiant",
+    tagline: "Livres, documents, services et colocations : achète, vends et échange entre étudiants.",
+    chips: ["Livres", "Documents", "Services", "Colocation"],
+    gradient: "linear-gradient(135deg, #3b0764 0%, #7c3aed 55%, #f59e0b 100%)",
+    solid: "#7c3aed",
+    Icon: ShoppingBag,
   },
 } as const;

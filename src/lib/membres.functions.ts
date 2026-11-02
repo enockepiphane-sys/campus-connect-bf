@@ -15,12 +15,6 @@ async function sha256(texte: string): Promise<string> {
   return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
-async function admin() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return supabaseAdmin as any;
-}
-
 // ───────────── Inscription (voie de secours côté serveur) ─────────────
 export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (ctx): Promise<Resultat> => {
   try {
@@ -32,7 +26,8 @@ export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (
     const probleme = validerInscription(nom, telephone, motDePasse, email);
     if (probleme) return { ok: false, message: probleme, secours: false };
 
-    const db = await admin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
     const { data: existant } = await db.from("membres").select("user_id").eq("telephone", telephone).maybeSingle();
     if (existant) return { ok: false, message: "Ce numéro est déjà inscrit. Connectez-vous.", secours: false };
 
@@ -91,7 +86,8 @@ export const demanderCodeReinit = createServerFn({ method: "POST" }).handler(asy
   try {
     const telephone = normaliserTelephone(String(lire(ctx).telephone ?? ""));
     if (telephone.length < 8 || telephone.length > 15) return { ok: false, message: "Numéro de téléphone invalide.", secours: false };
-    const db = await admin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
     const { data: membre } = await db.from("membres").select("user_id,nom_profil,email_recuperation").eq("telephone", telephone).maybeSingle();
     const neutre = "Si un email de récupération est enregistré pour ce numéro, un code vient d'y être envoyé (valable 15 minutes).";
     if (!membre) return { ok: true, message: neutre };
@@ -133,7 +129,8 @@ export const reinitialiserMotDePasse = createServerFn({ method: "POST" }).handle
     if (probleme) return { ok: false, message: probleme, secours: false };
     if (code.length !== 6) return { ok: false, message: "Le code contient 6 chiffres.", secours: false };
 
-    const db = await admin();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
     const invalide = { ok: false as const, message: "Code incorrect ou expiré. Redemande un code.", secours: false };
     const { data: membre } = await db.from("membres").select("user_id").eq("telephone", telephone).maybeSingle();
     if (!membre) return invalide;

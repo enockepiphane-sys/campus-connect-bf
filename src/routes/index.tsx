@@ -7,6 +7,10 @@ import { Logo } from "@/components/Logo";
 import { PhoneMockup } from "@/components/PhoneMockup";
 import { Copyright } from "@/components/Copyright";
 import { EvenementsSociauxSection } from "@/components/EvenementsSociauxSection";
+import { BandeDefilante } from "@/components/BandeDefilante";
+import { BannieresDefilantes } from "@/components/BannieresDefilantes";
+import { CompteMembreCarte } from "@/components/CompteMembreCarte";
+import { GuideBienvenue, relancerGuide } from "@/components/GuideBienvenue";
 import graduateHero from "@/assets/graduate-hero.png";
 
 export const Route = createFileRoute("/")({
@@ -50,6 +54,8 @@ function Home() {
 
       {/* Kente accent */}
       <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />
+      <div className="mx-auto max-w-7xl"><BandeDefilante /></div>
+      <GuideBienvenue />
 
       {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">
@@ -84,6 +90,7 @@ function Home() {
 
         {/* Accès étudiant */}
         <div className="mx-auto mt-16 grid max-w-2xl gap-6">
+          <CompteMembreCarte />
           {/* Étudiant */}
           <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">
@@ -96,6 +103,9 @@ function Home() {
                 </h2>
                 <p className="text-sm text-muted-foreground">
                   Notes, annonces, emploi du temps
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Réservé aux étudiants pré-inscrits par un établissement partenaire.
                 </p>
               </div>
             </div>
@@ -114,6 +124,10 @@ function Home() {
 
 
         <div className="mx-auto mt-10 max-w-2xl"><EspacesNavigation /></div>
+        <div className="mx-auto max-w-2xl"><BannieresDefilantes /></div>
+        <p className="mt-4 text-center">
+          <button type="button" onClick={relancerGuide} className="text-sm font-semibold text-primary underline">Revoir le guide de l’application</button>
+        </p>
 
         {/* Événements sociaux */}
         <EvenementsSociauxSection />

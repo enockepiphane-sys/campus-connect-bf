@@ -45,6 +45,7 @@ export type Annonce = {
   photos: string[];
   statut: "active" | "terminee";
   masquee: boolean;
+  a_la_une_jusqu?: string | null;
   created_at: string;
   updated_at: string;
   contact?: string;
@@ -63,14 +64,14 @@ export type AnnonceInput = {
 };
 
 // Le numéro de contact n'est jamais demandé dans les listes publiques (colonne protégée côté base).
-const PUBLIC_COLS = "id,user_id,auteur_nom,type_annonce,categorie,titre,description,prix,ville,universite,photos,statut,masquee,created_at,updated_at";
+const PUBLIC_COLS = "id,user_id,auteur_nom,type_annonce,categorie,titre,description,prix,ville,universite,photos,statut,masquee,a_la_une_jusqu,created_at,updated_at";
 
 function check(error: { message: string; code?: string } | null) {
   if (!error) return;
   if (["42P01", "PGRST205", "PGRST202"].includes(error.code ?? "")) throw new Error("Le Marché étudiant n’a pas encore été activé. Contactez l’administrateur.");
   if (error.code === "42501") throw new Error("Vous n’avez pas l’autorisation d’effectuer cette action.");
   if (error.code === "23505") throw new Error("Vous avez déjà signalé cette annonce.");
-  if (error.code === "23514") throw new Error("Certaines informations sont invalides, ou vous avez atteint la limite de 20 annonces actives.");
+  if (error.code === "23514") throw new Error("Certaines informations sont invalides, ou vous avez atteint votre limite d’annonces actives (passez Vendeur Pro pour en publier plus).");
   throw new Error("L’opération a échoué. Vérifiez votre connexion puis réessayez.");
 }
 

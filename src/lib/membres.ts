@@ -43,6 +43,8 @@ export async function connecterMembre(telephone: string, motDePasse: string) {
 // (utile si la clé SUPABASE_SERVICE_ROLE_KEY est absente ou si la fonction serveur est indisponible).
 // Elle s'appuie sur le déclencheur SQL de 20261105000000_fix_inscription_primaire.sql
 // qui confirme automatiquement les comptes membres et crée leur profil.
+export const EMAIL_REFUSE = "EMAIL_REFUSE";
+
 export async function inscrireMembreDirect(nom: string, telephone: string, motDePasse: string): Promise<void> {
   const tel = normaliserTelephone(telephone);
   const email = emailMembre(tel);
@@ -58,6 +60,7 @@ export async function inscrireMembreDirect(nom: string, telephone: string, motDe
     if (/signups? (not allowed|are disabled)|disabled/i.test(error.message)) throw new Error("Les inscriptions sont momentanément fermées. Réessaie plus tard.");
     if (/rate limit|too many/i.test(error.message)) throw new Error("Trop de tentatives. Patiente quelques minutes avant de réessayer.");
     if (/failed to fetch|network/i.test(error.message)) throw new Error("Impossible de joindre le serveur. Vérifie ta connexion internet et réessaie.");
+    if (/invalid/i.test(error.message) && /email/i.test(error.message)) throw new Error(EMAIL_REFUSE);
     throw new Error("Inscription impossible pour le moment. Réessaie dans quelques instants.");
   }
   // Un compte déjà existant renvoie parfois un utilisateur « vide » sans erreur.

@@ -39,9 +39,13 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <div className="bg-paper min-h-screen text-foreground">
-      {/* En-tête figé : nom de l'application et menu restent visibles pendant le défilement */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border/60 shadow-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      {/* En-tête figé : même apparence qu'avant, il reste simplement collé en haut de l'écran.
+          Pas de flou ni de transparence : sinon le menu s'ouvrirait « à l'intérieur » de l'en-tête. */}
+      <header
+        className="bg-paper fixed inset-x-0 top-0 z-50"
+        style={{ backgroundSize: "100% 100vh", backgroundPosition: "top left" }}
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
           <div className="flex items-center gap-3">
             <Logo />
             <div className="flex items-center gap-2">
@@ -54,6 +58,8 @@ function Home() {
           <div data-guide="menu"><HamburgerMenu /></div>
         </div>
       </header>
+      {/* Réserve la place de l'en-tête figé pour que le contenu ne passe pas dessous au départ */}
+      <div aria-hidden className="h-[92px]" />
 
       {/* Kente accent */}
       <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />

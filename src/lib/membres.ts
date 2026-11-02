@@ -51,9 +51,7 @@ export function validerInscription(nom: string, telephone: string, motDePasse: s
   return validerMotDePasse(motDePasse) ?? validerEmailOptionnel(email);
 }
 
-export async function connecterMembre(telephone: string, motDePasse: string) {
-  const { error } = await supabase.auth.signInWithPassword({ email: emailMembre(telephone), password: motDePasse });
-  if (error) {
+export async function connecterMembre(telephone: string, motDePasse: string) { {
     console.error("[connecterMembre]", error.message);
     if (/email not confirmed/i.test(error.message)) {
       throw new Error("Ton compte n'est pas encore activé. Contacte l'administrateur de CampusLink.");

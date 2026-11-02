@@ -1,28 +1,34 @@
-CampusLink — Cours en ligne + Guide du nouveau bachelier
+CampusLink — Marché étudiant (livres, documents, services, colocation, matériel)
 
 ÉTAPES
-1. SUPPRIMEZ sur GitHub l'ancien fichier : src/routes/cours-en-ligne.tsx
-   (il est remplacé par src/routes/_commun.cours-en-ligne.tsx ; garder les deux casserait la compilation).
-2. Copiez chaque fichier de ce dossier au même emplacement dans votre projet.
-3. Exécutez une seule fois dans Supabase (SQL Editor) :
-   supabase/migrations/20261102000000_cours_en_ligne_guide.sql
-   (crée les cours en ligne, le stockage des fichiers et le guide pré-rempli avec 11 fiches Campus Faso).
-4. Poussez sur GitHub.
+1. Copiez chaque fichier de ce dossier au même emplacement dans votre projet GitHub
+   (aucun fichier à supprimer).
+2. Exécutez UNE SEULE FOIS dans Supabase (SQL Editor) :
+   supabase/migrations/20261103000000_marche_etudiant.sql
+   (crée les annonces, les signalements, la modération et le stockage des photos).
+3. Poussez sur GitHub : Vercel redéploie tout seul.
 
 NOUVEAUX FICHIERS
-- supabase/migrations/20261102000000_cours_en_ligne_guide.sql
-- src/lib/cours-en-ligne.ts, src/lib/guide.ts
-- src/components/CoursEnLigneList.tsx, CoursEnLigneAdmin.tsx, GuideList.tsx, GuideAdmin.tsx
-- src/routes/_commun.cours-en-ligne.tsx, src/routes/_commun.guide-bachelier.tsx
+- supabase/migrations/20261103000000_marche_etudiant.sql
+- src/lib/marche.ts
+- src/components/MarcheList.tsx, MarchePublier.tsx, MarcheAdmin.tsx
+- src/routes/_commun.marche.tsx
+- tests/marche.test.ts
 
 FICHIERS MODIFIÉS
-- src/components/espaces-themes.tsx  (2 nouvelles palettes : Cours en ligne, Guide bachelier)
-- src/components/EspacesNavigation.tsx (palettes affichées à l'accueil)
+- src/components/espaces-themes.tsx   (palette « Marché étudiant »)
+- src/components/EspacesNavigation.tsx (palette affichée à l'accueil)
 - src/components/EspacesShell.tsx, src/components/HamburgerMenu.tsx
-- src/routes/_authenticated/super-admin.tsx (onglets « Cours en ligne » et « Guide bachelier »)
-- src/routeTree.gen.ts (régénéré)
+- src/lib/opportunites-model.ts       (retour vers /marche après connexion)
+- src/routes/_authenticated/super-admin.tsx (onglet « Marché étudiant » = modération)
+- src/routeTree.gen.ts                (route /marche ajoutée)
 
-À SAVOIR
-- Cours : vidéo (fichier ou lien YouTube/Vimeo), PDF, manuscrit scanné, photo ; 200 Mo max par fichier.
-- Les fiches Campus Faso pré-remplies sont des explications générales : vérifiez-les et ajustez
-  dates, frais et pièces depuis l'onglet « Guide bachelier ».
+FONCTIONNEMENT
+- Types d'annonces : Je vends / Je cherche / Je propose un service / Colocation.
+- Catégories : Livres, Documents & cours, Services, Colocation & logement, Matériel & autres.
+- Tout le monde peut parcourir les annonces. Il faut un compte CampusLink pour publier,
+  voir le numéro de contact (WhatsApp / appel) et signaler une annonce.
+- AUCUN paiement dans l'application : les étudiants se contactent directement.
+- Photos : 3 maximum, réduites automatiquement avant l'envoi (économie de données mobiles).
+- Sécurité : 20 annonces actives maximum par personne ; une annonce signalée par 3 personnes
+  différentes est masquée automatiquement ; le super admin peut masquer, réafficher, supprimer.

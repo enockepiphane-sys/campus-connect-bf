@@ -4,7 +4,7 @@ import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EspacesShell } from "@/components/EspacesShell";
+import { PageAuth } from "@/components/PageAuth";
 import { connecterMembre, retourSur, validerInscription } from "@/lib/membres";
 import { inscrireMembre } from "@/lib/membres.functions";
 
@@ -50,8 +50,8 @@ function Inscription() {
   }
 
   return (
-    <EspacesShell title="Créer mon compte">
-      <form className="mx-auto my-8 max-w-md space-y-5" onSubmit={envoyer}>
+    <PageAuth titre="Créer mon compte" sousTitre="Inscription unique et gratuite, en 30 secondes.">
+      <form className="space-y-5" onSubmit={envoyer}>
         <p className="text-sm text-muted-foreground">
           Inscription unique et gratuite. Ensuite, CampusLink s’ouvre directement sur ton téléphone, sans retaper ton mot de passe.
         </p>
@@ -76,6 +76,6 @@ function Inscription() {
           Ce compte est différent de l’Espace Étudiant (notes, emploi du temps), réservé aux étudiants pré-inscrits par leur établissement partenaire.
         </p>
       </form>
-    </EspacesShell>
+    </PageAuth>
   );
 }

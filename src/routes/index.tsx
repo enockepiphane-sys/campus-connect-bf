@@ -9,6 +9,7 @@ import { Copyright } from "@/components/Copyright";
 import { EvenementsSociauxSection } from "@/components/EvenementsSociauxSection";
 import { BandeDefilante } from "@/components/BandeDefilante";
 import { BannieresDefilantes } from "@/components/BannieresDefilantes";
+import { ALaUneDefilante } from "@/components/ALaUneDefilante";
 import { CompteMembreCarte } from "@/components/CompteMembreCarte";
 import { GuideBienvenue, relancerGuide } from "@/components/GuideBienvenue";
 import graduateHero from "@/assets/graduate-hero.png";
@@ -38,18 +39,20 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <div className="bg-paper min-h-screen text-foreground">
-      {/* Header */}
-      <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-        <div className="flex items-center gap-3">
-          <Logo />
-          <div className="flex items-center gap-2">
-            <span className="font-display text-2xl font-bold tracking-tight text-foreground">
-              Campus<span className="text-terracotta">Link</span>
-            </span>
-            <DrapeauBF className="h-5 w-8" />
+      {/* En-tête figé : nom de l'application et menu restent visibles pendant le défilement */}
+      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border/60 shadow-sm">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-3">
+            <Logo />
+            <div className="flex items-center gap-2">
+              <span className="font-display text-2xl font-bold tracking-tight text-foreground">
+                Campus<span className="text-terracotta">Link</span>
+              </span>
+              <DrapeauBF className="h-5 w-8" />
+            </div>
           </div>
+          <div data-guide="menu"><HamburgerMenu /></div>
         </div>
-        <HamburgerMenu />
       </header>
 
       {/* Kente accent */}
@@ -90,9 +93,9 @@ function Home() {
 
         {/* Accès étudiant */}
         <div className="mx-auto mt-16 grid max-w-2xl gap-6">
-          <CompteMembreCarte />
+          <div data-guide="compte"><CompteMembreCarte /></div>
           {/* Étudiant */}
-          <section className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
+          <section data-guide="espace-etudiant" className="card-glass group rounded-2xl p-8 transition hover:-translate-y-1 hover:shadow-[var(--shadow-elegant)]">
             <div className="mb-6 flex items-center gap-4">
               <div className="grid h-14 w-14 place-items-center rounded-xl bg-primary-soft text-primary">
                 <GraduationCap className="h-7 w-7" />
@@ -124,7 +127,8 @@ function Home() {
 
 
         <div className="mx-auto mt-10 max-w-2xl"><EspacesNavigation /></div>
-        <div className="mx-auto max-w-2xl"><BannieresDefilantes /></div>
+        <div className="mx-auto max-w-2xl"><ALaUneDefilante /></div>
+        <div className="mx-auto mt-6 max-w-2xl"><BannieresDefilantes /></div>
         <p className="mt-4 text-center">
           <button type="button" onClick={relancerGuide} className="text-sm font-semibold text-primary underline">Revoir le guide de l’application</button>
         </p>

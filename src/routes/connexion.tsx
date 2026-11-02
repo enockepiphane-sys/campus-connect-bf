@@ -4,7 +4,7 @@ import { LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EspacesShell } from "@/components/EspacesShell";
+import { PageAuth } from "@/components/PageAuth";
 import { connecterMembre, retourSur } from "@/lib/membres";
 
 export const Route = createFileRoute("/connexion")({
@@ -30,9 +30,9 @@ function Connexion() {
   const [busy, setBusy] = useState(false);
 
   return (
-    <EspacesShell title="Connexion">
+    <PageAuth titre="Connexion" sousTitre="Content de te revoir ! Entre ton numéro et ton mot de passe.">
       <form
-        className="mx-auto my-8 max-w-md space-y-5"
+        className="space-y-5"
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -61,6 +61,6 @@ function Connexion() {
           Pas encore de compte ? <Link to="/inscription" search={{ retour }} className="text-primary underline">Créer mon compte</Link>
         </p>
       </form>
-    </EspacesShell>
+    </PageAuth>
   );
 }

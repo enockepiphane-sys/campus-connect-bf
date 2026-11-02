@@ -15,9 +15,11 @@ import { Route as CommunRouteImport } from './routes/_commun'
 import { Route as AProposRouteImport } from './routes/a-propos'
 import { Route as AdminAccesRouteImport } from './routes/admin-acces'
 import { Route as ConfirmerCompteRouteImport } from './routes/confirmer-compte'
+import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as ConnexionEspacesRouteImport } from './routes/connexion-espaces'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
+import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
 import { Route as ReinitialiserMotDePasseRouteImport } from './routes/reinitialiser-mot-de-passe'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -71,6 +73,11 @@ const ConfirmerCompteRoute = ConfirmerCompteRouteImport.update({
   path: '/confirmer-compte',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ConnexionRoute = ConnexionRouteImport.update({
+  id: '/connexion',
+  path: '/connexion',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConnexionEspacesRoute = ConnexionEspacesRouteImport.update({
   id: '/connexion-espaces',
   path: '/connexion-espaces',
@@ -84,6 +91,11 @@ const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
 const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
   id: '/fonctionnalites',
   path: '/fonctionnalites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InscriptionRoute = InscriptionRouteImport.update({
+  id: '/inscription',
+  path: '/inscription',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PolitiqueConfidentialiteRoute =
@@ -216,9 +228,11 @@ export interface FileRoutesByFullPath {
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
   '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -249,9 +263,11 @@ export interface FileRoutesByTo {
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
   '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -285,9 +301,11 @@ export interface FileRoutesById {
   '/a-propos': typeof AProposRoute
   '/admin-acces': typeof AdminAccesRoute
   '/confirmer-compte': typeof ConfirmerCompteRoute
+  '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
+  '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
   '/reinitialiser-mot-de-passe': typeof ReinitialiserMotDePasseRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -320,9 +338,11 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin-acces'
     | '/confirmer-compte'
+    | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/inscription'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
     | '/reset-password'
@@ -353,9 +373,11 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin-acces'
     | '/confirmer-compte'
+    | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/inscription'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
     | '/reset-password'
@@ -388,9 +410,11 @@ export interface FileRouteTypes {
     | '/a-propos'
     | '/admin-acces'
     | '/confirmer-compte'
+    | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
     | '/fonctionnalites'
+    | '/inscription'
     | '/politique-confidentialite'
     | '/reinitialiser-mot-de-passe'
     | '/reset-password'
@@ -424,9 +448,11 @@ export interface RootRouteChildren {
   AProposRoute: typeof AProposRoute
   AdminAccesRoute: typeof AdminAccesRoute
   ConfirmerCompteRoute: typeof ConfirmerCompteRoute
+  ConnexionRoute: typeof ConnexionRoute
   ConnexionEspacesRoute: typeof ConnexionEspacesRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
+  InscriptionRoute: typeof InscriptionRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
   ReinitialiserMotDePasseRoute: typeof ReinitialiserMotDePasseRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -486,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConfirmerCompteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/connexion': {
+      id: '/connexion'
+      path: '/connexion'
+      fullPath: '/connexion'
+      preLoaderRoute: typeof ConnexionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/connexion-espaces': {
       id: '/connexion-espaces'
       path: '/connexion-espaces'
@@ -505,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/fonctionnalites'
       fullPath: '/fonctionnalites'
       preLoaderRoute: typeof FonctionnalitesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inscription': {
+      id: '/inscription'
+      path: '/inscription'
+      fullPath: '/inscription'
+      preLoaderRoute: typeof InscriptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/politique-confidentialite': {
@@ -725,9 +765,11 @@ const rootRouteChildren: RootRouteChildren = {
   AProposRoute: AProposRoute,
   AdminAccesRoute: AdminAccesRoute,
   ConfirmerCompteRoute: ConfirmerCompteRoute,
+  ConnexionRoute: ConnexionRoute,
   ConnexionEspacesRoute: ConnexionEspacesRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
+  InscriptionRoute: InscriptionRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,
   ReinitialiserMotDePasseRoute: ReinitialiserMotDePasseRoute,
   ResetPasswordRoute: ResetPasswordRoute,

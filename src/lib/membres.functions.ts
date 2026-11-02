@@ -10,9 +10,22 @@ type Ctx = { data?: Record<string, unknown> };
 
 const lire = (ctx: unknown): Record<string, unknown> => ((ctx as Ctx).data ?? {}) as Record<string, unknown>;
 
+// Messages et réponses réutilisés (évite les doublons).
+const MSG_DEJA_INSCRIT = "Ce numéro est déjà inscrit. Connectez-vous.";
+const MSG_MDP_REFUSE = "Mot de passe refusé. Au moins 6 caractères, avec une majuscule, une minuscule et un chiffre.";
+const MSG_INSCRIPTION_IMPOSSIBLE = "Inscription impossible pour le moment.";
+const MSG_INDISPONIBLE = "Service indisponible pour le moment. Réessaie plus tard.";
+const refus = (message: string, secours = false): Resultat => ({ ok: false, message, secours });
+
 async function sha256(texte: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
   return Array.from(new Uint8Array(buf)).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
+async function admin() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return supabaseAdmin as any;
 }
 
 // ───────────── Inscription (voie de secours côté serveur) ─────────────
@@ -26,10 +39,9 @@ export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (
     const probleme = validerInscription(nom, telephone, motDePasse, email);
     if (probleme) return { ok: false, message: probleme, secours: false };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
+    const db = await admin();
     const { data: existant } = await db.from("membres").select("user_id").eq("telephone", telephone).maybeSingle();
-    if (existant) return { ok: false, message: "Ce numéro est déjà inscrit. Connectez-vous.", secours: false };
+    if (existant) return refus(MSG_DEJA_INSCRIT);
 
     const { data: cree, error } = await db.auth.admin.createUser({
       email: emailMembre(telephone),
@@ -40,18 +52,23 @@ export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (
     if (error || !cree?.user) {
       const msg = String(error?.message ?? "");
       console.error("[inscrireMembre] createUser :", msg);
-      if (/already|registered|exists/i.test(msg)) return { ok: false, message: "Ce numéro est déjà inscrit. Connectez-vous.", secours: false };
-      if (/password/i.test(msg)) return { ok: false, message: "Mot de passe refusé. Au moins 6 caractères, avec une majuscule, une minuscule et un chiffre.", secours: false };
-      return { ok: false, message: "Inscription impossible pour le moment.", secours: true };
+      if (/already|registered|exists/i.test(msg)) return refus(MSG_DEJA_INSCRIT);
+      if (/password/i.test(msg)) return refus(MSG_MDP_REFUSE);
+      return refus(MSG_INSCRIPTION_IMPOSSIBLE, true);
     }
     const { error: errProfil } = await db
       .from("membres")
       .upsert({ user_id: cree.user.id, nom_profil: nom, telephone, ...(email ? { email_recuperation: email } : {}) }, { onConflict: "user_id" });
-    if (errProfil) console.error("[inscrireMembre] profil non enregistré :", errProfil.message);
+    if (errProfil) {
+      // Sans ligne « membres », le compte serait orphelin (connexion/réinitialisation impossibles) : on l'annule pour permettre un nouvel essai.
+      console.error("[inscrireMembre] profil non enregistré :", errProfil.message);
+      await db.auth.admin.deleteUser(cree.user.id).catch((e: unknown) => console.error("[inscrireMembre] annulation du compte :", e));
+      return refus(MSG_INSCRIPTION_IMPOSSIBLE, true);
+    }
     return { ok: true };
   } catch (e) {
     console.error("[inscrireMembre] erreur serveur :", e);
-    return { ok: false, message: "Inscription impossible pour le moment.", secours: true };
+    return refus(MSG_INSCRIPTION_IMPOSSIBLE, true);
   }
 });
 
@@ -86,8 +103,7 @@ export const demanderCodeReinit = createServerFn({ method: "POST" }).handler(asy
   try {
     const telephone = normaliserTelephone(String(lire(ctx).telephone ?? ""));
     if (telephone.length < 8 || telephone.length > 15) return { ok: false, message: "Numéro de téléphone invalide.", secours: false };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
+    const db = await admin();
     const { data: membre } = await db.from("membres").select("user_id,nom_profil,email_recuperation").eq("telephone", telephone).maybeSingle();
     const neutre = "Si un email de récupération est enregistré pour ce numéro, un code vient d'y être envoyé (valable 15 minutes).";
     if (!membre) return { ok: true, message: neutre };
@@ -108,14 +124,14 @@ export const demanderCodeReinit = createServerFn({ method: "POST" }).handler(asy
     }, { onConflict: "user_id" });
     if (error) {
       console.error("[reinit] stockage :", error.message);
-      return { ok: false, message: "Service indisponible pour le moment. Réessaie plus tard.", secours: false };
+      return refus(MSG_INDISPONIBLE);
     }
     const envoye = await envoyerEmail(String(membre.email_recuperation), String(membre.nom_profil ?? ""), code);
     if (!envoye) return { ok: false, message: "L'email n'a pas pu être envoyé. Réessaie plus tard.", secours: false };
     return { ok: true, message: neutre };
   } catch (e) {
     console.error("[demanderCodeReinit]", e);
-    return { ok: false, message: "Service indisponible pour le moment. Réessaie plus tard.", secours: false };
+    return refus(MSG_INDISPONIBLE);
   }
 });
 
@@ -129,8 +145,7 @@ export const reinitialiserMotDePasse = createServerFn({ method: "POST" }).handle
     if (probleme) return { ok: false, message: probleme, secours: false };
     if (code.length !== 6) return { ok: false, message: "Le code contient 6 chiffres.", secours: false };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const db = (await import("@/integrations/supabase/client.server")).supabaseAdmin as any;
+    const db = await admin();
     const invalide = { ok: false as const, message: "Code incorrect ou expiré. Redemande un code.", secours: false };
     const { data: membre } = await db.from("membres").select("user_id").eq("telephone", telephone).maybeSingle();
     if (!membre) return invalide;
@@ -143,12 +158,12 @@ export const reinitialiserMotDePasse = createServerFn({ method: "POST" }).handle
     const { error } = await db.auth.admin.updateUserById(membre.user_id, { password: nouveau });
     if (error) {
       console.error("[reinit] updateUserById :", error.message);
-      return { ok: false, message: "Mot de passe refusé. Au moins 6 caractères, avec une majuscule, une minuscule et un chiffre.", secours: false };
+      return refus(MSG_MDP_REFUSE);
     }
     await db.from("membres_reinit").delete().eq("user_id", membre.user_id);
     return { ok: true };
   } catch (e) {
     console.error("[reinitialiserMotDePasse]", e);
-    return { ok: false, message: "Service indisponible pour le moment. Réessaie plus tard.", secours: false };
+    return refus(MSG_INDISPONIBLE);
   }
 });

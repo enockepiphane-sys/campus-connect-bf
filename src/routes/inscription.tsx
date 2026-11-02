@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageAuth } from "@/components/PageAuth";
-import { connecterMembre, inscrireMembreDirect, retourSur, validerInscription } from "@/lib/membres";
+import { connecterMembre, EMAIL_REFUSE, inscrireMembreDirect, retourSur, validerInscription } from "@/lib/membres";
 import { inscrireMembre } from "@/lib/membres.functions";
 
 export const Route = createFileRoute("/inscription")({
@@ -38,31 +38,21 @@ function Inscription() {
     setBusy(true);
     setErreur("");
     try {
-      // 1) Voie normale : création du compte côté serveur.
-      let secours = false;
-      let cree = false;
+      // 1) Inscription directe : le compte est créé dans le MÊME projet Supabase que celui de la connexion.
       try {
-        const res = (await inscrireMembre({ data: { nom, telephone, motDePasse } } as never)) as
-          | { ok: true }
-          | { ok: false; message: string; secours: boolean };
-        if (res && res.ok) cree = true;
-        else if (res && !res.ok && !res.secours) throw new Error(res.message);
-        else secours = true;
-      } catch (e) {
-        // Refus normal (numéro déjà inscrit…) : on l'affiche. Panne technique : on tente la voie de secours.
-        if (e instanceof Error && /déjà inscrit|invalide|caractères|refusé/i.test(e.message)) throw e;
-        secours = true;
-      }
-      if (cree) {
-        await connecterMembre(telephone, motDePasse);
-        window.location.assign(retour);
-        return;
-      }
-      // 2) Voie de secours : inscription directe depuis le navigateur.
-      if (secours) {
         await inscrireMembreDirect(nom, telephone, motDePasse);
         window.location.assign(retour);
+        return;
+      } catch (e) {
+        if (!(e instanceof Error) || e.message !== EMAIL_REFUSE) throw e;
       }
+      // 2) Secours (adresse technique refusée par Supabase) : création côté serveur.
+      const res = (await inscrireMembre({ data: { nom, telephone, motDePasse } } as never)) as
+        | { ok: true }
+        | { ok: false; message: string; secours: boolean };
+      if (!res || !res.ok) throw new Error(res && !res.ok ? res.message : "Inscription impossible pour le moment.");
+      await connecterMembre(telephone, motDePasse);
+      window.location.assign(retour);
     } catch (err) {
       setErreur(err instanceof Error ? err.message : "Inscription impossible.");
     } finally {

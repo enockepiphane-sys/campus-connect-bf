@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Logo } from "@/components/Logo";
 import { MarqueCampusLink } from "@/components/MarqueCampusLink";
@@ -6,12 +6,30 @@ import { HamburgerMenu } from "@/components/HamburgerMenu";
 import { ESPACES } from "./espaces-themes";
 import { RetourButtons } from "./RetourButtons";
 
+function detecterEspace(pathname: string) {
+  if (pathname.startsWith("/revision-ia")) return { espace: ESPACES.revision, gestion: false };
+  if (pathname.startsWith("/bibliotheque")) return { espace: ESPACES.bibliotheque, gestion: false };
+  if (pathname.startsWith("/cours-en-ligne")) return { espace: ESPACES.cours, gestion: false };
+  if (pathname.startsWith("/guide-bachelier")) return { espace: ESPACES.guide, gestion: false };
+  if (pathname.startsWith("/evenements")) return { espace: ESPACES.evenements, gestion: false };
+  if (pathname.startsWith("/marche")) return { espace: ESPACES.marche, gestion: false };
+  if (pathname.startsWith("/gestion-opportunites")) return { espace: ESPACES.opportunites, gestion: true };
+  if (pathname.startsWith("/opportunites")) return { espace: ESPACES.opportunites, gestion: false };
+  return null;
+}
+
 export function EspacesShell({ title, children }: { title: string; children: ReactNode }) {
-  // Le thème (couleurs, icône) dépend de la page affichée : aucune autre route à modifier.
+  // Le thème (couleurs, icône) dépend de la page affichée.
+  // IMPORTANT : quand on clique sur « Retour », l'URL change AVANT que la page disparaisse.
+  // Sans précaution, l'espace affichait brièvement le thème « Opportunités » (orange) par défaut.
+  // On mémorise donc le dernier espace reconnu et on ne le change plus tant qu'on quitte la page.
   const { pathname } = useLocation();
-  const espace = pathname.startsWith("/revision-ia") ? ESPACES.revision : pathname.startsWith("/bibliotheque") ? ESPACES.bibliotheque : pathname.startsWith("/cours-en-ligne") ? ESPACES.cours : pathname.startsWith("/guide-bachelier") ? ESPACES.guide : pathname.startsWith("/evenements") ? ESPACES.evenements : pathname.startsWith("/marche") ? ESPACES.marche : ESPACES.opportunites;
+  const detecte = detecterEspace(pathname);
+  const memo = useRef<{ espace: (typeof ESPACES)[keyof typeof ESPACES]; gestion: boolean } | null>(null);
+  if (detecte) memo.current = detecte;
+  const espace = memo.current?.espace ?? ESPACES.opportunites;
+  const isGestion = memo.current?.gestion ?? false;
   const Icon = espace.Icon;
-  const isGestion = pathname.startsWith("/gestion-opportunites");
   const subtitle = isGestion ? "Publie, modifie et retire les offres visibles par les étudiants." : espace.tagline;
 
   return (

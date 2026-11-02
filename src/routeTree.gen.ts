@@ -30,6 +30,7 @@ import { Route as CommunCoursEnLigneRouteImport } from './routes/_commun.cours-e
 import { Route as CommunEvenementsRouteImport } from './routes/_commun.evenements'
 import { Route as CommunGestionOpportunitesRouteImport } from './routes/_commun.gestion-opportunites'
 import { Route as CommunGuideBachelierRouteImport } from './routes/_commun.guide-bachelier'
+import { Route as CommunMarcheRouteImport } from './routes/_commun.marche'
 import { Route as CommunOpportunitesRouteImport } from './routes/_commun.opportunites'
 import { Route as CommunRevisionIaRouteImport } from './routes/_commun.revision-ia'
 import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
@@ -147,6 +148,11 @@ const CommunGuideBachelierRoute = CommunGuideBachelierRouteImport.update({
   path: '/guide-bachelier',
   getParentRoute: () => CommunRoute,
 } as any)
+const CommunMarcheRoute = CommunMarcheRouteImport.update({
+  id: '/marche',
+  path: '/marche',
+  getParentRoute: () => CommunRoute,
+} as any)
 const CommunOpportunitesRoute = CommunOpportunitesRouteImport.update({
   id: '/opportunites',
   path: '/opportunites',
@@ -225,6 +231,7 @@ export interface FileRoutesByFullPath {
   '/evenements': typeof CommunEvenementsRoute
   '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/marche': typeof CommunMarcheRoute
   '/opportunites': typeof CommunOpportunitesRoute
   '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByTo {
   '/evenements': typeof CommunEvenementsRoute
   '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/marche': typeof CommunMarcheRoute
   '/opportunites': typeof CommunOpportunitesRoute
   '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
@@ -292,6 +300,7 @@ export interface FileRoutesById {
   '/_commun/evenements': typeof CommunEvenementsRoute
   '/_commun/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/_commun/guide-bachelier': typeof CommunGuideBachelierRoute
+  '/_commun/marche': typeof CommunMarcheRoute
   '/_commun/opportunites': typeof CommunOpportunitesRoute
   '/_commun/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
@@ -326,6 +335,7 @@ export interface FileRouteTypes {
     | '/evenements'
     | '/gestion-opportunites'
     | '/guide-bachelier'
+    | '/marche'
     | '/opportunites'
     | '/revision-ia'
     | '/admin/connexion'
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/evenements'
     | '/gestion-opportunites'
     | '/guide-bachelier'
+    | '/marche'
     | '/opportunites'
     | '/revision-ia'
     | '/admin/connexion'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/_commun/evenements'
     | '/_commun/gestion-opportunites'
     | '/_commun/guide-bachelier'
+    | '/_commun/marche'
     | '/_commun/opportunites'
     | '/_commun/revision-ia'
     | '/admin/connexion'
@@ -579,6 +591,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunGuideBachelierRouteImport
       parentRoute: typeof CommunRoute
     }
+    '/_commun/marche': {
+      id: '/_commun/marche'
+      path: '/marche'
+      fullPath: '/marche'
+      preLoaderRoute: typeof CommunMarcheRouteImport
+      parentRoute: typeof CommunRoute
+    }
     '/_commun/opportunites': {
       id: '/_commun/opportunites'
       path: '/opportunites'
@@ -680,6 +699,7 @@ interface CommunRouteChildren {
   CommunEvenementsRoute: typeof CommunEvenementsRoute
   CommunGestionOpportunitesRoute: typeof CommunGestionOpportunitesRoute
   CommunGuideBachelierRoute: typeof CommunGuideBachelierRoute
+  CommunMarcheRoute: typeof CommunMarcheRoute
   CommunOpportunitesRoute: typeof CommunOpportunitesRoute
   CommunRevisionIaRoute: typeof CommunRevisionIaRoute
 }
@@ -690,6 +710,7 @@ const CommunRouteChildren: CommunRouteChildren = {
   CommunEvenementsRoute: CommunEvenementsRoute,
   CommunGestionOpportunitesRoute: CommunGestionOpportunitesRoute,
   CommunGuideBachelierRoute: CommunGuideBachelierRoute,
+  CommunMarcheRoute: CommunMarcheRoute,
   CommunOpportunitesRoute: CommunOpportunitesRoute,
   CommunRevisionIaRoute: CommunRevisionIaRoute,
 }

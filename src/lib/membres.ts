@@ -27,7 +27,53 @@ export function validerInscription(nom: string, telephone: string, motDePasse: s
 
 export async function connecterMembre(telephone: string, motDePasse: string) {
   const { error } = await supabase.auth.signInWithPassword({ email: emailMembre(telephone), password: motDePasse });
-  if (error) throw new Error("Numéro ou mot de passe incorrect.");
+  if (error) {
+    console.error("[connecterMembre]", error.message);
+    if (/email not confirmed/i.test(error.message)) {
+      throw new Error("Ton compte n'est pas encore activé. Contacte l'administrateur de CampusLink.");
+    }
+    if (/failed to fetch|network/i.test(error.message)) {
+      throw new Error("Impossible de joindre le serveur. Vérifie ta connexion internet et réessaie.");
+    }
+    throw new Error("Numéro ou mot de passe incorrect.");
+  }
+}
+
+// Inscription « de secours » faite directement depuis le navigateur, sans passer par le serveur
+// (utile si la clé SUPABASE_SERVICE_ROLE_KEY est absente ou si la fonction serveur est indisponible).
+// Elle s'appuie sur le déclencheur SQL de 20261105000000_fix_inscription_primaire.sql
+// qui confirme automatiquement les comptes membres et crée leur profil.
+export async function inscrireMembreDirect(nom: string, telephone: string, motDePasse: string): Promise<void> {
+  const tel = normaliserTelephone(telephone);
+  const email = emailMembre(tel);
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: motDePasse,
+    options: { data: { nom_profil: nom.trim(), telephone: tel, type_compte: "membre" } },
+  });
+  if (error) {
+    console.error("[inscrireMembreDirect]", error.message);
+    if (/already|registered|exists/i.test(error.message)) throw new Error("Ce numéro est déjà inscrit. Connectez-vous.");
+    if (/password/i.test(error.message)) throw new Error("Mot de passe refusé : choisis-en un plus solide (6 caractères minimum, avec lettres et chiffres).");
+    if (/signups? (not allowed|are disabled)|disabled/i.test(error.message)) throw new Error("Les inscriptions sont momentanément fermées. Réessaie plus tard.");
+    if (/rate limit|too many/i.test(error.message)) throw new Error("Trop de tentatives. Patiente quelques minutes avant de réessayer.");
+    if (/failed to fetch|network/i.test(error.message)) throw new Error("Impossible de joindre le serveur. Vérifie ta connexion internet et réessaie.");
+    throw new Error("Inscription impossible pour le moment. Réessaie dans quelques instants.");
+  }
+  // Un compte déjà existant renvoie parfois un utilisateur « vide » sans erreur.
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    throw new Error("Ce numéro est déjà inscrit. Connectez-vous.");
+  }
+  // Pas de session = le compte n'a pas été confirmé automatiquement.
+  if (!data.session) await connecterMembre(tel, motDePasse);
+  // Profil : normalement créé par le déclencheur SQL ; sinon on le crée ici (sans bloquer).
+  if (data.user) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: errProfil } = await (supabase as any)
+      .from("membres")
+      .upsert({ user_id: data.user.id, nom_profil: nom.trim(), telephone: tel }, { onConflict: "user_id" });
+    if (errProfil) console.error("[inscrireMembreDirect] profil :", errProfil.message);
+  }
 }
 
 // Toute session existante (membre, étudiant, admin) ouvre les fonctionnalités primaires.

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageAuth } from "@/components/PageAuth";
-import { connecterMembre, EMAIL_REFUSE, inscrireMembreDirect, retourSur, validerInscription } from "@/lib/membres";
+import { connecterMembre, EMAIL_REFUSE, inscrireMembreDirect, REGLE_MOT_DE_PASSE, retourSur, validerInscription } from "@/lib/membres";
 import { inscrireMembre } from "@/lib/membres.functions";
 
 export const Route = createFileRoute("/inscription")({
@@ -28,26 +28,27 @@ function Inscription() {
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
+  const [email, setEmail] = useState("");
   const [erreur, setErreur] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function envoyer(e: React.FormEvent) {
     e.preventDefault();
-    const probleme = validerInscription(nom, telephone, motDePasse);
+    const probleme = validerInscription(nom, telephone, motDePasse, email);
     if (probleme) return setErreur(probleme);
     setBusy(true);
     setErreur("");
     try {
       // 1) Inscription directe : le compte est créé dans le MÊME projet Supabase que celui de la connexion.
       try {
-        await inscrireMembreDirect(nom, telephone, motDePasse);
+        await inscrireMembreDirect(nom, telephone, motDePasse, email);
         window.location.assign(retour);
         return;
       } catch (e) {
         if (!(e instanceof Error) || e.message !== EMAIL_REFUSE) throw e;
       }
       // 2) Secours (adresse technique refusée par Supabase) : création côté serveur.
-      const res = (await inscrireMembre({ data: { nom, telephone, motDePasse } } as never)) as
+      const res = (await inscrireMembre({ data: { nom, telephone, motDePasse, email } } as never)) as
         | { ok: true }
         | { ok: false; message: string; secours: boolean };
       if (!res || !res.ok) throw new Error(res && !res.ok ? res.message : "Inscription impossible pour le moment.");
@@ -77,6 +78,12 @@ function Inscription() {
         <div className="space-y-2">
           <Label htmlFor="m-mdp">Mot de passe</Label>
           <Input id="m-mdp" type="password" autoComplete="new-password" required minLength={6} value={motDePasse} onChange={(e) => setMotDePasse(e.target.value)} />
+          <p className="text-xs text-muted-foreground">{REGLE_MOT_DE_PASSE}</p>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="m-email">Email de récupération <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
+          <Input id="m-email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ex. awa@gmail.com" />
+          <p className="text-xs text-muted-foreground">Sert uniquement à retrouver ton compte si tu oublies ton mot de passe.</p>
         </div>
         {erreur && <p role="alert" className="text-sm text-destructive">{erreur}</p>}
         <Button type="submit" disabled={busy} className="w-full"><UserPlus />{busy ? "Création…" : "Créer mon compte"}</Button>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,13 @@ import { Label } from "@/components/ui/label";
 import { PageAuth } from "@/components/PageAuth";
 import { connecterMembre, EMAIL_REFUSE, inscrireMembreDirect, REGLE_MOT_DE_PASSE, retourSur, validerInscription } from "@/lib/membres";
 import { inscrireMembre } from "@/lib/membres.functions";
+import { lireRef, memoriserRef, metadonneesParrainage, normaliserCode } from "@/lib/parrainage";
 
 export const Route = createFileRoute("/inscription")({
-  validateSearch: (s: Record<string, unknown>) => ({ retour: retourSur(s.retour) }),
+  validateSearch: (s: Record<string, unknown>): { retour: string; ref?: string } => {
+    const ref = normaliserCode(s.ref);
+    return { retour: retourSur(s.retour), ...(ref ? { ref } : {}) };
+  },
   head: () => ({
     meta: [
       { title: "Créer mon compte CampusLink" },
@@ -24,7 +28,13 @@ export const Route = createFileRoute("/inscription")({
 });
 
 function Inscription() {
-  const { retour } = Route.useSearch();
+  const { retour, ref } = Route.useSearch();
+  const [parrain, setParrain] = useState("");
+  // Lien de parrainage : le code est mémorisé sur l'appareil puis transmis à l'inscription.
+  useEffect(() => {
+    if (ref) memoriserRef(ref);
+    setParrain(lireRef());
+  }, [ref]);
   const [nom, setNom] = useState("");
   const [telephone, setTelephone] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
@@ -48,7 +58,7 @@ function Inscription() {
         if (!(e instanceof Error) || e.message !== EMAIL_REFUSE) throw e;
       }
       // 2) Secours (adresse technique refusée par Supabase) : création côté serveur.
-      const res = (await inscrireMembre({ data: { nom, telephone, motDePasse, email } } as never)) as
+      const res = (await inscrireMembre({ data: { nom, telephone, motDePasse, email, ...metadonneesParrainage() } } as never)) as
         | { ok: true }
         | { ok: false; message: string; secours: boolean };
       if (!res || !res.ok) throw new Error(res && !res.ok ? res.message : "Inscription impossible pour le moment.");
@@ -64,6 +74,9 @@ function Inscription() {
   return (
     <PageAuth titre="Créer mon compte" sousTitre="Inscription unique et gratuite, en 30 secondes.">
       <form className="space-y-5" onSubmit={envoyer}>
+        {parrain && (
+          <p className="rounded-xl bg-primary/10 p-3 text-sm text-primary">Tu as été invité(e) par un membre CampusLink (code {parrain}).</p>
+        )}
         <p className="text-sm text-muted-foreground">
           Inscription unique et gratuite. Ensuite, CampusLink s’ouvre directement sur ton téléphone, sans retaper ton mot de passe.
         </p>

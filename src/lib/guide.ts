@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { preparerImage, supprimerImage, type ImageChoix } from "./images-contenu";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as unknown as SupabaseClient<any>;
@@ -12,6 +13,7 @@ export type GuideArticle = {
   titre: string;
   contenu: string;
   lien: string | null;
+  image_path?: string | null;
   ordre: number;
   actif: boolean;
 };
@@ -34,7 +36,8 @@ export async function listGuide(management = false): Promise<GuideArticle[]> {
   return (data ?? []) as GuideArticle[];
 }
 
-export async function saveGuide(input: GuideInput, id?: string) {
+export async function saveGuide(input: GuideInput, id?: string, image?: ImageChoix, imageActuelle?: string | null) {
+  const img = await preparerImage(image, imageActuelle, "guide");
   const row = {
     categorie: input.categorie.trim(),
     titre: input.titre.trim(),
@@ -42,12 +45,16 @@ export async function saveGuide(input: GuideInput, id?: string) {
     lien: input.lien.trim() || null,
     ordre: input.ordre,
     actif: input.actif,
+    ...img.patch,
   };
   const { error } = id ? await db.from("guide_articles").update(row).eq("id", id) : await db.from("guide_articles").insert(row);
+  if (error) await img.annuler();
   check(error);
+  await img.valider();
 }
 
-export async function deleteGuide(id: string) {
+export async function deleteGuide(id: string, imagePath?: string | null) {
   const { error } = await db.from("guide_articles").delete().eq("id", id);
   check(error);
+  await supprimerImage(imagePath);
 }

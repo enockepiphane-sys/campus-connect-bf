@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { preparerImage, supprimerImage, type ImageChoix } from "./images-contenu";
 
 // Les tables de la bibliothèque ne sont pas dans les types générés : client non typé.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,6 +20,7 @@ export type Doc = {
   fichier_path: string;
   fichier_type: string;
   taille: number | null;
+  image_path?: string | null;
   actif: boolean;
   created_at: string;
 };
@@ -91,14 +93,17 @@ export async function deleteTheme(id: string) {
   check(error);
 }
 
-export async function addDocument(input: { file: File; theme_id: string; titre: string; auteur: string; description: string; actif: boolean }) {
+export async function addDocument(input: { file: File; theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix }) {
   const { file } = input;
   if (!ACCEPTED_TYPES.includes(file.type)) throw new Error("Formats acceptés : PDF, JPG, PNG ou WebP.");
   if (file.size > MAX_FILE_BYTES) throw new Error("Le fichier dépasse 50 Mo.");
   const path = `${input.theme_id}/${crypto.randomUUID()}.${extensionOf(file.type)}`;
   const { error: upError } = await supabase.storage.from(BIBLIO_BUCKET).upload(path, file, { contentType: file.type });
   if (upError) throw new Error("L’envoi du fichier a échoué (" + upError.message + ").");
+  let img: Awaited<ReturnType<typeof preparerImage>>;
+  try { img = await preparerImage(input.image, null, "bibliotheque"); } catch (e) { await supabase.storage.from(BIBLIO_BUCKET).remove([path]); throw e; }
   const { error } = await db.from("bibliotheque_documents").insert({
+    ...img.patch,
     theme_id: input.theme_id,
     titre: input.titre.trim(),
     auteur: input.auteur.trim() || null,
@@ -109,22 +114,27 @@ export async function addDocument(input: { file: File; theme_id: string; titre: 
     actif: input.actif,
   });
   if (error) {
+    await img.annuler();
     await supabase.storage.from(BIBLIO_BUCKET).remove([path]);
     check(error);
   }
 }
 
-export async function updateDocument(id: string, input: { theme_id: string; titre: string; auteur: string; description: string; actif: boolean }) {
+export async function updateDocument(id: string, input: { theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix; imageActuelle?: string | null }) {
+  const img = await preparerImage(input.image, input.imageActuelle, "bibliotheque");
   const { error } = await db
     .from("bibliotheque_documents")
-    .update({ theme_id: input.theme_id, titre: input.titre.trim(), auteur: input.auteur.trim() || null, description: input.description.trim() || null, actif: input.actif })
+    .update({ theme_id: input.theme_id, titre: input.titre.trim(), auteur: input.auteur.trim() || null, description: input.description.trim() || null, actif: input.actif, ...img.patch })
     .eq("id", id);
+  if (error) await img.annuler();
   check(error);
+  await img.valider();
 }
 
 export async function deleteDocument(doc: Doc) {
   const { error } = await db.from("bibliotheque_documents").delete().eq("id", doc.id);
   check(error);
+  await supprimerImage(doc.image_path);
   await supabase.storage.from(BIBLIO_BUCKET).remove([doc.fichier_path]);
 }
 

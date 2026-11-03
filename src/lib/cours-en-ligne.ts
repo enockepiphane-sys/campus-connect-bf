@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { preparerImage, supprimerImage, type ImageChoix } from "./images-contenu";
 
 // Les tables des cours en ligne ne sont pas dans les types générés : client non typé.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -31,6 +32,7 @@ export type Cours = {
   fichier_type: string | null;
   taille: number | null;
   video_url: string | null;
+  image_path?: string | null;
   actif: boolean;
   created_at: string;
 };
@@ -119,24 +121,33 @@ async function upload(file: File, filiere: string) {
   return { fichier_path: path, fichier_type: file.type, taille: file.size };
 }
 
-export async function addCours(input: CoursInput, file: File | null) {
+export async function addCours(input: CoursInput, file: File | null, image?: ImageChoix) {
   if (!file && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
   const fichier = file ? await upload(file, input.filiere) : {};
-  const { error } = await db.from("cours_en_ligne").insert({ ...row(input), ...fichier });
-  if (error && "fichier_path" in fichier) await supabase.storage.from(COURS_BUCKET).remove([fichier.fichier_path as string]);
+  let img: Awaited<ReturnType<typeof preparerImage>>;
+  try { img = await preparerImage(image, null, "cours"); } catch (e) { if ("fichier_path" in fichier) await supabase.storage.from(COURS_BUCKET).remove([fichier.fichier_path as string]); throw e; }
+  const { error } = await db.from("cours_en_ligne").insert({ ...row(input), ...fichier, ...img.patch });
+  if (error) {
+    await img.annuler();
+    if ("fichier_path" in fichier) await supabase.storage.from(COURS_BUCKET).remove([fichier.fichier_path as string]);
+  }
   check(error);
 }
 
-export async function updateCours(c: Cours, input: CoursInput, file: File | null) {
+export async function updateCours(c: Cours, input: CoursInput, file: File | null, image?: ImageChoix) {
   const fichier = file ? await upload(file, input.filiere) : {};
   if (!file && !c.fichier_path && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
-  const { error } = await db.from("cours_en_ligne").update({ ...row(input), ...fichier }).eq("id", c.id);
+  const img = await preparerImage(image, c.image_path, "cours");
+  const { error } = await db.from("cours_en_ligne").update({ ...row(input), ...fichier, ...img.patch }).eq("id", c.id);
+  if (error) await img.annuler();
   check(error);
+  await img.valider();
   if (file && c.fichier_path) await supabase.storage.from(COURS_BUCKET).remove([c.fichier_path]);
 }
 
 export async function deleteCours(c: Cours) {
   const { error } = await db.from("cours_en_ligne").delete().eq("id", c.id);
   check(error);
+  await supprimerImage(c.image_path);
   if (c.fichier_path) await supabase.storage.from(COURS_BUCKET).remove([c.fichier_path]);
 }

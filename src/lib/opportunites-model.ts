@@ -3,7 +3,7 @@ export type Categorie = typeof CATEGORIES[number];
 export type Opportunite = {
   id: string; titre: string; organisme: string; description: string; conditions: string;
   categorie: Categorie; date_limite: string; candidature: string; publie: boolean;
-  created_by: string; created_at: string; updated_at: string;
+  image_path?: string | null; created_by: string; created_at: string; updated_at: string;
 };
 export type OffreInput = Pick<Opportunite, "titre" | "organisme" | "description" | "conditions" | "categorie" | "date_limite" | "candidature" | "publie">;
 export function deadlineState(deadline: string, now = new Date()): "expired" | "soon" | "open" {

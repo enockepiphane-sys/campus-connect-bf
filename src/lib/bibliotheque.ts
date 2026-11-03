@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { preparerImage, supprimerImage, type ImageChoix } from "./images-contenu";
+import { analyserLien } from "./lecture-externe";
 
 // Les tables de la bibliothèque ne sont pas dans les types générés : client non typé.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,9 +29,10 @@ export type Doc = {
   titre: string;
   auteur: string | null;
   description: string | null;
-  fichier_path: string;
-  fichier_type: string;
+  fichier_path: string | null; // null pour un document ajouté par lien
+  fichier_type: string | null;
   taille: number | null;
+  lien_url?: string | null; // lien externe lu dans le lecteur intégré
   image_path?: string | null;
   actif: boolean;
   created_at: string;
@@ -69,12 +71,14 @@ export async function listDocuments(management = false): Promise<Doc[]> {
 }
 
 export function fileUrl(doc: Pick<Doc, "fichier_path">, downloadName?: string) {
+  if (!doc.fichier_path) return "";
   const options = downloadName ? { download: downloadName } : undefined;
   return supabase.storage.from(BIBLIO_BUCKET).getPublicUrl(doc.fichier_path, options).data.publicUrl;
 }
 
 const EXT: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/webp": "webp", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
-export function extensionOf(type: string) {
+export function extensionOf(type: string | null) {
+  if (!type) return "bin";
   return EXT[type] ?? "jpg";
 }
 
@@ -132,11 +136,35 @@ export async function addDocument(input: { file: File; theme_id: string; titre: 
   }
 }
 
-export async function updateDocument(id: string, input: { theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix; imageActuelle?: string | null }) {
+/** Ajoute un document par lien externe (lecteur intégré quand la plateforme l'autorise). */
+export async function addLienDocument(input: { lien: string; theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix }) {
+  const a = analyserLien(input.lien);
+  if (!a.ok) throw new Error(a.erreur);
+  const img = await preparerImage(input.image, null, "bibliotheque");
+  const { error } = await db.from("bibliotheque_documents").insert({
+    ...img.patch,
+    theme_id: input.theme_id,
+    titre: input.titre.trim(),
+    auteur: input.auteur.trim() || null,
+    description: input.description.trim() || null,
+    lien_url: a.url,
+    actif: input.actif,
+  });
+  if (error) await img.annuler();
+  check(error);
+}
+
+export async function updateDocument(id: string, input: { theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix; imageActuelle?: string | null; lien?: string }) {
+  let lien: string | undefined;
+  if (input.lien !== undefined) {
+    const a = analyserLien(input.lien);
+    if (!a.ok) throw new Error(a.erreur);
+    lien = a.url;
+  }
   const img = await preparerImage(input.image, input.imageActuelle, "bibliotheque");
   const { error } = await db
     .from("bibliotheque_documents")
-    .update({ theme_id: input.theme_id, titre: input.titre.trim(), auteur: input.auteur.trim() || null, description: input.description.trim() || null, actif: input.actif, ...img.patch })
+    .update({ theme_id: input.theme_id, titre: input.titre.trim(), auteur: input.auteur.trim() || null, description: input.description.trim() || null, actif: input.actif, ...(lien ? { lien_url: lien } : {}), ...img.patch })
     .eq("id", id);
   if (error) await img.annuler();
   check(error);
@@ -147,7 +175,7 @@ export async function deleteDocument(doc: Doc) {
   const { error } = await db.from("bibliotheque_documents").delete().eq("id", doc.id);
   check(error);
   await supprimerImage(doc.image_path);
-  await supabase.storage.from(BIBLIO_BUCKET).remove([doc.fichier_path]);
+  if (doc.fichier_path) await supabase.storage.from(BIBLIO_BUCKET).remove([doc.fichier_path]);
 }
 
 export async function listPropositions(): Promise<Proposition[]> {

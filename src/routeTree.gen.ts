@@ -34,6 +34,7 @@ import { Route as CommunGestionOpportunitesRouteImport } from './routes/_commun.
 import { Route as CommunGuideBachelierRouteImport } from './routes/_commun.guide-bachelier'
 import { Route as CommunMarcheRouteImport } from './routes/_commun.marche'
 import { Route as CommunOpportunitesRouteImport } from './routes/_commun.opportunites'
+import { Route as CommunParrainageRouteImport } from './routes/_commun.parrainage'
 import { Route as CommunRevisionIaRouteImport } from './routes/_commun.revision-ia'
 import { Route as AdminConnexionRouteImport } from './routes/admin.connexion'
 import { Route as AdminInscriptionRouteImport } from './routes/admin.inscription'
@@ -170,6 +171,11 @@ const CommunOpportunitesRoute = CommunOpportunitesRouteImport.update({
   path: '/opportunites',
   getParentRoute: () => CommunRoute,
 } as any)
+const CommunParrainageRoute = CommunParrainageRouteImport.update({
+  id: '/parrainage',
+  path: '/parrainage',
+  getParentRoute: () => CommunRoute,
+} as any)
 const CommunRevisionIaRoute = CommunRevisionIaRouteImport.update({
   id: '/revision-ia',
   path: '/revision-ia',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/guide-bachelier': typeof CommunGuideBachelierRoute
   '/marche': typeof CommunMarcheRoute
   '/opportunites': typeof CommunOpportunitesRoute
+  '/parrainage': typeof CommunParrainageRoute
   '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -282,6 +289,7 @@ export interface FileRoutesByTo {
   '/guide-bachelier': typeof CommunGuideBachelierRoute
   '/marche': typeof CommunMarcheRoute
   '/opportunites': typeof CommunOpportunitesRoute
+  '/parrainage': typeof CommunParrainageRoute
   '/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/_commun/guide-bachelier': typeof CommunGuideBachelierRoute
   '/_commun/marche': typeof CommunMarcheRoute
   '/_commun/opportunites': typeof CommunOpportunitesRoute
+  '/_commun/parrainage': typeof CommunParrainageRoute
   '/_commun/revision-ia': typeof CommunRevisionIaRoute
   '/admin/connexion': typeof AdminConnexionRoute
   '/admin/inscription': typeof AdminInscriptionRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/guide-bachelier'
     | '/marche'
     | '/opportunites'
+    | '/parrainage'
     | '/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/guide-bachelier'
     | '/marche'
     | '/opportunites'
+    | '/parrainage'
     | '/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/_commun/guide-bachelier'
     | '/_commun/marche'
     | '/_commun/opportunites'
+    | '/_commun/parrainage'
     | '/_commun/revision-ia'
     | '/admin/connexion'
     | '/admin/inscription'
@@ -645,6 +657,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CommunOpportunitesRouteImport
       parentRoute: typeof CommunRoute
     }
+    '/_commun/parrainage': {
+      id: '/_commun/parrainage'
+      path: '/parrainage'
+      fullPath: '/parrainage'
+      preLoaderRoute: typeof CommunParrainageRouteImport
+      parentRoute: typeof CommunRoute
+    }
     '/_commun/revision-ia': {
       id: '/_commun/revision-ia'
       path: '/revision-ia'
@@ -741,6 +760,7 @@ interface CommunRouteChildren {
   CommunGuideBachelierRoute: typeof CommunGuideBachelierRoute
   CommunMarcheRoute: typeof CommunMarcheRoute
   CommunOpportunitesRoute: typeof CommunOpportunitesRoute
+  CommunParrainageRoute: typeof CommunParrainageRoute
   CommunRevisionIaRoute: typeof CommunRevisionIaRoute
 }
 
@@ -752,6 +772,7 @@ const CommunRouteChildren: CommunRouteChildren = {
   CommunGuideBachelierRoute: CommunGuideBachelierRoute,
   CommunMarcheRoute: CommunMarcheRoute,
   CommunOpportunitesRoute: CommunOpportunitesRoute,
+  CommunParrainageRoute: CommunParrainageRoute,
   CommunRevisionIaRoute: CommunRevisionIaRoute,
 }
 

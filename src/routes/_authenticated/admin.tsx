@@ -279,7 +279,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
   }
 
   return (
-    <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+    <div className="grid grid-cols-1 min-w-0 gap-6 lg:grid-cols-2">
       <div className="card-soft min-w-0 overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><BookOpen className="h-4 w-4" /></span>
@@ -287,7 +287,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
           <Pill>{filieres.length}</Pill>
         </div>
         <div className="p-6">
-          <form onSubmit={addFil} className="mb-4 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <form onSubmit={addFil} className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto] [&>*]:min-w-0">
             <input value={nfil} onChange={(e) => setNfil(e.target.value)} placeholder="Nom de la filière"
               className="input-soft min-w-0 w-full" />
             <button className="btn-forest w-full sm:w-auto"><Plus className="h-4 w-4" />Ajouter</button>
@@ -330,7 +330,7 @@ function StructurePanel({ etabId }: { etabId: string }) {
               <option value="">— Filière —</option>
               {filieres.map((f) => <option key={f.id} value={f.id}>{f.nom}</option>)}
             </select>
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto]">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] [&>*]:min-w-0">
               <input value={nniv.nom} onChange={(e) => setNniv({ ...nniv, nom: e.target.value })} placeholder="Nom (ex: L1)"
                 className="input-soft min-w-0 w-full" />
               <input type="number" value={nniv.ordre} onChange={(e) => setNniv({ ...nniv, ordre: e.target.value })}
@@ -634,7 +634,7 @@ function EtudiantsPanel({ etabId }: { etabId: string }) {
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_360px] [&>*]:min-w-0">
           <div className="card-soft min-w-0 overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
               <div className="flex items-center gap-2">
@@ -1206,7 +1206,7 @@ function MatieresPanel({ etabId }: { etabId: string }) {
       </div>
 
       {niveauId && (
-        <div className="grid min-w-0 gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 min-w-0 gap-6 lg:grid-cols-2">
           <div className="card-soft min-w-0 overflow-hidden">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
               <div className="flex items-center gap-2">
@@ -1493,7 +1493,7 @@ function AnnoncesPanel({ etabId }: { etabId: string }) {
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px] [&>*]:min-w-0">
           <div className="card-soft min-w-0 overflow-hidden">
             <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Megaphone className="h-4 w-4" /></span>
@@ -1672,7 +1672,7 @@ function EvenementsPanel({ etabId }: { etabId: string }) {
         <NiveauPicker items={niveaux} value={niveauId} onChange={setNiveauId} />
       </div>
       {niveauId && (
-        <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px] [&>*]:min-w-0">
           <div className="card-soft min-w-0 overflow-hidden">
             <div className="flex items-center gap-2 border-b border-border bg-primary-soft/60 px-6 py-4">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground"><Calendar className="h-4 w-4" /></span>
@@ -1898,7 +1898,7 @@ function EDTPanel({ etabId }: { etabId: string }) {
           </div>
 
           {cell && (
-            <form onSubmit={save} className="grid gap-3 border-t border-border bg-primary-soft/30 p-5 sm:grid-cols-3 lg:grid-cols-6">
+            <form onSubmit={save} className="grid grid-cols-1 gap-3 border-t border-border bg-primary-soft/30 p-5 sm:grid-cols-3 lg:grid-cols-6 [&>*]:min-w-0">
               <div className="text-sm font-semibold text-primary sm:col-span-3 lg:col-span-6">
                 {JOURS_LONGS[cell.jour - 1]} · {BLOCS.find((b) => b.key === cell.bloc)?.label} {editId ? "· modification" : ""}
               </div>

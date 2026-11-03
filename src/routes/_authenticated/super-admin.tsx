@@ -211,7 +211,7 @@ function EtablissementsPanel() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px] [&>*]:min-w-0">
       {toDelete && (
         <ConfirmDeleteModal
           title="Supprimer un établissement"
@@ -320,7 +320,7 @@ function PreAdminsPanel() {
         </select>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px] [&>*]:min-w-0">
         <div className="card-glass rounded-xl p-6">
           <h3 className="mb-3 font-bold">Administrateurs pré-autorisés ({list.length})</h3>
           <div className="space-y-2">
@@ -466,7 +466,7 @@ function EvenementsSociauxPanel() {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_420px]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] [&>*]:min-w-0">
       {toDelete && (
         <ConfirmDeleteModal
           title="Supprimer un événement social"

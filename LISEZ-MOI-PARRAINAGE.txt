@@ -1,0 +1,23 @@
+SYSTÈME DE PARRAINAGE CAMPUSLINK — fichiers à copier (même emplacement dans le projet)
+
+NOUVEAUX
+  supabase/migrations/20261110000000_parrainage.sql   -> à exécuter une fois dans Supabase > SQL Editor > Run
+  src/lib/parrainage.ts                               -> logique (lien, code parrain, appareil, appels)
+  src/components/BoutonTelechargement.tsx             -> bouton de téléchargement contrôlé
+  src/routes/_commun.parrainage.tsx                   -> page /parrainage (lien, récompenses, classement)
+MODIFIÉS
+  src/components/BibliothequeList.tsx    -> téléchargement soumis au parrainage (Lire reste libre)
+  src/components/CoursEnLigneList.tsx    -> idem pour les cours (Voir/Regarder reste libre)
+  src/components/HamburgerMenu.tsx       -> entrée « Parrainage » dans le menu
+  src/components/VisitTracker.tsx        -> mémorise ?ref=CODE + validation des filleuls
+  src/lib/membres.ts                     -> code parrain transmis à l'inscription
+  src/lib/membres.functions.ts           -> idem pour l'inscription de secours côté serveur
+  src/routes/inscription.tsx             -> lecture du lien ?ref=CODE
+  src/routeTree.gen.ts                   -> régénéré automatiquement (nouvelle page)
+
+RÈGLES (cumulées) : 3 validées = 1 téléchargement ; 5 = +3 (4) ; 10 = +6 (10) + badge Ambassadeur ;
+20 = Super Ambassadeur, téléchargements illimités.
+Re-télécharger un même fichier ne consomme pas de crédit. Super admin : illimité.
+Inscription validée si le filleul revient au moins 24 h après. Refusées : doublons,
+même appareil ou même email que le parrain. Aucune limite de nombre d'inscriptions par heure.
+Barème modifiable dans la fonction SQL public.parrainage_credits.

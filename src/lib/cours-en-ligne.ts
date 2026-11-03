@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { parseYoutube } from "./youtube";
 import { preparerImage, supprimerImage, type ImageChoix } from "./images-contenu";
 
 // Les tables des cours en ligne ne sont pas dans les types générés : client non typé.
@@ -85,8 +86,8 @@ export function formatSize(bytes: number | null) {
 // Transforme un lien YouTube / Vimeo en lien intégrable ; null si non reconnu.
 export function embedUrl(url: string | null): string | null {
   if (!url) return null;
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const yt = parseYoutube(url);
+  if (yt) return `https://www.youtube.com/embed/${yt.id}`;
   const vm = url.match(/vimeo\.com\/(\d+)/);
   if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
   return null;

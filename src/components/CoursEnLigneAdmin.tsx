@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageField } from "@/components/ImageField";
+import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, formatSize, listCours, updateCours, validateFile,
@@ -30,6 +32,7 @@ export function CoursEnLigneAdmin() {
   const all = cours.data ?? [];
   const [form, setForm] = useState<CoursInput>(empty());
   const [file, setFile] = useState<File | null>(null);
+  const [image, setImage] = useState<ImageChoix>(aucuneImage);
   const [editing, setEditing] = useState<Cours | null>(null);
   const [deleting, setDeleting] = useState<Cours | null>(null);
   const [busy, setBusy] = useState(false);
@@ -55,6 +58,7 @@ export function CoursEnLigneAdmin() {
   function reset(keep = true) {
     setForm(keep ? empty(form) : empty());
     setFile(null);
+    setImage(aucuneImage());
     setEditing(null);
   }
 
@@ -72,8 +76,8 @@ export function CoursEnLigneAdmin() {
     }
     setBusy(true);
     try {
-      if (editing) await updateCours(editing, form, file);
-      else await addCours(form, file);
+      if (editing) await updateCours(editing, form, file, image);
+      else await addCours(form, file, image);
       await Promise.all(["cours-en-ligne", "cours-en-ligne-admin"].map((k) => cache.invalidateQueries({ queryKey: [k] })));
       setMessage(editing ? "Cours modifié." : "Cours publié.");
       reset();
@@ -130,6 +134,7 @@ export function CoursEnLigneAdmin() {
               <ul className="divide-y divide-border">
                 {list.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center gap-3 py-3">
+                    {imageUrl(c.image_path) && <img src={imageUrl(c.image_path) ?? ""} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />}
                     <div className="min-w-0 flex-1">
                       <p className="break-words font-semibold">{c.titre}</p>
                       <p className="break-words text-xs text-muted-foreground">
@@ -143,6 +148,7 @@ export function CoursEnLigneAdmin() {
                       <Button variant="ghost" size="icon" aria-label={`Modifier ${c.titre}`} onClick={() => {
                         setEditing(c);
                         setFile(null);
+                        setImage(aucuneImage());
                         setForm({ filiere: c.filiere, niveau: c.niveau, module: c.module, titre: c.titre, description: c.description ?? "", enseignant: c.enseignant ?? "", type_contenu: c.type_contenu, video_url: c.video_url ?? "", actif: c.actif });
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}><Pencil /></Button>
@@ -211,6 +217,7 @@ export function CoursEnLigneAdmin() {
             {file ? <span className="break-all font-semibold">{file.name} ({formatSize(file.size)})</span> : <span>{editing?.fichier_path ? "Remplacer le fichier (facultatif)" : "Choisir le fichier"} — 200 Mo max.</span>}
             <input type="file" accept={type.accept} className="sr-only" onChange={(e) => pick(e.target.files?.[0])} />
           </label>
+          <ImageField id="c-image" label="Image de couverture" actuel={editing?.image_path} choix={image} onChange={setImage} disabled={busy} />
           {form.type_contenu === "video" && (
             <div className="space-y-1.5">
               <Label htmlFor="c-url">…ou lien YouTube / Vimeo</Label>

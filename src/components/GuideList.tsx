@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ExternalLink, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { imageUrl } from "@/lib/images-contenu";
 import { listGuide, type GuideArticle } from "@/lib/guide";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -18,6 +19,7 @@ function Fiche({ a, index }: { a: GuideArticle; index: number }) {
       </button>
       {open && (
         <div className="border-t border-border px-4 pb-5 pt-4 sm:px-5">
+          {imageUrl(a.image_path) && <img src={imageUrl(a.image_path) ?? ""} alt={a.titre} loading="lazy" className="mb-4 max-h-80 w-full rounded-xl object-cover" />}
           <p className="whitespace-pre-line text-sm leading-relaxed text-foreground/85">{a.contenu}</p>
           {a.lien && (
             <a href={a.lien} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: COLOR }}>

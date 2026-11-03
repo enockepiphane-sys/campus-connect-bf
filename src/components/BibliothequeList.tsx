@@ -1,3 +1,4 @@
+import { imageUrl } from "@/lib/images-contenu";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookPlus, Download, FileText, ImageIcon, Library, Search, X, BookOpen } from "lucide-react";
@@ -116,12 +117,13 @@ function ProposerLivre({ open, onClose }: { open: boolean; onClose: () => void }
 function DocCard({ doc, color }: { doc: Doc; color: string }) {
   const isPdf = doc.fichier_type === "application/pdf";
   const Icon = isPdf ? FileText : ImageIcon;
+  const couverture = imageUrl(doc.image_path);
   const name = `${doc.titre}.${isPdf ? "pdf" : doc.fichier_type.split("/")[1] === "jpeg" ? "jpg" : doc.fichier_type.split("/")[1]}`;
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative flex h-32 items-center justify-center overflow-hidden" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+      <div className="relative flex h-32 items-center justify-center overflow-hidden sm:h-40" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />
+        {couverture ? <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />}
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{isPdf ? "PDF" : "Photo"}</span>
       </div>
       <div className="flex flex-1 flex-col p-5">

@@ -1,3 +1,5 @@
+import { ImageField } from "@/components/ImageField";
+import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, Check, FileText, ImageIcon, Pencil, Plus, Save, Trash2, X } from "lucide-react";
@@ -33,6 +35,8 @@ export function BibliothequeAdmin() {
   // Documents
   const [docForm, setDocForm] = useState<DocForm>(emptyDoc());
   const [file, setFile] = useState<File | null>(null);
+  const [image, setImage] = useState<ImageChoix>(aucuneImage);
+  const [imageActuelle, setImageActuelle] = useState<string | null>(null);
   const [editingDoc, setEditingDoc] = useState<string | null>(null);
   const [deletingDoc, setDeletingDoc] = useState<Doc | null>(null);
   // Thèmes
@@ -78,15 +82,18 @@ export function BibliothequeAdmin() {
     if (!docForm.titre.trim()) return setError("Indiquez un titre.");
     if (editingDoc) {
       await run(async () => {
-        await updateDocument(editingDoc, docForm);
+        await updateDocument(editingDoc, { ...docForm, image, imageActuelle });
         setEditingDoc(null);
+        setImage(aucuneImage());
+        setImageActuelle(null);
         setDocForm(emptyDoc(docForm.theme_id));
       }, "Document modifié.");
     } else {
       if (!file) return setError("Choisissez un fichier (PDF ou photo).");
       await run(async () => {
-        await addDocument({ file, ...docForm });
+        await addDocument({ file, ...docForm, image });
         setFile(null);
+        setImage(aucuneImage());
         setDocForm(emptyDoc(docForm.theme_id)); // on garde le thème pour enchaîner les ajouts
       }, "Document ajouté à la bibliothèque.");
     }
@@ -151,6 +158,7 @@ export function BibliothequeAdmin() {
                         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: t.couleur }}>
                           {d.fichier_type === "application/pdf" ? <FileText className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
                         </span>
+                        {imageUrl(d.image_path) && <img src={imageUrl(d.image_path) ?? ""} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-xl border border-border object-cover" />}
                         <div className="min-w-0 flex-1">
                           <p className="break-words font-semibold">{d.titre}</p>
                           <p className="break-words text-xs text-muted-foreground">
@@ -170,6 +178,8 @@ export function BibliothequeAdmin() {
                             onClick={() => {
                               setEditingDoc(d.id);
                               setFile(null);
+                              setImage(aucuneImage());
+                              setImageActuelle(d.image_path ?? null);
                               setDocForm({ theme_id: d.theme_id, titre: d.titre, auteur: d.auteur ?? "", description: d.description ?? "", actif: d.actif });
                               window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
@@ -207,6 +217,7 @@ export function BibliothequeAdmin() {
                 {file && <p className="break-all text-xs text-muted-foreground">{file.name} · {formatSize(file.size)}</p>}
               </div>
             )}
+            <ImageField id="bd-image" label="Image de couverture" actuel={imageActuelle} choix={image} onChange={setImage} disabled={busy} />
             <div className="space-y-1.5">
               <Label htmlFor="bd-titre">Titre *</Label>
               <Input id="bd-titre" value={docForm.titre} maxLength={200} disabled={busy} onChange={(e) => setDocForm((v) => ({ ...v, titre: e.target.value }))} />
@@ -235,6 +246,8 @@ export function BibliothequeAdmin() {
                   disabled={busy}
                   onClick={() => {
                     setEditingDoc(null);
+                    setImage(aucuneImage());
+                    setImageActuelle(null);
                     setDocForm(emptyDoc(docForm.theme_id));
                   }}
                 >

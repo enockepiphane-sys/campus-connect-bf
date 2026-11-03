@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ImageField } from "@/components/ImageField";
+import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { CATEGORIES_GUIDE, deleteGuide, listGuide, saveGuide, type GuideArticle, type GuideInput } from "@/lib/guide";
 
 const empty = (ordre = 0): GuideInput => ({ categorie: CATEGORIES_GUIDE[0], titre: "", contenu: "", lien: "", ordre, actif: true });
@@ -16,6 +18,8 @@ export function GuideAdmin() {
   const all = guide.data ?? [];
   const [form, setForm] = useState<GuideInput>(empty());
   const [editing, setEditing] = useState<string | null>(null);
+  const [image, setImage] = useState<ImageChoix>(aucuneImage);
+  const [imageActuelle, setImageActuelle] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<GuideArticle | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -36,10 +40,12 @@ export function GuideAdmin() {
     if (!form.contenu.trim()) return setError("Écrivez le contenu de la fiche.");
     setBusy(true);
     try {
-      await saveGuide(form, editing ?? undefined);
+      await saveGuide(form, editing ?? undefined, image, imageActuelle);
       await refresh();
       setMessage(editing ? "Fiche modifiée." : "Fiche ajoutée.");
       setEditing(null);
+      setImage(aucuneImage());
+      setImageActuelle(null);
       setForm(empty((all.at(-1)?.ordre ?? 0) + 1));
     } catch (err) {
       setError(err instanceof Error ? err.message : "L’opération a échoué.");
@@ -52,7 +58,7 @@ export function GuideAdmin() {
     if (!deleting) return;
     setBusy(true);
     try {
-      await deleteGuide(deleting.id);
+      await deleteGuide(deleting.id, deleting.image_path);
       await refresh();
       setMessage("Fiche supprimée.");
     } catch (err) {
@@ -82,12 +88,15 @@ export function GuideAdmin() {
               <ul className="divide-y divide-border">
                 {all.filter((a) => a.categorie === c).map((a) => (
                   <li key={a.id} className="flex items-center gap-3 py-3">
+                    {imageUrl(a.image_path) && <img src={imageUrl(a.image_path) ?? ""} alt="" loading="lazy" className="h-12 w-12 shrink-0 rounded-lg border border-border object-cover" />}
                     <div className="min-w-0 flex-1">
                       <p className="break-words font-semibold">{a.titre}</p>
                       <p className="line-clamp-1 text-xs text-muted-foreground">{a.actif ? "Publiée" : "Masquée"} · ordre {a.ordre} · {a.contenu}</p>
                     </div>
                     <Button variant="ghost" size="icon" aria-label={`Modifier ${a.titre}`} onClick={() => {
                       setEditing(a.id);
+                      setImage(aucuneImage());
+                      setImageActuelle(a.image_path ?? null);
                       setForm({ categorie: a.categorie, titre: a.titre, contenu: a.contenu, lien: a.lien ?? "", ordre: a.ordre, actif: a.actif });
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}><Pencil /></Button>
@@ -121,6 +130,7 @@ export function GuideAdmin() {
             <Label htmlFor="g-lien">Lien utile (facultatif)</Label>
             <Input id="g-lien" type="url" value={form.lien} onChange={(e) => set("lien", e.target.value)} placeholder="https://www.campusfaso.bf" />
           </div>
+          <ImageField id="g-image" label="Image de la fiche" actuel={imageActuelle} choix={image} onChange={setImage} disabled={busy} />
           <div className="grid grid-cols-2 items-end gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="g-ordre">Ordre d’affichage</Label>
@@ -134,7 +144,7 @@ export function GuideAdmin() {
           {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
           <div className="flex gap-2">
             <Button type="submit" disabled={busy} className="flex-1"><Save />{busy ? "Enregistrement…" : editing ? "Enregistrer" : "Ajouter la fiche"}</Button>
-            {editing && <Button type="button" variant="outline" onClick={() => { setEditing(null); setForm(empty()); }}><X />Annuler</Button>}
+            {editing && <Button type="button" variant="outline" onClick={() => { setEditing(null); setImage(aucuneImage()); setImageActuelle(null); setForm(empty()); }}><X />Annuler</Button>}
           </div>
         </form>
       </div>

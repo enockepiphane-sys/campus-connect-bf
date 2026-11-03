@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { listOffres, favoriteIds, setFavorite, canManage } from "@/lib/opportunites";
 import { CATEGORIES, deadlineState, type Opportunite } from "@/lib/opportunites-model";
 import { OpportuniteDetails } from "./OpportuniteDetails";
+import { imageUrl } from "@/lib/images-contenu";
 export const offresQueryOptions = { queryKey: ["opportunites"], queryFn: () => listOffres() };
 
 // Une couleur par catégorie pour un repérage immédiat.
@@ -157,6 +158,7 @@ export function OpportunitesList() {
               className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
             >
               <div className="h-2" style={{ background: col }} />
+              {imageUrl(item.image_path) && <img src={imageUrl(item.image_path) ?? ""} alt="" loading="lazy" className="aspect-video w-full object-cover" />}
               <div className="flex flex-1 flex-col p-5">
                 <div className="mb-4 flex items-start justify-between gap-2">
                   <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ background: `${col}1f`, color: col }}>

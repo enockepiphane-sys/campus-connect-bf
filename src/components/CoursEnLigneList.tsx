@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Download, FileText, ImageIcon, PenLine, PlayCircle, Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { imageUrl } from "@/lib/images-contenu";
 import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -54,11 +55,12 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
   const { label, Icon } = META[c.type_contenu];
   const url = coursFileUrl(c);
   const isPdf = c.fichier_type === "application/pdf";
+  const couverture = imageUrl(c.image_path);
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative flex h-28 items-center justify-center overflow-hidden" style={{ background: `linear-gradient(135deg, #431407, ${COLOR}, #e0764f)` }}>
+      <div className="relative flex h-28 items-center justify-center overflow-hidden sm:h-36" style={{ background: `linear-gradient(135deg, #431407, ${COLOR}, #e0764f)` }}>
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />
+        {couverture ? <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{label}</span>
         <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{c.niveau}</span>
       </div>

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, Download, FileText, ImageIcon, PenLine, PlayCircle, Search, X } from "lucide-react";
+import { BoutonTelechargement } from "@/components/BoutonTelechargement";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { imageUrl } from "@/lib/images-contenu";
@@ -87,9 +88,9 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
             </button>
           )}
           {url && (
-            <a href={coursFileUrl(c, `${c.titre}.${extensionOf(c.fichier_type ?? "")}`)} aria-label={`Télécharger ${c.titre}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted">
+            <BoutonTelechargement url={coursFileUrl(c, `${c.titre}.${extensionOf(c.fichier_type ?? "")}`)} ressource={`cours:${c.id}`} label={`Télécharger ${c.titre}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted">
               <Download className="h-4 w-4" />
-            </a>
+            </BoutonTelechargement>
           )}
         </div>
       </div>

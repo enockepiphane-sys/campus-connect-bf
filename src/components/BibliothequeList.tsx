@@ -1,6 +1,7 @@
 import { imageUrl } from "@/lib/images-contenu";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { BoutonTelechargement } from "@/components/BoutonTelechargement";
 import { BookPlus, Download, FileText, ImageIcon, Library, Link2, PlayCircle, Search, Video, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -215,13 +216,14 @@ function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPl
               Lire
             </a>
           )}
-          <a
-            href={fileUrl(doc, name)}
-            aria-label={`Télécharger ${doc.titre}`}
+          <BoutonTelechargement
+            url={fileUrl(doc, name)}
+            ressource={`bibliotheque:${doc.id}`}
+            label={`Télécharger ${doc.titre}`}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted"
           >
             <Download className="h-4 w-4" />
-          </a>
+          </BoutonTelechargement>
         </div>
       </div>
     </article>

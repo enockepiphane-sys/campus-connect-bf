@@ -68,7 +68,7 @@ function Home() {
 
       {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">
-        <div className="grid items-center gap-12 md:grid-cols-2">
+        <div className="grid grid-cols-1 items-center gap-12 md:grid-cols-2 [&>*]:min-w-0">
           <div className="text-center md:text-left">
             <span className="inline-block rounded-full border border-primary/20 bg-primary-soft px-4 py-1 text-xs font-medium uppercase tracking-widest text-primary">
               Burkina Faso

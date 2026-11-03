@@ -50,7 +50,7 @@ function Page() {
         {/* Outils disponibles */}
         <section className="mb-12">
           <h2 className="mb-6 text-xl font-bold text-foreground">Outils disponibles</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             <FeatureCard
               icon={<ClipboardList className="h-6 w-6" />}
               title="Gestion des notes"
@@ -96,7 +96,7 @@ function Page() {
           <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
             Même si votre université n'est pas encore partenaire de CampusLink, vous pouvez utiliser ces outils gratuitement.
           </p>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             <StickerCard
               icon={<Brain className="h-6 w-6" />}
               title="Révision & IA"
@@ -157,7 +157,7 @@ function Page() {
             Comment un étudiant s'inscrit et se connecte
           </h2>
           <div className="card-glass rounded-2xl p-8">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 [&>*]:min-w-0">
               <StepBlock
                 step="1"
                 icon={<Building2 className="h-5 w-5" />}
@@ -192,7 +192,7 @@ function Page() {
             Comment un administrateur gère son établissement
           </h2>
           <div className="card-glass rounded-2xl p-8">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 [&>*]:min-w-0">
               <StepBlock
                 step="1"
                 icon={<ShieldCheck className="h-5 w-5" />}

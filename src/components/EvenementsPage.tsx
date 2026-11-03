@@ -34,7 +34,7 @@ function Actions({ item }: { item: EventItem }) {
 function Featured({ item, onZoom }: { item: EventItem; onZoom: (src: string, titre: string) => void }) {
   const { ev, date, status, img } = item;
   return (
-    <article id={ev.id} className="scroll-mt-24 grid overflow-hidden rounded-3xl border border-border bg-surface shadow-xl md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <article id={ev.id} className="scroll-mt-24 grid grid-cols-1 overflow-hidden rounded-3xl border border-border bg-surface shadow-xl md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)] [&>*]:min-w-0">
       <div className="relative">
         <Poster src={img} titre={ev.titre} onZoom={onZoom} className="aspect-[4/5] w-full md:aspect-auto md:h-full md:min-h-[440px]" />
         <div className="pointer-events-none absolute left-4 top-4">

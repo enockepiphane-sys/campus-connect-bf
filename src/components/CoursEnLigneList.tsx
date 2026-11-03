@@ -132,7 +132,7 @@ export function CoursEnLigneList() {
     <section className="space-y-6">
       <div className="rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-5">
         <p className="mb-3 text-sm font-medium text-muted-foreground">Choisis ta filière, ton niveau puis ton module pour trouver tes cours.</p>
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
           <select aria-label="Filière" value={filiere} onChange={(e) => { setFiliere(e.target.value); setNiveau(""); setModule(""); }} className={selectCls}>
             <option value="">Toutes les filières</option>
             {filieres.map((f) => <option key={f} value={f}>{f}</option>)}
@@ -171,7 +171,7 @@ export function CoursEnLigneList() {
             <span className="h-6 w-1.5 rounded-full" style={{ background: COLOR }} />
             {titre} <span className="text-sm font-medium text-muted-foreground">({list.length})</span>
           </h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {list.map((c) => <CoursCard key={c.id} c={c} onOpen={() => setOuvert(c)} />)}
           </div>
         </div>

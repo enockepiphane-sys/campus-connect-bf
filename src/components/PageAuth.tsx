@@ -18,7 +18,7 @@ export function PageAuth({ titre, sousTitre, children }: { titre: string; sousTi
           <ArrowLeft className="h-4 w-4" />Accueil
         </Link>
       </header>
-      <main className="mx-auto grid w-full max-w-5xl flex-1 items-center gap-10 px-5 pb-12 md:grid-cols-2">
+      <main className="mx-auto grid grid-cols-1 w-full max-w-5xl flex-1 items-center gap-10 px-5 pb-12 md:grid-cols-2 [&>*]:min-w-0">
         <section className="hidden md:block">
           <h2 className="font-display text-4xl font-bold leading-tight">
             Un seul compte,<br /><span className="text-gradient-bf">tout ton campus.</span>

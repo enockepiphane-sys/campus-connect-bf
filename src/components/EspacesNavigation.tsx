@@ -32,7 +32,7 @@ export function EspacesNavigation({ variant = "compact" }: { variant?: "compact"
 
   if (variant === "cards") {
     return (
-      <nav aria-label="Espaces CampusLink" className="my-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <nav aria-label="Espaces CampusLink" className="my-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
         {KEYS.map((k) => {
           const e = ESPACES[k];
           const Icon = e.Icon;

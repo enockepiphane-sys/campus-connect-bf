@@ -277,7 +277,7 @@ export function BibliothequeList() {
               {g.docs.length}
             </span>
           </h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {g.docs.map((d) => (
               <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} />
             ))}

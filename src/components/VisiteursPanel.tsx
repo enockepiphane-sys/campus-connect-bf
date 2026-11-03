@@ -132,7 +132,7 @@ export function VisiteursPanel() {
 
           <div className="card-glass rounded-2xl p-4 sm:p-6">
             <h3 className="mb-4 font-display text-lg font-bold">Visiteurs par outil</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
               {Object.entries(TOOLS).map(([key, t]) => {
                 const row = s.outils.find((o) => o.page === key);
                 return (

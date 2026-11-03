@@ -71,14 +71,14 @@ export function GuideAdmin() {
       </div>
       {message && <p role="status" className="flex items-center gap-2 rounded-xl bg-primary-soft px-4 py-3 text-sm text-primary"><Check className="h-4 w-4" />{message}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] [&>*]:min-w-0">
         <div className="order-2 space-y-4 lg:order-1">
           {guide.isPending && <p role="status">Chargement…</p>}
           {guide.error && <p role="alert" className="text-destructive">{(guide.error as Error).message}</p>}
           {!guide.isPending && !all.length && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">Aucune fiche pour l’instant.</p>}
           {categories.filter((c) => all.some((a) => a.categorie === c)).map((c) => (
             <div key={c} className="card-glass rounded-2xl p-4 sm:p-5">
-              <h3 className="mb-2 font-display text-lg font-bold">{c}</h3>
+              <h3 className="mb-2 break-words font-display text-lg font-bold">{c}</h3>
               <ul className="divide-y divide-border">
                 {all.filter((a) => a.categorie === c).map((a) => (
                   <li key={a.id} className="flex items-center gap-3 py-3">

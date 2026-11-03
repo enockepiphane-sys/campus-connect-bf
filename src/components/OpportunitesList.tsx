@@ -146,7 +146,7 @@ export function OpportunitesList() {
         </div>
       )}
 
-      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
         {filtered.map((item) => {
           const state = deadlineState(item.date_limite);
           const active = ids.includes(item.id);

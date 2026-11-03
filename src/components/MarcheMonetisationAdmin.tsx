@@ -52,7 +52,7 @@ function TarifsForm() {
       catch (err) { setMsg(err instanceof Error ? err.message : "Échec."); }
     }}>
       <h3 className="flex items-center gap-2 font-display text-lg font-bold"><Wallet className="h-5 w-5" />Tarifs & numéros de paiement</h3>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0">
         {champNombre("une_semaine", "À la une — 1 semaine (FCFA)")}
         {champNombre("une_mois", "À la une — 1 mois (FCFA)")}
         {champNombre("banniere_semaine", "Bannière — 1 semaine (FCFA)")}
@@ -136,7 +136,7 @@ function BannieresGestion() {
     <section className={carte}>
       <h3 className="flex items-center gap-2 font-display text-lg font-bold"><Megaphone className="h-5 w-5" />Bannières publicitaires</h3>
       <p className="text-xs text-muted-foreground">Pour les imprimeries, cybercafés, résidences, boutiques, opérateurs… Encaisse le paiement, puis crée la bannière avec ses dates de diffusion. Elle défile sur l’accueil et le Marché.</p>
-      <form className="grid gap-3 sm:grid-cols-2" onSubmit={async (e) => {
+      <form className="grid grid-cols-1 gap-3 sm:grid-cols-2 [&>*]:min-w-0" onSubmit={async (e) => {
         e.preventDefault(); setBusy(true); setMsg("");
         try {
           if (f.fin < f.debut) throw new Error("La date de fin doit suivre la date de début.");
@@ -162,7 +162,7 @@ function BannieresGestion() {
           return (
             <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border p-3 text-sm">
               <div className="min-w-0">
-                <p className="font-semibold">{b.annonceur} <span className="font-normal text-muted-foreground">· {enCours ? "en diffusion" : b.actif ? "programmée / expirée" : "désactivée"}</span></p>
+                <p className="break-words font-semibold">{b.annonceur} <span className="font-normal text-muted-foreground">· {enCours ? "en diffusion" : b.actif ? "programmée / expirée" : "désactivée"}</span></p>
                 <p className="truncate text-muted-foreground">{b.message} · du {b.debut} au {b.fin}</p>
               </div>
               <div className="flex gap-2">

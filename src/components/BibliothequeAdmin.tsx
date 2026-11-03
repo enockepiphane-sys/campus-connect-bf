@@ -132,7 +132,7 @@ export function BibliothequeAdmin() {
 
       {/* ---------------- DOCUMENTS ---------------- */}
       {tab === "documents" && (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_400px] [&>*]:min-w-0">
           <div className="order-2 space-y-5 lg:order-1">
             {docs.isPending && <p role="status">Chargement…</p>}
             {!docs.isPending && !docs.data?.length && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">Aucun document. Ajoutez le premier avec le formulaire.</p>}
@@ -153,7 +153,7 @@ export function BibliothequeAdmin() {
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="break-words font-semibold">{d.titre}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="break-words text-xs text-muted-foreground">
                             {[d.auteur, formatSize(d.taille), d.actif ? "Publié" : "Masqué"].filter(Boolean).join(" · ")}
                           </p>
                         </div>
@@ -191,7 +191,7 @@ export function BibliothequeAdmin() {
             <h3 className="font-display text-lg font-bold">{editingDoc ? "Modifier le document" : "Ajouter un document"}</h3>
             <div className="space-y-1.5">
               <Label htmlFor="bd-theme">Thème *</Label>
-              <select id="bd-theme" required value={docForm.theme_id} disabled={busy} onChange={(e) => setDocForm((v) => ({ ...v, theme_id: e.target.value }))} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+              <select id="bd-theme" required value={docForm.theme_id} disabled={busy} onChange={(e) => setDocForm((v) => ({ ...v, theme_id: e.target.value }))} className="h-10 w-full min-w-0 max-w-full rounded-md border border-input bg-background px-3 text-sm">
                 <option value="">Choisir un thème…</option>
                 {themeList.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -266,7 +266,7 @@ export function BibliothequeAdmin() {
                 }, "Thème enregistré.");
               }}
             >
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
                 <div className="space-y-1.5">
                   <Label htmlFor="th-nom">Nom *</Label>
                   <Input id="th-nom" value={themeForm.nom} maxLength={80} disabled={busy} onChange={(e) => setThemeForm({ ...themeForm, nom: e.target.value })} />
@@ -309,8 +309,8 @@ export function BibliothequeAdmin() {
                 <li key={t.id} className="flex flex-wrap items-center gap-3 p-4">
                   <span className="h-8 w-8 shrink-0 rounded-xl" style={{ background: t.couleur }} />
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold">{t.nom}</p>
-                    <p className="text-xs text-muted-foreground">{[t.description, `${count} document${count > 1 ? "s" : ""}`].filter(Boolean).join(" · ")}</p>
+                    <p className="break-words font-semibold">{t.nom}</p>
+                    <p className="break-words text-xs text-muted-foreground">{[t.description, `${count} document${count > 1 ? "s" : ""}`].filter(Boolean).join(" · ")}</p>
                   </div>
                   <Button variant="ghost" size="icon" aria-label={`Modifier ${t.nom}`} onClick={() => setThemeForm({ id: t.id, nom: t.nom, description: t.description ?? "", couleur: t.couleur, ordre: t.ordre })}>
                     <Pencil />

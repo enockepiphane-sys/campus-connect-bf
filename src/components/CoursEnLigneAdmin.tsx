@@ -22,7 +22,7 @@ const empty = (prev?: Partial<CoursInput>): CoursInput => ({
   video_url: "",
   actif: true,
 });
-const selectCls = "h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
+const selectCls = "h-10 w-full min-w-0 max-w-full truncate rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function CoursEnLigneAdmin() {
   const cache = useQueryClient();
@@ -114,7 +114,7 @@ export function CoursEnLigneAdmin() {
       </div>
       {message && <p role="status" className="flex items-center gap-2 rounded-xl bg-primary-soft px-4 py-3 text-sm text-primary"><Check className="h-4 w-4" />{message}</p>}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] [&>*]:min-w-0">
         {/* Liste */}
         <div className="order-2 space-y-4 lg:order-1">
           <select aria-label="Filtrer par filière" value={filtre} onChange={(e) => setFiltre(e.target.value)} className={selectCls}>
@@ -126,17 +126,17 @@ export function CoursEnLigneAdmin() {
           {!cours.isPending && !visibles.length && <p className="rounded-2xl border border-dashed border-border p-8 text-center text-muted-foreground">Aucun cours. Ajoutez le premier avec le formulaire.</p>}
           {groups.map(([titre, list]) => (
             <div key={titre} className="card-glass rounded-2xl p-4 sm:p-5">
-              <h3 className="mb-2 font-display text-base font-bold">{titre} <span className="text-sm font-medium text-muted-foreground">({list.length})</span></h3>
+              <h3 className="mb-2 break-words font-display text-base font-bold">{titre} <span className="text-sm font-medium text-muted-foreground">({list.length})</span></h3>
               <ul className="divide-y divide-border">
                 {list.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center gap-3 py-3">
                     <div className="min-w-0 flex-1">
                       <p className="break-words font-semibold">{c.titre}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="break-words text-xs text-muted-foreground">
                         {[TYPES.find((t) => t.value === c.type_contenu)?.label, c.enseignant, formatSize(c.taille), c.actif ? "Publié" : "Masqué"].filter(Boolean).join(" · ")}
                       </p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex shrink-0 gap-1">
                       <Button asChild variant="ghost" size="icon" aria-label="Ouvrir">
                         <a href={c.fichier_path ? coursFileUrl(c) : c.video_url ?? "#"} target="_blank" rel="noopener noreferrer"><BookOpen /></a>
                       </Button>
@@ -156,7 +156,7 @@ export function CoursEnLigneAdmin() {
         </div>
 
         {/* Formulaire */}
-        <form onSubmit={submit} className="card-glass order-1 space-y-4 self-start rounded-2xl p-5 lg:order-2 lg:sticky lg:top-4">
+        <form onSubmit={submit} className="card-glass order-1 min-w-0 space-y-4 self-start rounded-2xl p-5 lg:order-2 lg:sticky lg:top-4">
           <h3 className="flex items-center gap-2 font-display text-lg font-bold">
             {editing ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
             {editing ? "Modifier le cours" : "Ajouter un cours"}

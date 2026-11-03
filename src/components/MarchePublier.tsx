@@ -142,7 +142,7 @@ export function MarchePublier({ open, onClose, onPublished }: { open: boolean; o
             <Textarea id="mk-desc" rows={5} maxLength={3000} placeholder="État, contenu, disponibilités, conditions…" value={form.description} onChange={(e) => set("description", e.target.value)} />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
               <Label htmlFor="mk-prix">{PRIX_LABEL[form.type_annonce]}</Label>
               <Input id="mk-prix" inputMode="numeric" placeholder="Vide = à discuter, 0 = gratuit" value={form.prix} onChange={(e) => set("prix", e.target.value.replace(/[^\d\s.]/g, ""))} />
@@ -163,7 +163,7 @@ export function MarchePublier({ open, onClose, onPublished }: { open: boolean; o
             <Input id="mk-univ" maxLength={120} placeholder="Ex. : Joseph Ki-Zerbo, Nazi Boni…" value={form.universite} onChange={(e) => set("universite", e.target.value)} />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
             <div>
               <Label htmlFor="mk-nom">Nom affiché</Label>
               <Input id="mk-nom" maxLength={80} placeholder="Ton prénom" value={form.auteur_nom} onChange={(e) => set("auteur_nom", e.target.value)} />

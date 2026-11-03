@@ -8,7 +8,18 @@ const db = supabase as unknown as SupabaseClient<any>;
 
 export const BIBLIO_BUCKET = "bibliotheque";
 export const MAX_FILE_BYTES = 50 * 1024 * 1024;
-export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp"];
+export const MAX_VIDEO_BYTES = 200 * 1024 * 1024;
+export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+export const ACCEPTED_TYPES = ["application/pdf", "image/jpeg", "image/png", "image/webp", ...VIDEO_TYPES];
+export const FILE_ACCEPT = "application/pdf,.pdf,image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.mp4,.mov,.webm";
+export const isVideoType = (type: string | null | undefined) => Boolean(type?.startsWith("video/"));
+
+/** Message d'erreur si le fichier n'est pas accepté, sinon null. */
+export function validateDocFile(file: File): string | null {
+  if (!ACCEPTED_TYPES.includes(file.type)) return "Formats acceptés : PDF, photo (JPG, PNG, WebP) ou vidéo (MP4, WebM, MOV).";
+  if (isVideoType(file.type) ? file.size > MAX_VIDEO_BYTES : file.size > MAX_FILE_BYTES) return isVideoType(file.type) ? "La vidéo dépasse 200 Mo." : "Le fichier dépasse 50 Mo.";
+  return null;
+}
 
 export type Theme = { id: string; nom: string; description: string | null; couleur: string; ordre: number };
 export type Doc = {
@@ -62,8 +73,9 @@ export function fileUrl(doc: Pick<Doc, "fichier_path">, downloadName?: string) {
   return supabase.storage.from(BIBLIO_BUCKET).getPublicUrl(doc.fichier_path, options).data.publicUrl;
 }
 
+const EXT: Record<string, string> = { "application/pdf": "pdf", "image/png": "png", "image/webp": "webp", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
 export function extensionOf(type: string) {
-  return type === "application/pdf" ? "pdf" : type === "image/png" ? "png" : type === "image/webp" ? "webp" : "jpg";
+  return EXT[type] ?? "jpg";
 }
 
 export function formatSize(bytes: number | null) {
@@ -95,8 +107,8 @@ export async function deleteTheme(id: string) {
 
 export async function addDocument(input: { file: File; theme_id: string; titre: string; auteur: string; description: string; actif: boolean; image?: ImageChoix }) {
   const { file } = input;
-  if (!ACCEPTED_TYPES.includes(file.type)) throw new Error("Formats acceptés : PDF, JPG, PNG ou WebP.");
-  if (file.size > MAX_FILE_BYTES) throw new Error("Le fichier dépasse 50 Mo.");
+  const invalid = validateDocFile(file);
+  if (invalid) throw new Error(invalid);
   const path = `${input.theme_id}/${crypto.randomUUID()}.${extensionOf(file.type)}`;
   const { error: upError } = await supabase.storage.from(BIBLIO_BUCKET).upload(path, file, { contentType: file.type });
   if (upError) throw new Error("L’envoi du fichier a échoué (" + upError.message + ").");

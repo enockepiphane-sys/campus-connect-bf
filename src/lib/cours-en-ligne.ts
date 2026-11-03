@@ -22,7 +22,8 @@ export const FILIERES_SUGGEREES = ["Droit", "Informatique", "Économie", "Gestio
 
 export type Cours = {
   id: string;
-  filiere: string;
+  filiere: string; // première filière (compatibilité)
+  filieres?: string[]; // toutes les filières concernées
   niveau: Niveau;
   module: string;
   titre: string;
@@ -38,8 +39,11 @@ export type Cours = {
   created_at: string;
 };
 
+/** Toutes les filières d'un cours (retombe sur l'ancienne colonne « filiere »). */
+export const filieresOf = (c: Pick<Cours, "filiere" | "filieres">): string[] => (c.filieres?.length ? c.filieres : [c.filiere]);
+
 export type CoursInput = {
-  filiere: string;
+  filieres: string[];
   niveau: Niveau;
   module: string;
   titre: string;
@@ -102,7 +106,8 @@ export function validateFile(type: TypeContenu, file: File): string | null {
 
 function row(input: CoursInput) {
   return {
-    filiere: input.filiere.trim(),
+    filiere: input.filieres[0].trim(),
+    filieres: input.filieres.map((f) => f.trim()),
     niveau: input.niveau,
     module: input.module.trim(),
     titre: input.titre.trim(),
@@ -123,8 +128,9 @@ async function upload(file: File, filiere: string) {
 }
 
 export async function addCours(input: CoursInput, file: File | null, image?: ImageChoix) {
+  if (!input.filieres.length) throw new Error("Choisissez au moins une filière.");
   if (!file && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
-  const fichier = file ? await upload(file, input.filiere) : {};
+  const fichier = file ? await upload(file, input.filieres[0]) : {};
   let img: Awaited<ReturnType<typeof preparerImage>>;
   try { img = await preparerImage(image, null, "cours"); } catch (e) { if ("fichier_path" in fichier) await supabase.storage.from(COURS_BUCKET).remove([fichier.fichier_path as string]); throw e; }
   const { error } = await db.from("cours_en_ligne").insert({ ...row(input), ...fichier, ...img.patch });
@@ -136,7 +142,8 @@ export async function addCours(input: CoursInput, file: File | null, image?: Ima
 }
 
 export async function updateCours(c: Cours, input: CoursInput, file: File | null, image?: ImageChoix) {
-  const fichier = file ? await upload(file, input.filiere) : {};
+  if (!input.filieres.length) throw new Error("Choisissez au moins une filière.");
+  const fichier = file ? await upload(file, input.filieres[0]) : {};
   if (!file && !c.fichier_path && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
   const img = await preparerImage(image, c.image_path, "cours");
   const { error } = await db.from("cours_en_ligne").update({ ...row(input), ...fichier, ...img.patch }).eq("id", c.id);

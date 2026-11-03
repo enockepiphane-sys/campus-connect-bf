@@ -4,6 +4,8 @@ import { BookOpen, Download, FileText, ImageIcon, PenLine, PlayCircle, Search, X
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { imageUrl } from "@/lib/images-contenu";
+import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
+import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -19,12 +21,13 @@ const selectCls = "h-12 w-full rounded-2xl border border-input bg-background px-
 function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void }) {
   if (!cours) return null;
   const embed = embedUrl(cours.video_url);
+  const youtube = parseYoutube(cours.video_url);
   const url = coursFileUrl(cours);
   const isVideoFile = cours.fichier_type?.startsWith("video/");
   const isImage = cours.fichier_type?.startsWith("image/");
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-xl">{cours.titre}</DialogTitle>
           <DialogDescription>
@@ -36,15 +39,15 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
             <video src={url} controls playsInline className="max-h-[70vh] w-full" />
           ) : url && isImage ? (
             <img src={url} alt={cours.titre} className="max-h-[70vh] w-full bg-white object-contain" />
+          ) : youtube ? (
+            <YouTubePlayer video={youtube} titre={cours.titre} />
           ) : embed ? (
-            <iframe src={embed} title={cours.titre} allow="accelerometer; autoplay; encrypted-media; picture-in-picture" allowFullScreen className="aspect-video w-full" />
+            <iframe src={embed} title={cours.titre} allow="autoplay; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="aspect-video w-full" />
           ) : null}
         </div>
         {cours.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{cours.description}</p>}
         {!url && cours.video_url && !embed && (
-          <a href={cours.video_url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-primary underline">
-            Ouvrir la vidéo
-          </a>
+          <p className="text-sm text-muted-foreground">Ce lien ne peut pas être lu dans CampusLink (seuls YouTube et Vimeo sont pris en charge).</p>
         )}
       </DialogContent>
     </Dialog>
@@ -55,12 +58,13 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
   const { label, Icon } = META[c.type_contenu];
   const url = coursFileUrl(c);
   const isPdf = c.fichier_type === "application/pdf";
-  const couverture = imageUrl(c.image_path);
+  const yt = parseYoutube(c.video_url);
+  const couverture = imageUrl(c.image_path) ?? (yt && !c.fichier_path ? youtubeMiniature(yt.id) : null);
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative flex h-28 items-center justify-center overflow-hidden sm:h-36" style={{ background: `linear-gradient(135deg, #431407, ${COLOR}, #e0764f)` }}>
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        {couverture ? <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
+        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{label}</span>
         <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{c.niveau}</span>
       </div>

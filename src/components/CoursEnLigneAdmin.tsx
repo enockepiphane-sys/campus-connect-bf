@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageField } from "@/components/ImageField";
+import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
-  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, formatSize, listCours, updateCours, validateFile,
+  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, embedUrl, formatSize, listCours, updateCours, validateFile,
   type Cours, type CoursInput,
 } from "@/lib/cours-en-ligne";
 
@@ -70,6 +71,7 @@ export function CoursEnLigneAdmin() {
     if (!form.module.trim()) return setError("Indiquez le nom du module.");
     if (!form.titre.trim()) return setError("Indiquez le titre du cours.");
     if (!editing && !file && !form.video_url.trim()) return setError(form.type_contenu === "video" ? "Ajoutez un fichier vidéo ou un lien YouTube/Vimeo." : "Ajoutez le fichier du cours.");
+    if (form.video_url.trim() && !embedUrl(form.video_url)) return setError("Lien vidéo non reconnu. Collez un lien YouTube (watch, youtu.be, partage, shorts) ou Vimeo.");
     if (file) {
       const err = validateFile(form.type_contenu, file);
       if (err) return setError(err);
@@ -222,6 +224,9 @@ export function CoursEnLigneAdmin() {
             <div className="space-y-1.5">
               <Label htmlFor="c-url">…ou lien YouTube / Vimeo</Label>
               <Input id="c-url" type="url" value={form.video_url} onChange={(e) => set("video_url", e.target.value)} placeholder="https://www.youtube.com/watch?v=…" />
+              {form.video_url.trim() && (embedUrl(form.video_url)
+                ? <p className="flex items-center gap-2 text-xs text-primary"><Check className="h-3.5 w-3.5 shrink-0" />{parseYoutube(form.video_url) ? "Lien YouTube reconnu : la vidéo sera lue dans CampusLink." : "Lien Vimeo reconnu."}{parseYoutube(form.video_url) && <img src={youtubeMiniature(parseYoutube(form.video_url)!.id)} alt="" className="ml-auto h-8 rounded" onError={(e) => { e.currentTarget.style.display = "none"; }} />}</p>
+                : <p role="alert" className="text-xs text-destructive">Lien non reconnu : utilisez un lien YouTube ou Vimeo.</p>)}
             </div>
           )}
           <label className="flex items-center gap-2 text-sm">

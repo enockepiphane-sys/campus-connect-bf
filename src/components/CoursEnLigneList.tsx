@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
+import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const COLOR = "#c2410c";
@@ -31,7 +31,7 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
         <DialogHeader>
           <DialogTitle className="font-display text-xl">{cours.titre}</DialogTitle>
           <DialogDescription>
-            {cours.filiere} · {cours.niveau} · {cours.module}
+            {filieresOf(cours).join(" + ")} · {cours.niveau} · {cours.module}
           </DialogDescription>
         </DialogHeader>
         <div className="overflow-hidden rounded-2xl bg-black">
@@ -106,33 +106,37 @@ export function CoursEnLigneList() {
   const [ouvert, setOuvert] = useState<Cours | null>(null);
   const all = cours.data ?? [];
 
-  const filieres = useMemo(() => [...new Set(all.map((c) => c.filiere))].sort((a, b) => a.localeCompare(b, "fr")), [all]);
-  const niveaux = NIVEAUX.filter((n) => all.some((c) => c.niveau === n && (!filiere || c.filiere === filiere)));
+  const filieres = useMemo(() => [...new Set(all.flatMap(filieresOf))].sort((a, b) => a.localeCompare(b, "fr")), [all]);
+  const niveaux = NIVEAUX.filter((n) => all.some((c) => c.niveau === n && (!filiere || filieresOf(c).includes(filiere))));
   const modules = useMemo(
-    () => [...new Set(all.filter((c) => (!filiere || c.filiere === filiere) && (!niveau || c.niveau === niveau)).map((c) => c.module))].sort((a, b) => a.localeCompare(b, "fr")),
+    () => [...new Set(all.filter((c) => (!filiere || filieresOf(c).includes(filiere)) && (!niveau || c.niveau === niveau)).map((c) => c.module))].sort((a, b) => a.localeCompare(b, "fr")),
     [all, filiere, niveau],
   );
 
   const filtered = useMemo(() => {
     const q = plain(search.trim());
     return all.filter((c) => {
-      if (filiere && c.filiere !== filiere) return false;
+      if (filiere && !filieresOf(c).includes(filiere)) return false;
       if (niveau && c.niveau !== niveau) return false;
       if (module && c.module !== module) return false;
       if (!q) return true;
-      return plain(`${c.titre} ${c.module} ${c.filiere} ${c.enseignant ?? ""} ${c.description ?? ""}`).includes(q);
+      return plain(`${c.titre} ${c.module} ${filieresOf(c).join(" ")} ${c.enseignant ?? ""} ${c.description ?? ""}`).includes(q);
     });
   }, [all, filiere, niveau, module, search]);
 
   // Regroupement : Filière › Niveau
   const groups = useMemo(() => {
     const map = new Map<string, Cours[]>();
+    // Un cours multi-filières apparaît dans chacune de ses filières (sans être dupliqué en base).
     for (const c of filtered) {
-      const k = `${c.filiere} › ${c.niveau}`;
-      map.set(k, [...(map.get(k) ?? []), c]);
+      for (const f of filieresOf(c)) {
+        if (filiere && f !== filiere) continue;
+        const k = `${f} › ${c.niveau}`;
+        map.set(k, [...(map.get(k) ?? []), c]);
+      }
     }
     return [...map.entries()];
-  }, [filtered]);
+  }, [filtered, filiere]);
 
   return (
     <section className="space-y-6">

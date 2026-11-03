@@ -10,12 +10,12 @@ import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
-  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, embedUrl, formatSize, listCours, updateCours, validateFile,
+  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, embedUrl, filieresOf, formatSize, listCours, updateCours, validateFile,
   type Cours, type CoursInput,
 } from "@/lib/cours-en-ligne";
 
 const empty = (prev?: Partial<CoursInput>): CoursInput => ({
-  filiere: prev?.filiere ?? "",
+  filieres: prev?.filieres ?? [],
   niveau: prev?.niveau ?? "L1",
   module: prev?.module ?? "",
   titre: "",
@@ -25,6 +25,10 @@ const empty = (prev?: Partial<CoursInput>): CoursInput => ({
   video_url: "",
   actif: true,
 });
+const addFiliere = (list: string[], name: string) => {
+  const v = name.trim();
+  return !v || list.some((f) => f.toLowerCase() === v.toLowerCase()) ? list : [...list, v];
+};
 const selectCls = "h-10 w-full min-w-0 max-w-full truncate rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 export function CoursEnLigneAdmin() {
@@ -40,9 +44,10 @@ export function CoursEnLigneAdmin() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [filtre, setFiltre] = useState("");
+  const [saisieFiliere, setSaisieFiliere] = useState("");
 
-  const filieres = useMemo(() => [...new Set([...all.map((c) => c.filiere), ...FILIERES_SUGGEREES])].sort((a, b) => a.localeCompare(b, "fr")), [all]);
-  const modules = useMemo(() => [...new Set(all.filter((c) => c.filiere === form.filiere && c.niveau === form.niveau).map((c) => c.module))], [all, form.filiere, form.niveau]);
+  const filieres = useMemo(() => [...new Set([...all.flatMap(filieresOf), ...FILIERES_SUGGEREES])].sort((a, b) => a.localeCompare(b, "fr")), [all]);
+  const modules = useMemo(() => [...new Set(all.filter((c) => filieresOf(c).some((f) => form.filieres.includes(f)) && c.niveau === form.niveau).map((c) => c.module))], [all, form.filieres, form.niveau]);
   const type = TYPES.find((t) => t.value === form.type_contenu)!;
 
   const set = <K extends keyof CoursInput>(k: K, v: CoursInput[K]) => setForm((f) => ({ ...f, [k]: v }));
@@ -61,13 +66,17 @@ export function CoursEnLigneAdmin() {
     setFile(null);
     setImage(aucuneImage());
     setEditing(null);
+    setSaisieFiliere("");
   }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setMessage("");
-    if (!form.filiere.trim()) return setError("Indiquez la filière (ex. : Droit).");
+    // Si une filière a été tapée sans appuyer sur « Ajouter », on la prend en compte.
+    const filieresFinales = addFiliere(form.filieres, saisieFiliere);
+    if (!filieresFinales.length) return setError("Choisissez au moins une filière (ex. : Droit).");
+    const donnees = { ...form, filieres: filieresFinales };
     if (!form.module.trim()) return setError("Indiquez le nom du module.");
     if (!form.titre.trim()) return setError("Indiquez le titre du cours.");
     if (!editing && !file && !form.video_url.trim()) return setError(form.type_contenu === "video" ? "Ajoutez un fichier vidéo ou un lien YouTube/Vimeo." : "Ajoutez le fichier du cours.");
@@ -78,8 +87,8 @@ export function CoursEnLigneAdmin() {
     }
     setBusy(true);
     try {
-      if (editing) await updateCours(editing, form, file, image);
-      else await addCours(form, file, image);
+      if (editing) await updateCours(editing, donnees, file, image);
+      else await addCours(donnees, file, image);
       await Promise.all(["cours-en-ligne", "cours-en-ligne-admin"].map((k) => cache.invalidateQueries({ queryKey: [k] })));
       setMessage(editing ? "Cours modifié." : "Cours publié.");
       reset();
@@ -105,10 +114,10 @@ export function CoursEnLigneAdmin() {
     }
   }
 
-  const visibles = all.filter((c) => !filtre || c.filiere === filtre);
+  const visibles = all.filter((c) => !filtre || filieresOf(c).includes(filtre));
   const groups = useMemo(() => {
     const map = new Map<string, Cours[]>();
-    for (const c of visibles) map.set(`${c.filiere} › ${c.niveau} › ${c.module}`, [...(map.get(`${c.filiere} › ${c.niveau} › ${c.module}`) ?? []), c]);
+    for (const c of visibles) map.set(`${filieresOf(c).join(" + ")} › ${c.niveau} › ${c.module}`, [...(map.get(`${filieresOf(c).join(" + ")} › ${c.niveau} › ${c.module}`) ?? []), c]);
     return [...map.entries()];
   }, [visibles]);
 
@@ -125,7 +134,7 @@ export function CoursEnLigneAdmin() {
         <div className="order-2 space-y-4 lg:order-1">
           <select aria-label="Filtrer par filière" value={filtre} onChange={(e) => setFiltre(e.target.value)} className={selectCls}>
             <option value="">Toutes les filières ({all.length} cours)</option>
-            {[...new Set(all.map((c) => c.filiere))].map((f) => <option key={f} value={f}>{f}</option>)}
+            {[...new Set(all.flatMap(filieresOf))].map((f) => <option key={f} value={f}>{f}</option>)}
           </select>
           {cours.isPending && <p role="status">Chargement…</p>}
           {cours.error && <p role="alert" className="text-destructive">{(cours.error as Error).message}</p>}
@@ -151,7 +160,7 @@ export function CoursEnLigneAdmin() {
                         setEditing(c);
                         setFile(null);
                         setImage(aucuneImage());
-                        setForm({ filiere: c.filiere, niveau: c.niveau, module: c.module, titre: c.titre, description: c.description ?? "", enseignant: c.enseignant ?? "", type_contenu: c.type_contenu, video_url: c.video_url ?? "", actif: c.actif });
+                        setForm({ filieres: filieresOf(c), niveau: c.niveau, module: c.module, titre: c.titre, description: c.description ?? "", enseignant: c.enseignant ?? "", type_contenu: c.type_contenu, video_url: c.video_url ?? "", actif: c.actif });
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}><Pencil /></Button>
                       <Button variant="ghost" size="icon" aria-label={`Supprimer ${c.titre}`} onClick={() => setDeleting(c)}><Trash2 className="text-destructive" /></Button>
@@ -172,9 +181,41 @@ export function CoursEnLigneAdmin() {
 
           <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">1. Classement</p>
           <div className="space-y-1.5">
-            <Label htmlFor="c-filiere">Filière *</Label>
-            <Input id="c-filiere" list="c-filieres" value={form.filiere} onChange={(e) => set("filiere", e.target.value)} placeholder="Ex. : Droit, Informatique…" maxLength={100} />
-            <datalist id="c-filieres">{filieres.map((f) => <option key={f} value={f} />)}</datalist>
+            <Label htmlFor="c-filiere">Filière(s) * — une ou plusieurs</Label>
+            {form.filieres.length > 0 && (
+              <ul className="flex flex-wrap gap-2" aria-label="Filières choisies">
+                {form.filieres.map((f) => (
+                  <li key={f} className="inline-flex items-center gap-1 rounded-full bg-primary-soft py-1 pl-3 pr-1 text-sm font-semibold text-primary">
+                    {f}
+                    <button type="button" aria-label={`Retirer ${f}`} onClick={() => set("filieres", form.filieres.filter((x) => x !== f))} className="grid h-6 w-6 place-items-center rounded-full hover:bg-primary/15">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <Input
+                id="c-filiere"
+                list="c-filieres"
+                value={saisieFiliere}
+                onChange={(e) => setSaisieFiliere(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    set("filieres", addFiliere(form.filieres, saisieFiliere));
+                    setSaisieFiliere("");
+                  }
+                }}
+                placeholder="Tapez ou choisissez, puis Ajouter"
+                maxLength={100}
+              />
+              <Button type="button" variant="outline" onClick={() => { set("filieres", addFiliere(form.filieres, saisieFiliere)); setSaisieFiliere(""); }}>
+                <Plus />Ajouter
+              </Button>
+            </div>
+            <datalist id="c-filieres">{filieres.filter((f) => !form.filieres.includes(f)).map((f) => <option key={f} value={f} />)}</datalist>
+            <p className="text-xs text-muted-foreground">Le cours sera publié une seule fois et apparaîtra dans toutes les filières choisies.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

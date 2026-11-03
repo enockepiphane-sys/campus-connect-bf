@@ -2,14 +2,14 @@ import { ImageField } from "@/components/ImageField";
 import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Check, FileText, ImageIcon, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { BookOpen, Check, FileText, ImageIcon, Pencil, Plus, Save, Trash2, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
-  ACCEPTED_TYPES, MAX_FILE_BYTES, addDocument, deleteDocument, deleteProposition, deleteTheme, fileUrl, formatSize, listDocuments, listPropositions,
+  FILE_ACCEPT, addDocument, isVideoType, validateDocFile, deleteDocument, deleteProposition, deleteTheme, fileUrl, formatSize, listDocuments, listPropositions,
   listThemes, saveTheme, setPropositionStatus, updateDocument, type Doc, type Proposition, type Theme,
 } from "@/lib/bibliotheque";
 
@@ -69,8 +69,8 @@ export function BibliothequeAdmin() {
 
   function pickFile(f: File | undefined) {
     if (!f) return;
-    if (!ACCEPTED_TYPES.includes(f.type)) return setError("Formats acceptés : PDF, JPG, PNG ou WebP.");
-    if (f.size > MAX_FILE_BYTES) return setError("Le fichier dépasse 50 Mo.");
+    const invalid = validateDocFile(f);
+    if (invalid) return setError(invalid);
     setError("");
     setFile(f);
     if (!docForm.titre) setDocForm((v) => ({ ...v, titre: f.name.replace(/\.[^.]+$/, "") }));
@@ -89,7 +89,7 @@ export function BibliothequeAdmin() {
         setDocForm(emptyDoc(docForm.theme_id));
       }, "Document modifié.");
     } else {
-      if (!file) return setError("Choisissez un fichier (PDF ou photo).");
+      if (!file) return setError("Choisissez un fichier (PDF, photo ou vidéo).");
       await run(async () => {
         await addDocument({ file, ...docForm, image });
         setFile(null);
@@ -156,7 +156,7 @@ export function BibliothequeAdmin() {
                     {list.map((d) => (
                       <li key={d.id} className="flex flex-wrap items-center gap-3 py-3">
                         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: t.couleur }}>
-                          {d.fichier_type === "application/pdf" ? <FileText className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+                          {d.fichier_type === "application/pdf" ? <FileText className="h-5 w-5" /> : isVideoType(d.fichier_type) ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
                         </span>
                         {imageUrl(d.image_path) && <img src={imageUrl(d.image_path) ?? ""} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-xl border border-border object-cover" />}
                         <div className="min-w-0 flex-1">
@@ -212,8 +212,9 @@ export function BibliothequeAdmin() {
             </div>
             {!editingDoc && (
               <div className="space-y-1.5">
-                <Label htmlFor="bd-file">Fichier * (PDF ou photo, 50 Mo max)</Label>
-                <Input id="bd-file" type="file" accept="application/pdf,.pdf,image/jpeg,image/png,image/webp" disabled={busy} onChange={(e) => pickFile(e.target.files?.[0])} />
+                <Label htmlFor="bd-file">Fichier * (PDF, photo ou vidéo)</Label>
+                <Input id="bd-file" type="file" accept={FILE_ACCEPT} disabled={busy} onChange={(e) => pickFile(e.target.files?.[0])} />
+                <p className="text-xs text-muted-foreground">PDF et photos : 50 Mo max. Vidéos (MP4, WebM, MOV) : 200 Mo max.</p>
                 {file && <p className="break-all text-xs text-muted-foreground">{file.name} · {formatSize(file.size)}</p>}
               </div>
             )}

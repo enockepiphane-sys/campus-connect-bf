@@ -1,12 +1,12 @@
 import { imageUrl } from "@/lib/images-contenu";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookPlus, Download, FileText, ImageIcon, Library, Search, X, BookOpen } from "lucide-react";
+import { BookPlus, Download, FileText, ImageIcon, Library, PlayCircle, Search, Video, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { fileUrl, formatSize, listDocuments, listThemes, proposeBook, type Doc } from "@/lib/bibliotheque";
+import { extensionOf, fileUrl, formatSize, isVideoType, listDocuments, listThemes, proposeBook, type Doc } from "@/lib/bibliotheque";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
@@ -114,17 +114,43 @@ function ProposerLivre({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-function DocCard({ doc, color }: { doc: Doc; color: string }) {
+function LecteurVideo({ doc, onClose }: { doc: Doc | null; onClose: () => void }) {
+  if (!doc) return null;
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="break-words font-display text-xl">{doc.titre}</DialogTitle>
+          <DialogDescription>{doc.auteur ?? "Vidéo de la bibliothèque"}</DialogDescription>
+        </DialogHeader>
+        <div className="overflow-hidden rounded-2xl bg-black">
+          <video src={fileUrl(doc)} controls playsInline autoPlay className="max-h-[70vh] w-full" />
+        </div>
+        {doc.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{doc.description}</p>}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DocCard({ doc, color, onPlay }: { doc: Doc; color: string; onPlay: (d: Doc) => void }) {
   const isPdf = doc.fichier_type === "application/pdf";
-  const Icon = isPdf ? FileText : ImageIcon;
+  const isVideo = isVideoType(doc.fichier_type);
+  const Icon = isPdf ? FileText : isVideo ? Video : ImageIcon;
   const couverture = imageUrl(doc.image_path);
-  const name = `${doc.titre}.${isPdf ? "pdf" : doc.fichier_type.split("/")[1] === "jpeg" ? "jpg" : doc.fichier_type.split("/")[1]}`;
+  const name = `${doc.titre}.${extensionOf(doc.fichier_type)}`;
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative flex h-32 items-center justify-center overflow-hidden sm:h-40" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        {couverture ? <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{isPdf ? "PDF" : "Photo"}</span>
+        {couverture ? (
+          <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+        ) : isVideo ? (
+          <video src={`${fileUrl(doc)}#t=0.5`} preload="metadata" muted playsInline aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+        ) : (
+          <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />
+        )}
+        {isVideo && <PlayCircle aria-hidden className="absolute h-12 w-12 text-white drop-shadow-lg" />}
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{isPdf ? "PDF" : isVideo ? "Vidéo" : "Photo"}</span>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <h3 className="line-clamp-2 break-words font-display text-lg font-bold leading-snug">{doc.titre}</h3>
@@ -132,16 +158,28 @@ function DocCard({ doc, color }: { doc: Doc; color: string }) {
         {doc.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{doc.description}</p>}
         {doc.taille ? <p className="mt-3 text-xs text-muted-foreground">{formatSize(doc.taille)}</p> : null}
         <div className="mt-auto flex gap-2 pt-4">
-          <a
-            href={fileUrl(doc)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
-            style={{ background: color }}
-          >
-            <BookOpen className="h-4 w-4" />
-            Lire
-          </a>
+          {isVideo ? (
+            <button
+              type="button"
+              onClick={() => onPlay(doc)}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+              style={{ background: color }}
+            >
+              <PlayCircle className="h-4 w-4" />
+              Regarder
+            </button>
+          ) : (
+            <a
+              href={fileUrl(doc)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+              style={{ background: color }}
+            >
+              <BookOpen className="h-4 w-4" />
+              Lire
+            </a>
+          )}
           <a
             href={fileUrl(doc, name)}
             aria-label={`Télécharger ${doc.titre}`}
@@ -161,6 +199,7 @@ export function BibliothequeList() {
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState("");
   const [proposer, setProposer] = useState(false);
+  const [video, setVideo] = useState<Doc | null>(null);
 
   const themeList = themes.data ?? [];
   const colorOf = (id: string) => themeList.find((t) => t.id === id)?.couleur ?? "#0F8A44";
@@ -281,13 +320,14 @@ export function BibliothequeList() {
           </h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {g.docs.map((d) => (
-              <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} />
+              <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} onPlay={setVideo} />
             ))}
           </div>
         </div>
       ))}
 
       <ProposerLivre open={proposer} onClose={() => setProposer(false)} />
+      <LecteurVideo doc={video} onClose={() => setVideo(null)} />
     </section>
   );
 }

@@ -1,15 +1,16 @@
 import { ImageField } from "@/components/ImageField";
+import { analyserLien, hoteDe } from "@/lib/lecture-externe";
 import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, Check, FileText, ImageIcon, Pencil, Plus, Save, Trash2, Video, X } from "lucide-react";
+import { BookOpen, Check, FileText, ImageIcon, Link2, Pencil, Plus, Save, Trash2, Upload, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
-  FILE_ACCEPT, addDocument, isVideoType, validateDocFile, deleteDocument, deleteProposition, deleteTheme, fileUrl, formatSize, listDocuments, listPropositions,
+  FILE_ACCEPT, addDocument, addLienDocument, isVideoType, validateDocFile, deleteDocument, deleteProposition, deleteTheme, fileUrl, formatSize, listDocuments, listPropositions,
   listThemes, saveTheme, setPropositionStatus, updateDocument, type Doc, type Proposition, type Theme,
 } from "@/lib/bibliotheque";
 
@@ -38,6 +39,9 @@ export function BibliothequeAdmin() {
   const [image, setImage] = useState<ImageChoix>(aucuneImage);
   const [imageActuelle, setImageActuelle] = useState<string | null>(null);
   const [editingDoc, setEditingDoc] = useState<string | null>(null);
+  const [mode, setMode] = useState<"fichier" | "lien">("fichier");
+  const [lien, setLien] = useState("");
+  const [droits, setDroits] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState<Doc | null>(null);
   // Thèmes
   const [themeForm, setThemeForm] = useState<ThemeForm | null>(null);
@@ -76,20 +80,34 @@ export function BibliothequeAdmin() {
     if (!docForm.titre) setDocForm((v) => ({ ...v, titre: f.name.replace(/\.[^.]+$/, "") }));
   }
 
+  const analyse = lien.trim() ? analyserLien(lien) : null;
+  const resetLien = () => { setMode("fichier"); setLien(""); setDroits(false); };
+
   async function submitDoc(e: React.FormEvent) {
     e.preventDefault();
     if (!docForm.theme_id) return setError("Choisissez un thème.");
     if (!docForm.titre.trim()) return setError("Indiquez un titre.");
     if (editingDoc) {
       await run(async () => {
-        await updateDocument(editingDoc, { ...docForm, image, imageActuelle });
+        await updateDocument(editingDoc, { ...docForm, image, imageActuelle, lien: mode === "lien" ? lien : undefined });
         setEditingDoc(null);
         setImage(aucuneImage());
         setImageActuelle(null);
         setDocForm(emptyDoc(docForm.theme_id));
+        resetLien();
       }, "Document modifié.");
+    } else if (mode === "lien") {
+      if (!analyse || !analyse.ok) return setError(analyse && !analyse.ok ? analyse.erreur : "Collez le lien du contenu.");
+      if (!droits) return setError("Confirmez que vous avez le droit de partager ce contenu.");
+      await run(async () => {
+        await addLienDocument({ lien, ...docForm, image });
+        setImage(aucuneImage());
+        setLien("");
+        setDroits(false);
+        setDocForm(emptyDoc(docForm.theme_id));
+      }, "Lien ajouté à la bibliothèque.");
     } else {
-      if (!file) return setError("Choisissez un fichier (PDF, photo ou vidéo).");
+      if (!file) return setError("Choisissez un fichier (PDF, photo ou vidéo) ou collez un lien.");
       await run(async () => {
         await addDocument({ file, ...docForm, image });
         setFile(null);
@@ -156,18 +174,18 @@ export function BibliothequeAdmin() {
                     {list.map((d) => (
                       <li key={d.id} className="flex flex-wrap items-center gap-3 py-3">
                         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white" style={{ background: t.couleur }}>
-                          {d.fichier_type === "application/pdf" ? <FileText className="h-5 w-5" /> : isVideoType(d.fichier_type) ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
+                          {d.lien_url ? <Link2 className="h-5 w-5" /> : d.fichier_type === "application/pdf" ? <FileText className="h-5 w-5" /> : isVideoType(d.fichier_type) ? <Video className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
                         </span>
                         {imageUrl(d.image_path) && <img src={imageUrl(d.image_path) ?? ""} alt="" loading="lazy" className="h-10 w-10 shrink-0 rounded-xl border border-border object-cover" />}
                         <div className="min-w-0 flex-1">
                           <p className="break-words font-semibold">{d.titre}</p>
                           <p className="break-words text-xs text-muted-foreground">
-                            {[d.auteur, formatSize(d.taille), d.actif ? "Publié" : "Masqué"].filter(Boolean).join(" · ")}
+                            {[d.auteur, d.lien_url ? `Lien · ${hoteDe(d.lien_url)}` : formatSize(d.taille), d.actif ? "Publié" : "Masqué"].filter(Boolean).join(" · ")}
                           </p>
                         </div>
                         <div className="flex gap-1">
                           <Button asChild variant="ghost" size="icon" aria-label="Ouvrir le fichier">
-                            <a href={fileUrl(d)} target="_blank" rel="noopener noreferrer">
+                            <a href={d.lien_url || fileUrl(d)} target="_blank" rel="noopener noreferrer">
                               <BookOpen />
                             </a>
                           </Button>
@@ -180,6 +198,9 @@ export function BibliothequeAdmin() {
                               setFile(null);
                               setImage(aucuneImage());
                               setImageActuelle(d.image_path ?? null);
+                              setMode(d.lien_url ? "lien" : "fichier");
+                              setLien(d.lien_url ?? "");
+                              setDroits(true);
                               setDocForm({ theme_id: d.theme_id, titre: d.titre, auteur: d.auteur ?? "", description: d.description ?? "", actif: d.actif });
                               window.scrollTo({ top: 0, behavior: "smooth" });
                             }}
@@ -211,6 +232,34 @@ export function BibliothequeAdmin() {
               </select>
             </div>
             {!editingDoc && (
+              <div role="group" aria-label="Source du contenu" className="grid grid-cols-2 gap-2">
+                {([["fichier", "Envoyer un fichier", Upload], ["lien", "Coller un lien", Link2]] as const).map(([k, label, Ico]) => (
+                  <button key={k} type="button" aria-pressed={mode === k} disabled={busy} onClick={() => { setMode(k); setError(""); }}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${mode === k ? "border-primary bg-primary-soft text-primary" : "border-border hover:bg-muted"}`}>
+                    <Ico className="h-4 w-4" />{label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {mode === "lien" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="bd-lien">Lien du contenu * (https://…)</Label>
+                <Input id="bd-lien" type="url" inputMode="url" value={lien} disabled={busy} maxLength={2000} placeholder="https://drive.google.com/file/d/…" onChange={(e) => setLien(e.target.value)} />
+                {analyse && (analyse.ok
+                  ? analyse.integrable
+                    ? <p className="flex items-start gap-2 text-xs text-primary"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0" />Lecture intégrée dans CampusLink ({analyse.fournisseur}).</p>
+                    : <p className="text-xs text-muted-foreground">Ce site ne permet pas la lecture intégrée : les étudiants verront un bouton pour l’ouvrir sur {analyse.hote}.</p>
+                  : <p role="alert" className="text-xs text-destructive">{analyse.erreur}</p>)}
+                <p className="text-xs text-muted-foreground">Lecture intégrée : YouTube, Vimeo, Dailymotion, Google Drive (partage « avec le lien »), Internet Archive, et liens directs vers un PDF, une vidéo ou une image.</p>
+                {!editingDoc && (
+                  <label className="flex items-start gap-2 rounded-xl bg-muted/50 p-3 text-xs">
+                    <input type="checkbox" className="mt-0.5" checked={droits} disabled={busy} onChange={(e) => setDroits(e.target.checked)} />
+                    <span>Je confirme que ce contenu est libre de droits, que j’en ai l’autorisation, ou que son propriétaire permet de le partager.</span>
+                  </label>
+                )}
+              </div>
+            )}
+            {!editingDoc && mode === "fichier" && (
               <div className="space-y-1.5">
                 <Label htmlFor="bd-file">Fichier * (PDF, photo ou vidéo)</Label>
                 <Input id="bd-file" type="file" accept={FILE_ACCEPT} disabled={busy} onChange={(e) => pickFile(e.target.files?.[0])} />
@@ -250,6 +299,7 @@ export function BibliothequeAdmin() {
                     setImage(aucuneImage());
                     setImageActuelle(null);
                     setDocForm(emptyDoc(docForm.theme_id));
+                    resetLien();
                   }}
                 >
                   <X />

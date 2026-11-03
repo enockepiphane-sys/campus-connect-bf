@@ -1,11 +1,14 @@
 import { imageUrl } from "@/lib/images-contenu";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookPlus, Download, FileText, ImageIcon, Library, PlayCircle, Search, Video, X, BookOpen } from "lucide-react";
+import { BookPlus, Download, FileText, ImageIcon, Library, Link2, PlayCircle, Search, Video, X, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LecteurLien } from "@/components/LecteurLien";
+import { analyserLien, etiquetteLien } from "@/lib/lecture-externe";
+import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { extensionOf, fileUrl, formatSize, isVideoType, listDocuments, listThemes, proposeBook, type Doc } from "@/lib/bibliotheque";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -132,7 +135,39 @@ function LecteurVideo({ doc, onClose }: { doc: Doc | null; onClose: () => void }
   );
 }
 
-function DocCard({ doc, color, onPlay }: { doc: Doc; color: string; onPlay: (d: Doc) => void }) {
+function LienCard({ doc, color, onRead }: { doc: Doc; color: string; onRead: (d: Doc) => void }) {
+  const a = analyserLien(doc.lien_url);
+  const lecture = a.ok ? a.lecture : null;
+  const yt = parseYoutube(doc.lien_url);
+  const couverture = imageUrl(doc.image_path) ?? (yt ? youtubeMiniature(yt.id) : null);
+  const Icon = lecture && (lecture.kind === "youtube" || lecture.kind === "video" || (lecture.kind === "iframe" && lecture.format === "video")) ? Video : lecture?.kind === "pdf" ? FileText : lecture?.kind === "image" ? ImageIcon : Link2;
+  const lisible = Boolean(a.ok && a.integrable);
+  return (
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
+      <div className="relative flex h-32 items-center justify-center overflow-hidden sm:h-40" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+        <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
+        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />}
+        {yt && <PlayCircle aria-hidden className="absolute h-12 w-12 text-white drop-shadow-lg" />}
+        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{lecture ? etiquetteLien(lecture) : "Lien"}</span>
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <h3 className="line-clamp-2 break-words font-display text-lg font-bold leading-snug">{doc.titre}</h3>
+        {doc.auteur && <p className="mt-1 text-sm font-medium text-muted-foreground">{doc.auteur}</p>}
+        {doc.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{doc.description}</p>}
+        {a.ok && <p className="mt-3 text-xs text-muted-foreground">Source : {a.fournisseur || a.hote}</p>}
+        <div className="mt-auto flex gap-2 pt-4">
+          <button type="button" onClick={() => onRead(doc)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: color }}>
+            {lecture && (yt || lecture.kind === "video") ? <PlayCircle className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+            {lisible ? (yt || lecture?.kind === "video" ? "Regarder" : "Lire") : "Consulter"}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPlay: (d: Doc) => void; onRead: (d: Doc) => void }) {
+  if (doc.lien_url) return <LienCard doc={doc} color={color} onRead={onRead} />;
   const isPdf = doc.fichier_type === "application/pdf";
   const isVideo = isVideoType(doc.fichier_type);
   const Icon = isPdf ? FileText : isVideo ? Video : ImageIcon;
@@ -200,6 +235,7 @@ export function BibliothequeList() {
   const [theme, setTheme] = useState("");
   const [proposer, setProposer] = useState(false);
   const [video, setVideo] = useState<Doc | null>(null);
+  const [lien, setLien] = useState<Doc | null>(null);
 
   const themeList = themes.data ?? [];
   const colorOf = (id: string) => themeList.find((t) => t.id === id)?.couleur ?? "#0F8A44";
@@ -320,7 +356,7 @@ export function BibliothequeList() {
           </h2>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             {g.docs.map((d) => (
-              <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} onPlay={setVideo} />
+              <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} onPlay={setVideo} onRead={setLien} />
             ))}
           </div>
         </div>
@@ -328,6 +364,7 @@ export function BibliothequeList() {
 
       <ProposerLivre open={proposer} onClose={() => setProposer(false)} />
       <LecteurVideo doc={video} onClose={() => setVideo(null)} />
+      <LecteurLien doc={lien} onClose={() => setLien(null)} />
     </section>
   );
 }

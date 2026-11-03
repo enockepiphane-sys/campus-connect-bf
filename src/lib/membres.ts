@@ -2,6 +2,7 @@
 // Elle donne accès aux fonctionnalités de l'accueil (bibliothèque, marché, opportunités…)
 // et reste totalement séparée de l'inscription universités / étudiants pré-inscrits.
 import { supabase } from "@/integrations/supabase/client";
+import { metadonneesParrainage } from "@/lib/parrainage";
 
 export const DOMAINE_MEMBRE = "membre.campuslink.bf";
 
@@ -78,7 +79,7 @@ export async function inscrireMembreDirect(nom: string, telephone: string, motDe
   const { data, error } = await supabase.auth.signUp({
     email: emailAuth,
     password: motDePasse,
-    options: { data: { nom_profil: nom.trim(), telephone: tel, type_compte: "membre", ...(emailRec ? { email_recuperation: emailRec } : {}) } },
+    options: { data: { nom_profil: nom.trim(), telephone: tel, type_compte: "membre", ...(emailRec ? { email_recuperation: emailRec } : {}), ...metadonneesParrainage() } },
   });
   if (error) {
     console.error("[inscrireMembreDirect]", error.message);

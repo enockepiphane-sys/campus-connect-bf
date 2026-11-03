@@ -38,6 +38,10 @@ export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (
     const email = normaliserEmail(String(brut.email ?? ""));
     const probleme = validerInscription(nom, telephone, motDePasse, email);
     if (probleme) return { ok: false, message: probleme, secours: false };
+    // Parrainage (facultatif) : code parrain + identifiant d'appareil, contrôlés ensuite en base.
+    const parrainCode = String(brut.parrain_code ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+    const appareil = String(brut.appareil ?? "").replace(/[^a-zA-Z0-9-]/g, "").slice(0, 64);
+    const parrainage = { ...(parrainCode.length >= 6 ? { parrain_code: parrainCode } : {}), ...(appareil.length >= 8 ? { appareil } : {}) };
 
     const db = await admin();
     const { data: existant } = await db.from("membres").select("user_id").eq("telephone", telephone).maybeSingle();
@@ -47,7 +51,7 @@ export const inscrireMembre = createServerFn({ method: "POST" }).handler(async (
       email: emailMembre(telephone),
       password: motDePasse,
       email_confirm: true,
-      user_metadata: { nom_profil: nom, telephone, type_compte: "membre", ...(email ? { email_recuperation: email } : {}) },
+      user_metadata: { nom_profil: nom, telephone, type_compte: "membre", ...(email ? { email_recuperation: email } : {}), ...parrainage },
     });
     if (error || !cree?.user) {
       const msg = String(error?.message ?? "");

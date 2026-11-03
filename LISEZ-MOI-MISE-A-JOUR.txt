@@ -1,0 +1,33 @@
+MISE À JOUR CAMPUSLINK — Inscription primaire + Monétisation du Marché + Bande défilante + Guide
+
+ÉTAPE 1 — Base de données (une seule fois)
+  Supabase > SQL Editor > coller et exécuter :
+  supabase/migrations/20261104000000_membres_et_monetisation_marche.sql
+
+ÉTAPE 2 — Remplacer / ajouter ces fichiers sur GitHub (même emplacement)
+  NOUVEAUX :
+    src/lib/membres.ts                         (outils inscription primaire)
+    src/lib/membres.functions.ts               (création du compte côté serveur, déjà confirmé)
+    src/lib/marche-monetisation.ts             (tarifs, paiements, bannières, Pro)
+    src/routes/inscription.tsx                 (page /inscription : nom, téléphone, mot de passe)
+    src/routes/connexion.tsx                   (page /connexion : téléphone + mot de passe)
+    src/components/MarchePaiement.tsx          (fenêtre de paiement Orange/Moov Money)
+    src/components/MarcheMonetisationAdmin.tsx (super admin : tarifs, validation, bannières)
+    src/components/BannieresDefilantes.tsx     (carrousel des bannières publicitaires)
+    src/components/BandeDefilante.tsx          (bande défilante de l'accueil)
+    src/components/GuideBienvenue.tsx          (guide première visite : Passer / Suivant)
+    src/components/CompteMembreCarte.tsx       (carte « Mon compte CampusLink » de l'accueil)
+  MODIFIÉS :
+    src/lib/marche.ts                (champ « à la une »)
+    src/routes/_commun.tsx           (accès aux fonctionnalités primaires = compte requis)
+    src/routes/index.tsx             (accueil : bande défilante, bannières, guide, compte)
+    src/routeTree.gen.ts             (nouvelles pages /inscription et /connexion)
+    src/components/MarcheList.tsx    (À la une en tête, badge Pro, boutons de paiement)
+    src/components/MarcheAdmin.tsx   (section revenus dans le super admin)
+
+ÉTAPE 3 — Super admin > onglet Marché > « Tarifs & numéros » : saisir prix + numéros Orange/Moov.
+
+SÉPARATION DES INSCRIPTIONS
+  - Inscription primaire (/inscription) : table « membres », aucun rôle, aucun lien avec les universités.
+  - Inscription secondaire (/etudiant/inscription, /admin/...) : inchangée.
+  - Variable requise côté hébergement : SUPABASE_SERVICE_ROLE_KEY (déjà utilisée par l'import CSV).

@@ -1,0 +1,19 @@
+MISE À JOUR CAMPUSLINK — 4 novembre 2026
+
+1) Exécuter UNE FOIS dans Supabase (SQL Editor > Run), dans cet ordre :
+   - supabase/migrations/20261111000000_cours_multi_niveaux.sql
+   - supabase/migrations/20261112000000_visites_comptes_primaires.sql
+   (Les deux peuvent être relancés sans risque.)
+
+2) Remplacer les fichiers du ZIP aux mêmes emplacements.
+
+3) SUPPRIMER l'ancien fichier : src/routes/_commun.evenements.tsx
+   (remplacé par src/routes/evenements.tsx, page publique).
+
+Ce qui change :
+- Cours en ligne : on peut cocher plusieurs niveaux (L1, L2, L3…) pour un même cours.
+- Compteur : seules les personnes connectées à leur compte (primaire au minimum) sont comptées ;
+  un compte = un utilisateur. Les anciennes visites anonymes sont archivées, pas détruites.
+- Événements sociaux : visibles par tous, sans connexion. Les affiches de l'accueil défilent seules.
+- Politique de confidentialité, Fonctionnalités, À propos : mis à jour, sans détails sensibles.
+- L'étudiant de l'accueil marche sur place.

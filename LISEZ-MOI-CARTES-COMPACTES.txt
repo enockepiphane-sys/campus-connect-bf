@@ -1,0 +1,17 @@
+CampusLink - Cartes plus compactes (Cours en ligne et Bibliotheque)
+
+Fichiers a remplacer dans ton projet (meme emplacement) :
+  src/components/CoursEnLigneList.tsx   -> page "Cours en ligne"
+  src/components/BibliothequeList.tsx   -> page "Bibliotheque"
+
+Ce qui change :
+  - Cartes et images moins hautes, coins un peu moins arrondis.
+  - Les miniatures des videos sont gardees, en plus petit.
+  - Moins d'espace entre les cartes et autour du texte.
+  - Ordinateur : 4 cartes par ligne (au lieu de 3).
+  - Tablette : 3 cartes par ligne. Telephone : 2 cartes par ligne (au lieu de 1).
+  - Titres, descriptions et boutons restent bien lisibles.
+
+Important : CoursEnLigneList.tsx contient deja la correction des cours en double
+(livree avant). Garde aussi src/lib/cours-groupes.ts de cette livraison.
+Rien a changer dans la base de donnees.

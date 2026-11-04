@@ -89,7 +89,7 @@ function Home() {
               alt="Jeune diplômé universitaire africain présentant fièrement l'application CampusLink"
               width={1024}
               height={1536}
-              className="relative z-0 max-h-[240px] w-auto sm:max-h-[300px] md:max-h-[420px] -mr-6 sm:-mr-10 md:-mr-24"
+              className="avatar-marche relative z-0 max-h-[240px] w-auto sm:max-h-[300px] md:max-h-[420px] -mr-6 sm:-mr-10 md:-mr-24"
             />
             <div className="relative z-10">
               <PhoneMockup />

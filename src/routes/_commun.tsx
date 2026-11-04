@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 
-// Fonctionnalités PRIMAIRES (bibliothèque, marché, opportunités, révision, guide, cours, événements) :
+// Fonctionnalités PRIMAIRES (bibliothèque, marché, opportunités, révision, guide, cours)
+// Les événements sociaux (/evenements) sont publics : visibles sans connexion.
+// Pour les autres :
 // il suffit d'un compte CampusLink (inscription primaire nom + téléphone + mot de passe).
 // Tout compte existant (étudiant, admin) y a aussi accès. La session reste enregistrée sur
 // l'appareil : après la première inscription, la page s'ouvre directement.

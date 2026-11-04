@@ -18,6 +18,11 @@ import {
   Library,
   PartyPopper,
   Smartphone,
+  ShoppingBag,
+  PlayCircle,
+  Compass,
+  Gift,
+  MessageCircle,
   Bell,
 } from "lucide-react";
 
@@ -92,9 +97,10 @@ function Page() {
 
         {/* Nouveau : outils ouverts à tous */}
         <section className="mb-12">
-          <h2 className="mb-2 text-xl font-bold text-foreground">Ouvert à tous les étudiants, sans compte</h2>
+          <h2 className="mb-2 text-xl font-bold text-foreground">Ouvert à tous les étudiants, avec un compte CampusLink gratuit</h2>
           <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
-            Même si votre université n'est pas encore partenaire de CampusLink, vous pouvez utiliser ces outils gratuitement.
+            Même si votre université n'est pas encore partenaire de CampusLink, créez votre compte en quelques secondes (nom, numéro de
+            téléphone et mot de passe) et utilisez tous ces outils gratuitement. Les événements sociaux restent visibles par tous, même sans compte.
           </p>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
             <StickerCard
@@ -125,6 +131,42 @@ function Page() {
               badge="Nouveau"
             />
             <StickerCard
+              icon={<PlayCircle className="h-6 w-6" />}
+              title="Cours en ligne"
+              desc="Des cours en vidéo, en PDF ou manuscrits, classés par filière, niveau et module. Un même cours peut concerner plusieurs filières et plusieurs niveaux."
+              from="#1d4ed8"
+              to2="#38bdf8"
+              link="/cours-en-ligne"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Compass className="h-6 w-6" />}
+              title="Guide du nouveau bachelier"
+              desc="Campus Faso expliqué pas à pas : création du compte, orientation, inscription et consultation des résultats."
+              from="#7c2d12"
+              to2="#f59e0b"
+              link="/guide-bachelier"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<ShoppingBag className="h-6 w-6" />}
+              title="Marché étudiant"
+              desc="Livres, documents, services et colocations : achetez, vendez et échangez entre étudiants."
+              from="#9d174d"
+              to2="#f472b6"
+              link="/marche"
+              badge="Nouveau"
+            />
+            <StickerCard
+              icon={<Gift className="h-6 w-6" />}
+              title="Parrainage"
+              desc="Invitez vos camarades avec votre lien personnel et débloquez des téléchargements, puis les badges Ambassadeur et Super Ambassadeur CampusLink."
+              from="#0b6b36"
+              to2="#12A150"
+              link="/parrainage"
+              badge="Nouveau"
+            />
+            <StickerCard
               icon={<PartyPopper className="h-6 w-6" />}
               title="Événements sociaux"
               desc="L'agenda des concerts, conférences et activités : recherche, filtres (cette semaine, ce mois-ci), affiches en grand format et partage en un clic."
@@ -147,6 +189,13 @@ function Page() {
               desc="Les utilisateurs connectés peuvent activer les alertes de l'application pour être prévenus directement sur leur téléphone."
               from="#b7791f"
               to2="#F0C419"
+            />
+            <StickerCard
+              icon={<MessageCircle className="h-6 w-6" />}
+              title="Aide intégrée"
+              desc="Un bouton d'aide toujours à portée de main : réponses aux questions fréquentes, guide de l'application et contact direct avec le support."
+              from="#0f766e"
+              to2="#5eead4"
             />
           </div>
         </section>
@@ -197,7 +246,7 @@ function Page() {
                 step="1"
                 icon={<ShieldCheck className="h-5 w-5" />}
                 title="Pré-autorisation"
-                desc="Le super administrateur pré-autorise l'administrateur de l'établissement (nom, email, date de naissance)."
+                desc="L'équipe CampusLink pré-autorise l'administrateur de l'établissement partenaire (nom, email, date de naissance)."
               />
               <StepBlock
                 step="2"

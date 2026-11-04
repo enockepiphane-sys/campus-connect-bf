@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, Download, FileText, ImageIcon, PenLine, PlayCircle, Search, X } from "lucide-react";
+import { BookOpen, BookPlus, Download, FileText, ImageIcon, PenLine, PlayCircle, Search, X } from "lucide-react";
 import { BoutonTelechargement } from "@/components/BoutonTelechargement";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, grouperCours, niveauxOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
+import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, grouperCours, niveauxOf, formatSize, listCours, proposeCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const COLOR = "#c2410c";
@@ -49,6 +51,135 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
         {cours.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{cours.description}</p>}
         {!url && cours.video_url && !embed && (
           <p className="text-sm text-muted-foreground">Ce lien ne peut pas être lu dans CampusLink (seuls YouTube et Vimeo sont pris en charge).</p>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ProposerCours({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [titre, setTitre] = useState("");
+  const [filiere, setFiliere] = useState("");
+  const [niveau, setNiveau] = useState("");
+  const [module, setModule] = useState("");
+  const [commentaire, setCommentaire] = useState("");
+  const [trap, setTrap] = useState(""); // champ piège contre les robots
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+
+  function close() {
+    onClose();
+    setTimeout(() => {
+      setDone(false);
+      setError("");
+    }, 300);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    if (trap) {
+      setDone(true);
+      return;
+    }
+    if (titre.trim().length < 2) {
+      setError("Indiquez le titre du cours.");
+      return;
+    }
+    try {
+      const now = Date.now();
+      const log: number[] = JSON.parse(localStorage.getItem("cl_prop_cours_log") ?? "[]").filter((t: number) => now - t < 86400000);
+      if (log.length >= 3) {
+        setError("Vous avez déjà envoyé plusieurs propositions aujourd’hui. Revenez demain.");
+        return;
+      }
+      setBusy(true);
+      await proposeCours({ titre, filiere, niveau, module, commentaire });
+      localStorage.setItem("cl_prop_cours_log", JSON.stringify([...log, now]));
+      setTitre("");
+      setFiliere("");
+      setNiveau("");
+      setModule("");
+      setCommentaire("");
+      setDone(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "L’envoi a échoué. Réessayez.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && close()}>
+      <DialogContent className="max-h-[92dvh] max-w-md overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="font-display text-xl">Proposer un cours</DialogTitle>
+          <DialogDescription>Un cours, un module, une matière… Dites-nous ce qui manque dans les cours en ligne.</DialogDescription>
+        </DialogHeader>
+        {done ? (
+          <div className="py-6 text-center">
+            <span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-primary-soft text-primary">
+              <BookOpen className="h-7 w-7" />
+            </span>
+            <p className="mt-4 font-display text-lg font-bold">Merci pour votre proposition !</p>
+            <p className="mt-1 text-sm text-muted-foreground">Elle sera étudiée, et le cours sera ajouté s’il est retenu.</p>
+            <Button className="mt-5" onClick={close}>
+              Fermer
+            </Button>
+          </div>
+        ) : (
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="pc-titre" className="text-sm font-medium">
+                Titre du cours *
+              </label>
+              <Input id="pc-titre" value={titre} onChange={(e) => setTitre(e.target.value)} maxLength={200} placeholder="Ex. : Introduction au droit des contrats" />
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="pc-filiere" className="text-sm font-medium">
+                Filière (facultatif)
+              </label>
+              <Input id="pc-filiere" value={filiere} onChange={(e) => setFiliere(e.target.value)} maxLength={100} placeholder="Ex. : Droit" />
+            </div>
+            <div className="grid grid-cols-2 gap-3 [&>*]:min-w-0">
+              <div className="space-y-1.5">
+                <label htmlFor="pc-niveau" className="text-sm font-medium">
+                  Niveau (facultatif)
+                </label>
+                <select id="pc-niveau" value={niveau} onChange={(e) => setNiveau(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring">
+                  <option value="">—</option>
+                  {NIVEAUX.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="pc-module" className="text-sm font-medium">
+                  Module (facultatif)
+                </label>
+                <Input id="pc-module" value={module} onChange={(e) => setModule(e.target.value)} maxLength={150} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label htmlFor="pc-com" className="text-sm font-medium">
+                Précisions (facultatif)
+              </label>
+              <Textarea id="pc-com" value={commentaire} onChange={(e) => setCommentaire(e.target.value)} maxLength={1000} className="min-h-24" />
+            </div>
+            <input aria-hidden tabIndex={-1} autoComplete="off" value={trap} onChange={(e) => setTrap(e.target.value)} name="site" className="hidden" />
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+            <Button type="submit" disabled={busy} className="w-full">
+              <BookPlus />
+              {busy ? "Envoi…" : "Envoyer ma proposition"}
+            </Button>
+          </form>
         )}
       </DialogContent>
     </Dialog>
@@ -105,6 +236,7 @@ export function CoursEnLigneList() {
   const [module, setModule] = useState("");
   const [search, setSearch] = useState("");
   const [ouvert, setOuvert] = useState<Cours | null>(null);
+  const [proposer, setProposer] = useState(false);
   const all = cours.data ?? [];
 
   const filieres = useMemo(() => [...new Set(all.flatMap(filieresOf))].sort((a, b) => a.localeCompare(b, "fr")), [all]);
@@ -146,14 +278,20 @@ export function CoursEnLigneList() {
             {modules.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
-        <div className="relative mt-3">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-          <Input aria-label="Rechercher un cours" placeholder="Rechercher un cours, un module, un enseignant…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 rounded-2xl pl-12 pr-10 text-base" />
-          {search && (
-            <button type="button" aria-label="Effacer la recherche" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted">
-              <X className="h-4 w-4" />
-            </button>
-          )}
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input aria-label="Rechercher un cours" placeholder="Rechercher un cours, un module, un enseignant…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 rounded-2xl pl-12 pr-10 text-base" />
+            {search && (
+              <button type="button" aria-label="Effacer la recherche" onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted">
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button onClick={() => setProposer(true)} className="h-12 rounded-2xl px-5">
+            <BookPlus />
+            Proposer un cours
+          </Button>
         </div>
       </div>
 
@@ -177,6 +315,7 @@ export function CoursEnLigneList() {
         </div>
       ))}
       <Lecteur cours={ouvert} onClose={() => setOuvert(null)} />
+      <ProposerCours open={proposer} onClose={() => setProposer(false)} />
     </section>
   );
 }

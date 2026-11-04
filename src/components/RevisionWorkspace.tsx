@@ -28,7 +28,7 @@ async function runRevisionAi({ tool, question, file }: RevisionAiInput): Promise
     body: { tool, question, pdfBase64, mimeType: file ? file.type || "application/pdf" : undefined },
   });
   if (error) {
-    let message = "Le service IA est indisponible. Réessaie plus tard.";
+    let message = "IA CampusLink est indisponible. Réessaie plus tard.";
     try {
       const response = (error as { context?: Response }).context;
       if (response) {
@@ -41,7 +41,7 @@ async function runRevisionAi({ tool, question, file }: RevisionAiInput): Promise
     throw new Error(message);
   }
   if (typeof data?.error === "string") throw new Error(data.error);
-  if (typeof data?.result !== "string" || !data.result) throw new Error("L’IA n’a pas produit de réponse. Réessaie.");
+  if (typeof data?.result !== "string" || !data.result) throw new Error("IA CampusLink n’a pas produit de réponse. Réessaie.");
   return data.result;
 }
 
@@ -258,7 +258,7 @@ export function RevisionWorkspace() {
           )}
 
           <p role="status" className="rounded-xl border-l-4 border-gold bg-secondary p-4 text-sm">
-            Pour un cours manuscrit, prenez une photo nette et bien éclairée, une page à la fois. Votre document est analysé par notre assistant d’intelligence artificielle pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Pour un cours manuscrit, prenez une photo nette et bien éclairée, une page à la fois. Votre document est analysé par IA CampusLink, notre assistant d’intelligence artificielle, pour générer la réponse. N’y mettez pas d’informations personnelles.
           </p>
           <Button
             onClick={() => void generate()}
@@ -267,7 +267,7 @@ export function RevisionWorkspace() {
             style={{ background: color }}
           >
             {loading ? <Loader2 className="animate-spin" /> : <Sparkles />}
-            {loading ? "L’IA travaille… (jusqu’à 1 minute)" : tool === "assistant" ? "Poser ma question" : "Générer"}
+            {loading ? "IA CampusLink travaille… (jusqu’à 1 minute)" : tool === "assistant" ? "Poser ma question" : "Générer"}
           </Button>
 
         </div>

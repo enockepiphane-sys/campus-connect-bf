@@ -12,7 +12,7 @@ const ETAPES: { cible?: string; titre: string; texte: string }[] = [
   { cible: "marche", titre: "Marché étudiant", texte: "Achète, vends ou échange livres, cours, services et colocations. Tu peux mettre ton annonce à la une." },
   { cible: "bibliotheque", titre: "Bibliothèque", texte: "Documents, mémoires et cours à consulter ou télécharger." },
   { cible: "cours", titre: "Cours en ligne", texte: "Des cours structurés à suivre à ton rythme depuis ton téléphone." },
-  { cible: "revision", titre: "Révision & IA", texte: "Envoie tes cours en PDF ou en photo : l’IA te prépare résumés, QCM et fiches." },
+  { cible: "revision", titre: "Révision & IA", texte: "Envoie tes cours en PDF ou en photo : IA CampusLink te prépare résumés, QCM et fiches." },
   { cible: "opportunites", titre: "Opportunités", texte: "Bourses, stages, emplois et concours publiés pour les étudiants du Burkina Faso." },
   { cible: "guide", titre: "Guide du bachelier", texte: "Filières, établissements et conseils pour bien choisir après le bac." },
   { cible: "une", titre: "Annonces à la une", texte: "Les annonces mises en avant du Marché défilent ici." },

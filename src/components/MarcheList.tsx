@@ -159,48 +159,48 @@ export function MarcheList() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 [&>*]:min-w-0">
         {filtrees.map((a) => {
           const Icone = ICONES[a.categorie] ?? Package;
           const col = couleurDuType(a.type_annonce);
           const miennesCarte = onglet === "miennes";
           return (
-            <article key={a.id} className={`flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl ${a.statut === "terminee" || a.masquee ? "opacity-70" : ""}`}>
-              <button type="button" onClick={() => setChoisie(a)} className="relative block aspect-[4/3] w-full overflow-hidden text-left" aria-label={`Voir l’annonce ${a.titre}`}>
+            <article key={a.id} className={`flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg ${a.statut === "terminee" || a.masquee ? "opacity-70" : ""}`}>
+              <button type="button" onClick={() => setChoisie(a)} className="relative block aspect-[5/4] w-full overflow-hidden text-left" aria-label={`Voir l’annonce ${a.titre}`}>
                 {a.photos[0] ? (
                   <img src={photoUrl(a.photos[0])} alt="" loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <span className="grid h-full w-full place-items-center text-white" style={{ background: `linear-gradient(135deg, ${col}, ${col}99)` }}>
-                    <Icone className="h-14 w-14 opacity-90" />
+                    <Icone className="h-10 w-10 opacity-90" />
                   </span>
                 )}
-                <span className="absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow" style={{ background: col }}>
+                <span className="absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow sm:text-[11px]" style={{ background: col }}>
                   {libelleDuType(a.type_annonce)}
                 </span>
                 {estActif(a.a_la_une_jusqu) && (
-                  <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-terracotta px-3 py-1 text-xs font-bold text-white shadow">
-                    <Star className="h-3.5 w-3.5 fill-current" />À la une
+                  <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-terracotta px-2 py-0.5 text-[10px] font-bold text-white shadow sm:text-[11px]">
+                    <Star className="h-3 w-3 fill-current" />À la une
                   </span>
                 )}
                 {(a.statut === "terminee" || a.masquee) && (
-                  <span className="absolute right-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-semibold text-white">
+                  <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold text-white sm:text-[11px]">
                     {a.masquee ? "Masquée (modération)" : "Terminée"}
                   </span>
                 )}
               </button>
-              <div className="flex flex-1 flex-col p-4">
-                <p className="font-display text-lg font-bold" style={{ color: col }}>{formatPrix(a.prix, a.type_annonce)}</p>
-                <h2 className="mt-1 line-clamp-2 break-words font-display text-base font-bold">{a.titre}</h2>
-                <p className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4 shrink-0" />
+              <div className="flex flex-1 flex-col p-3">
+                <p className="font-display text-base font-bold" style={{ color: col }}>{formatPrix(a.prix, a.type_annonce)}</p>
+                <h2 className="mt-0.5 line-clamp-2 break-words font-display text-sm font-bold leading-snug">{a.titre}</h2>
+                <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{a.ville}{a.universite ? ` · ${a.universite}` : ""}</span>
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">{a.categorie} · {tempsEcoule(a.created_at)}</p>
+                <p className="mt-0.5 truncate text-[11px] text-muted-foreground">{a.categorie} · {tempsEcoule(a.created_at)}</p>
                 {pros.data?.has(a.user_id) && (
-                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"><BadgeCheck className="h-4 w-4" />Vendeur Pro</p>
+                  <p className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary"><BadgeCheck className="h-3.5 w-3.5" />Vendeur Pro</p>
                 )}
                 {miennesCarte ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-1.5">
                     <Button size="sm" variant="outline" disabled={enCours === a.id} onClick={() => void agir(a, a.statut === "active" ? "terminer" : "reactiver")}>
                       {a.statut === "active" ? <CheckCircle2 /> : <RotateCcw />}
                       {a.statut === "active" ? "Marquer terminée" : "Réactiver"}
@@ -217,7 +217,7 @@ export function MarcheList() {
                     </Button>
                   </div>
                 ) : (
-                  <Button className="mt-4 w-full text-white hover:brightness-110" style={{ background: col }} onClick={() => setChoisie(a)}>
+                  <Button size="sm" className="mt-3 w-full text-white hover:brightness-110" style={{ background: col }} onClick={() => setChoisie(a)}>
                     Voir l’annonce
                   </Button>
                 )}

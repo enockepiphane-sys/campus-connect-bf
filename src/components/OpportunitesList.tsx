@@ -147,7 +147,7 @@ export function OpportunitesList() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 [&>*]:min-w-0">
         {filtered.map((item) => {
           const state = deadlineState(item.date_limite);
           const active = ids.includes(item.id);
@@ -155,13 +155,13 @@ export function OpportunitesList() {
           return (
             <article
               key={item.id}
-              className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+              className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg"
             >
-              <div className="h-2" style={{ background: col }} />
+              <div className="h-1.5" style={{ background: col }} />
               {imageUrl(item.image_path) && <img src={imageUrl(item.image_path) ?? ""} alt="" loading="lazy" className="aspect-video w-full bg-muted/40 object-contain" />}
-              <div className="flex flex-1 flex-col p-5">
-                <div className="mb-4 flex items-start justify-between gap-2">
-                  <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wide" style={{ background: `${col}1f`, color: col }}>
+              <div className="flex flex-1 flex-col p-3 sm:p-4">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                  <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide sm:text-[11px]" style={{ background: `${col}1f`, color: col }}>
                     {item.categorie}
                   </span>
                   {signedIn && (
@@ -178,23 +178,24 @@ export function OpportunitesList() {
                     </Button>
                   )}
                 </div>
-                <h2 className="break-words font-display text-xl font-bold">{item.titre}</h2>
-                <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Building2 className="h-4 w-4 shrink-0" />
-                  <span className="break-words">{item.organisme}</span>
+                <h2 className="line-clamp-2 break-words font-display text-sm font-bold leading-snug sm:text-base">{item.titre}</h2>
+                <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Building2 className="h-3.5 w-3.5 shrink-0" />
+                  <span className="line-clamp-1 break-words">{item.organisme}</span>
                 </p>
-                <p className="mt-4 line-clamp-3 whitespace-pre-wrap break-words text-sm text-muted-foreground">{item.description}</p>
+                <p className="mt-2 line-clamp-2 whitespace-pre-wrap break-words text-xs text-muted-foreground sm:text-[13px]">{item.description}</p>
                 <p
-                  className={`mt-5 flex flex-wrap items-center gap-2 text-sm font-medium ${
+                  className={`mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium ${
                     state === "expired" ? "text-muted-foreground" : state === "soon" ? "text-destructive" : "text-primary"
                   }`}
                 >
-                  <CalendarDays className="h-4 w-4" />
+                  <CalendarDays className="h-3.5 w-3.5" />
                   {new Date(item.date_limite + "T12:00:00Z").toLocaleDateString("fr-FR", { dateStyle: "medium", timeZone: "UTC" })}
                   <span>{state === "expired" ? "Clôturée" : state === "soon" ? "Clôture prochaine" : "Candidatures ouvertes"}</span>
                 </p>
                 <Button
-                  className="mt-5 w-full text-white hover:brightness-110"
+                  size="sm"
+                  className="mt-3 w-full text-white hover:brightness-110"
                   style={{ background: col }}
                   onClick={() => setSelected(item)}
                 >

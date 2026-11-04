@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { EspacesNavigation } from "@/components/EspacesNavigation";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GraduationCap, LogIn, UserPlus } from "lucide-react";
@@ -37,13 +38,32 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
+  // Le bandeau d'installation est tout en haut de la page. L'en-tête figé se place juste sous lui,
+  // puis remonte jusqu'en haut de l'écran quand on descend (ou quand le bandeau est fermé).
+  const [decalage, setDecalage] = useState(0);
+  useEffect(() => {
+    const mesurer = () => {
+      const b = document.querySelector<HTMLElement>("[data-install-banner]");
+      setDecalage(b ? Math.max(0, Math.round(b.getBoundingClientRect().bottom)) : 0);
+    };
+    mesurer();
+    window.addEventListener("scroll", mesurer, { passive: true });
+    window.addEventListener("resize", mesurer);
+    const obs = typeof ResizeObserver !== "undefined" ? new ResizeObserver(mesurer) : null;
+    obs?.observe(document.body);
+    return () => {
+      window.removeEventListener("scroll", mesurer);
+      window.removeEventListener("resize", mesurer);
+      obs?.disconnect();
+    };
+  }, []);
   return (
     <div className="bg-paper min-h-screen text-foreground">
       {/* En-tête figé : même apparence qu'avant, il reste simplement collé en haut de l'écran.
           Pas de flou ni de transparence : sinon le menu s'ouvrirait « à l'intérieur » de l'en-tête. */}
       <header
-        className="bg-paper fixed inset-x-0 top-0 z-50"
-        style={{ backgroundSize: "100% 100vh", backgroundPosition: "top left" }}
+        className="bg-paper fixed inset-x-0 z-50"
+        style={{ top: decalage, backgroundSize: "100% 100vh", backgroundPosition: "top left" }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">

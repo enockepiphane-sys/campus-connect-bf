@@ -130,7 +130,7 @@ function validateResult(result: unknown): RevisionResult {
     !Array.isArray(value.sections)
   ) {
     throw new Error(
-      "La réponse de l'IA ne respecte pas le format attendu par CampusLink.",
+      "La réponse d'IA CampusLink ne respecte pas le format attendu.",
     );
   }
 
@@ -144,7 +144,7 @@ function validateResult(result: unknown): RevisionResult {
   });
 
   if (!validSections) {
-    throw new Error("Les sections reçues de l'IA sont incomplètes.");
+    throw new Error("Les sections reçues d'IA CampusLink sont incomplètes.");
   }
 
   if (value.questions !== undefined && !Array.isArray(value.questions)) {
@@ -212,7 +212,7 @@ export const revisionProvider: RevisionProvider = {
     }
 
     if (data.error) {
-      throw new Error(`Erreur de traitement IA : ${data.error}`);
+      throw new Error(`Erreur de traitement d'IA CampusLink : ${data.error}`);
     }
 
     if (data.success !== true) {

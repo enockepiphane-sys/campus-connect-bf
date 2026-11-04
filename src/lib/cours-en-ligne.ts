@@ -160,3 +160,43 @@ export async function deleteCours(c: Cours) {
   await supprimerImage(c.image_path);
   if (c.fichier_path) await supabase.storage.from(COURS_BUCKET).remove([c.fichier_path]);
 }
+
+/* ---------- Propositions de cours (envoyées par les utilisateurs) ---------- */
+
+export type CoursProposition = {
+  id: string;
+  titre: string;
+  filiere: string | null;
+  niveau: Niveau | null;
+  module: string | null;
+  commentaire: string | null;
+  statut: "nouvelle" | "retenue" | "refusee";
+  created_at: string;
+};
+
+export async function proposeCours(input: { titre: string; filiere: string; niveau: string; module: string; commentaire: string }) {
+  const { error } = await db.from("cours_propositions").insert({
+    titre: input.titre.trim(),
+    filiere: input.filiere.trim() || null,
+    niveau: input.niveau || null,
+    module: input.module.trim() || null,
+    commentaire: input.commentaire.trim() || null,
+  });
+  check(error);
+}
+
+export async function listCoursPropositions(): Promise<CoursProposition[]> {
+  const { data, error } = await db.from("cours_propositions").select("*").order("created_at", { ascending: false });
+  check(error);
+  return (data ?? []) as CoursProposition[];
+}
+
+export async function setCoursPropositionStatus(id: string, statut: CoursProposition["statut"]) {
+  const { error } = await db.from("cours_propositions").update({ statut }).eq("id", id);
+  check(error);
+}
+
+export async function deleteCoursProposition(id: string) {
+  const { error } = await db.from("cours_propositions").delete().eq("id", id);
+  check(error);
+}

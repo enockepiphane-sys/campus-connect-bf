@@ -18,6 +18,7 @@ import { Route as ConfirmerCompteRouteImport } from './routes/confirmer-compte'
 import { Route as ConnexionRouteImport } from './routes/connexion'
 import { Route as ConnexionEspacesRouteImport } from './routes/connexion-espaces'
 import { Route as DevenirPartenaireRouteImport } from './routes/devenir-partenaire'
+import { Route as EvenementsRouteImport } from './routes/evenements'
 import { Route as FonctionnalitesRouteImport } from './routes/fonctionnalites'
 import { Route as InscriptionRouteImport } from './routes/inscription'
 import { Route as PolitiqueConfidentialiteRouteImport } from './routes/politique-confidentialite'
@@ -29,7 +30,6 @@ import { Route as AuthenticatedEtudiantRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
 import { Route as CommunBibliothequeRouteImport } from './routes/_commun.bibliotheque'
 import { Route as CommunCoursEnLigneRouteImport } from './routes/_commun.cours-en-ligne'
-import { Route as CommunEvenementsRouteImport } from './routes/_commun.evenements'
 import { Route as CommunGestionOpportunitesRouteImport } from './routes/_commun.gestion-opportunites'
 import { Route as CommunGuideBachelierRouteImport } from './routes/_commun.guide-bachelier'
 import { Route as CommunMarcheRouteImport } from './routes/_commun.marche'
@@ -89,6 +89,11 @@ const DevenirPartenaireRoute = DevenirPartenaireRouteImport.update({
   path: '/devenir-partenaire',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EvenementsRoute = EvenementsRouteImport.update({
+  id: '/evenements',
+  path: '/evenements',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FonctionnalitesRoute = FonctionnalitesRouteImport.update({
   id: '/fonctionnalites',
   path: '/fonctionnalites',
@@ -143,11 +148,6 @@ const CommunBibliothequeRoute = CommunBibliothequeRouteImport.update({
 const CommunCoursEnLigneRoute = CommunCoursEnLigneRouteImport.update({
   id: '/cours-en-ligne',
   path: '/cours-en-ligne',
-  getParentRoute: () => CommunRoute,
-} as any)
-const CommunEvenementsRoute = CommunEvenementsRouteImport.update({
-  id: '/evenements',
-  path: '/evenements',
   getParentRoute: () => CommunRoute,
 } as any)
 const CommunGestionOpportunitesRoute =
@@ -237,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/evenements': typeof EvenementsRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -248,7 +249,6 @@ export interface FileRoutesByFullPath {
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/bibliotheque': typeof CommunBibliothequeRoute
   '/cours-en-ligne': typeof CommunCoursEnLigneRoute
-  '/evenements': typeof CommunEvenementsRoute
   '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/guide-bachelier': typeof CommunGuideBachelierRoute
   '/marche': typeof CommunMarcheRoute
@@ -273,6 +273,7 @@ export interface FileRoutesByTo {
   '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/evenements': typeof EvenementsRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -284,7 +285,6 @@ export interface FileRoutesByTo {
   '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/bibliotheque': typeof CommunBibliothequeRoute
   '/cours-en-ligne': typeof CommunCoursEnLigneRoute
-  '/evenements': typeof CommunEvenementsRoute
   '/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/guide-bachelier': typeof CommunGuideBachelierRoute
   '/marche': typeof CommunMarcheRoute
@@ -312,6 +312,7 @@ export interface FileRoutesById {
   '/connexion': typeof ConnexionRoute
   '/connexion-espaces': typeof ConnexionEspacesRoute
   '/devenir-partenaire': typeof DevenirPartenaireRoute
+  '/evenements': typeof EvenementsRoute
   '/fonctionnalites': typeof FonctionnalitesRoute
   '/inscription': typeof InscriptionRoute
   '/politique-confidentialite': typeof PolitiqueConfidentialiteRoute
@@ -323,7 +324,6 @@ export interface FileRoutesById {
   '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/_commun/bibliotheque': typeof CommunBibliothequeRoute
   '/_commun/cours-en-ligne': typeof CommunCoursEnLigneRoute
-  '/_commun/evenements': typeof CommunEvenementsRoute
   '/_commun/gestion-opportunites': typeof CommunGestionOpportunitesRoute
   '/_commun/guide-bachelier': typeof CommunGuideBachelierRoute
   '/_commun/marche': typeof CommunMarcheRoute
@@ -350,6 +350,7 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
+    | '/evenements'
     | '/fonctionnalites'
     | '/inscription'
     | '/politique-confidentialite'
@@ -361,7 +362,6 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/bibliotheque'
     | '/cours-en-ligne'
-    | '/evenements'
     | '/gestion-opportunites'
     | '/guide-bachelier'
     | '/marche'
@@ -386,6 +386,7 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
+    | '/evenements'
     | '/fonctionnalites'
     | '/inscription'
     | '/politique-confidentialite'
@@ -397,7 +398,6 @@ export interface FileRouteTypes {
     | '/super-admin'
     | '/bibliotheque'
     | '/cours-en-ligne'
-    | '/evenements'
     | '/gestion-opportunites'
     | '/guide-bachelier'
     | '/marche'
@@ -424,6 +424,7 @@ export interface FileRouteTypes {
     | '/connexion'
     | '/connexion-espaces'
     | '/devenir-partenaire'
+    | '/evenements'
     | '/fonctionnalites'
     | '/inscription'
     | '/politique-confidentialite'
@@ -435,7 +436,6 @@ export interface FileRouteTypes {
     | '/_authenticated/super-admin'
     | '/_commun/bibliotheque'
     | '/_commun/cours-en-ligne'
-    | '/_commun/evenements'
     | '/_commun/gestion-opportunites'
     | '/_commun/guide-bachelier'
     | '/_commun/marche'
@@ -463,6 +463,7 @@ export interface RootRouteChildren {
   ConnexionRoute: typeof ConnexionRoute
   ConnexionEspacesRoute: typeof ConnexionEspacesRoute
   DevenirPartenaireRoute: typeof DevenirPartenaireRoute
+  EvenementsRoute: typeof EvenementsRoute
   FonctionnalitesRoute: typeof FonctionnalitesRoute
   InscriptionRoute: typeof InscriptionRoute
   PolitiqueConfidentialiteRoute: typeof PolitiqueConfidentialiteRoute
@@ -545,6 +546,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevenirPartenaireRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/evenements': {
+      id: '/evenements'
+      path: '/evenements'
+      fullPath: '/evenements'
+      preLoaderRoute: typeof EvenementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/fonctionnalites': {
       id: '/fonctionnalites'
       path: '/fonctionnalites'
@@ -620,13 +628,6 @@ declare module '@tanstack/react-router' {
       path: '/cours-en-ligne'
       fullPath: '/cours-en-ligne'
       preLoaderRoute: typeof CommunCoursEnLigneRouteImport
-      parentRoute: typeof CommunRoute
-    }
-    '/_commun/evenements': {
-      id: '/_commun/evenements'
-      path: '/evenements'
-      fullPath: '/evenements'
-      preLoaderRoute: typeof CommunEvenementsRouteImport
       parentRoute: typeof CommunRoute
     }
     '/_commun/gestion-opportunites': {
@@ -755,7 +756,6 @@ const AuthenticatedRouteRouteWithChildren =
 interface CommunRouteChildren {
   CommunBibliothequeRoute: typeof CommunBibliothequeRoute
   CommunCoursEnLigneRoute: typeof CommunCoursEnLigneRoute
-  CommunEvenementsRoute: typeof CommunEvenementsRoute
   CommunGestionOpportunitesRoute: typeof CommunGestionOpportunitesRoute
   CommunGuideBachelierRoute: typeof CommunGuideBachelierRoute
   CommunMarcheRoute: typeof CommunMarcheRoute
@@ -767,7 +767,6 @@ interface CommunRouteChildren {
 const CommunRouteChildren: CommunRouteChildren = {
   CommunBibliothequeRoute: CommunBibliothequeRoute,
   CommunCoursEnLigneRoute: CommunCoursEnLigneRoute,
-  CommunEvenementsRoute: CommunEvenementsRoute,
   CommunGestionOpportunitesRoute: CommunGestionOpportunitesRoute,
   CommunGuideBachelierRoute: CommunGuideBachelierRoute,
   CommunMarcheRoute: CommunMarcheRoute,
@@ -789,6 +788,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConnexionRoute: ConnexionRoute,
   ConnexionEspacesRoute: ConnexionEspacesRoute,
   DevenirPartenaireRoute: DevenirPartenaireRoute,
+  EvenementsRoute: EvenementsRoute,
   FonctionnalitesRoute: FonctionnalitesRoute,
   InscriptionRoute: InscriptionRoute,
   PolitiqueConfidentialiteRoute: PolitiqueConfidentialiteRoute,

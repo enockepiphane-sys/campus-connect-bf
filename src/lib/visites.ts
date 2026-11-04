@@ -46,39 +46,27 @@ export function describeAgent(ua: string | null): { label: string; bot: boolean 
 
 /* ---------- Enregistrement des visites ---------- */
 
-// Identifiant anonyme propre à l'appareil/navigateur : un même téléphone n'est compté qu'une fois par période.
-function visitorId(): string {
-  try {
-    let id = localStorage.getItem("cl_vid");
-    if (!id || id.length < 8) {
-      id = crypto.randomUUID();
-      localStorage.setItem("cl_vid", id);
-    }
-    return id;
-  } catch {
-    return "";
-  }
-}
-
+// Seules les personnes connectées (compte primaire ouvert au minimum) sont comptées.
+// Un utilisateur = un compte : le même compte sur plusieurs appareils n'est compté qu'une fois.
 // once = "session" : une seule fois par session ; "device" : une seule fois sur cet appareil.
 export function trackVisit(page: VisitePage, once: "session" | "device" = "session") {
   try {
     if (isAutomated() || isNoTrack()) return;
-    const id = visitorId();
-    if (!id) return;
-    const store = once === "device" ? localStorage : sessionStorage;
-    const key = `cl_seen_${page}`;
-    if (store.getItem(key)) return;
-    store.setItem(key, "1");
-    const agent = navigator.userAgent.slice(0, 300);
-    void db
-      .from("visites")
-      .insert({ visitor_id: id, page, agent })
-      .then(({ error }: { error: { code?: string } | null }) => {
-        // colonne « agent » pas encore créée (SQL n°3 non exécuté) : on enregistre sans elle
-        if (error && ["42703", "PGRST204"].includes(error.code ?? "")) return db.from("visites").insert({ visitor_id: id, page });
-        return undefined;
-      });
+    void supabase.auth.getSession().then(({ data }) => {
+      const userId = data.session?.user.id;
+      if (!userId) return; // visiteur sans compte : non compté
+      const store = once === "device" ? localStorage : sessionStorage;
+      const key = `cl_seen_${page}_${userId}`;
+      if (store.getItem(key)) return;
+      store.setItem(key, "1");
+      const agent = navigator.userAgent.slice(0, 300);
+      return db
+        .from("visites")
+        .insert({ visitor_id: userId, user_id: userId, page, agent })
+        .then(({ error }: { error: { code?: string } | null }) => {
+          if (error) store.removeItem(key); // nouvel essai à la prochaine page
+        });
+    }).catch(() => undefined);
   } catch {
     /* le suivi ne doit jamais gêner l'utilisateur */
   }

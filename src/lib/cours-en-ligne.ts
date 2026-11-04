@@ -24,7 +24,8 @@ export type Cours = {
   id: string;
   filiere: string; // première filière (compatibilité)
   filieres?: string[]; // toutes les filières concernées
-  niveau: Niveau;
+  niveau: Niveau; // premier niveau (compatibilité)
+  niveaux?: Niveau[]; // tous les niveaux concernés
   module: string;
   titre: string;
   description: string | null;
@@ -42,9 +43,12 @@ export type Cours = {
 /** Toutes les filières d'un cours (retombe sur l'ancienne colonne « filiere »). */
 export const filieresOf = (c: Pick<Cours, "filiere" | "filieres">): string[] => (c.filieres?.length ? c.filieres : [c.filiere]);
 
+/** Tous les niveaux d'un cours (retombe sur l'ancienne colonne « niveau »). */
+export const niveauxOf = (c: Pick<Cours, "niveau" | "niveaux">): Niveau[] => (c.niveaux?.length ? c.niveaux : [c.niveau]);
+
 export type CoursInput = {
   filieres: string[];
-  niveau: Niveau;
+  niveaux: Niveau[];
   module: string;
   titre: string;
   description: string;
@@ -108,7 +112,8 @@ function row(input: CoursInput) {
   return {
     filiere: input.filieres[0].trim(),
     filieres: input.filieres.map((f) => f.trim()),
-    niveau: input.niveau,
+    niveau: input.niveaux[0],
+    niveaux: input.niveaux,
     module: input.module.trim(),
     titre: input.titre.trim(),
     description: input.description.trim() || null,
@@ -129,6 +134,7 @@ async function upload(file: File, filiere: string) {
 
 export async function addCours(input: CoursInput, file: File | null, image?: ImageChoix) {
   if (!input.filieres.length) throw new Error("Choisissez au moins une filière.");
+  if (!input.niveaux.length) throw new Error("Choisissez au moins un niveau.");
   if (!file && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
   const fichier = file ? await upload(file, input.filieres[0]) : {};
   let img: Awaited<ReturnType<typeof preparerImage>>;
@@ -143,6 +149,7 @@ export async function addCours(input: CoursInput, file: File | null, image?: Ima
 
 export async function updateCours(c: Cours, input: CoursInput, file: File | null, image?: ImageChoix) {
   if (!input.filieres.length) throw new Error("Choisissez au moins une filière.");
+  if (!input.niveaux.length) throw new Error("Choisissez au moins un niveau.");
   const fichier = file ? await upload(file, input.filieres[0]) : {};
   if (!file && !c.fichier_path && !input.video_url.trim()) throw new Error("Ajoutez un fichier ou un lien vidéo.");
   const img = await preparerImage(image, c.image_path, "cours");

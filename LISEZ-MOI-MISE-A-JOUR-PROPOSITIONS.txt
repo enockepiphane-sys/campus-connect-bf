@@ -1,0 +1,19 @@
+MISE À JOUR CAMPUSLINK — Propositions de cours, IA CampusLink, cartes compactes
+
+1) Exécuter UNE FOIS dans Supabase (SQL Editor > Run) :
+   supabase/migrations/20261113000000_cours_propositions.sql
+   (peut être relancé sans risque)
+
+2) Remplacer les fichiers du ZIP aux mêmes emplacements (fichiers complets).
+
+Ce qui change :
+- Cours en ligne : bouton « Proposer un cours » à côté de la recherche (titre, filière,
+  niveau, module, précisions). Limite de 3 propositions par jour et par appareil.
+- Super-admin > Cours en ligne : nouvel onglet « Propositions » (Retenir / Refuser / Supprimer),
+  avec le nombre de nouvelles propositions.
+- IA : les textes visibles disent maintenant « IA CampusLink » (Révision & IA, messages d'erreur,
+  guide de bienvenue, Fonctionnalités, politique de confidentialité).
+- Opportunités et Marché étudiant : cartes plus petites (4 par ligne sur ordinateur,
+  3 sur tablette, 2 sur téléphone). Couleurs et style inchangés.
+
+Rien d'autre n'a été modifié.

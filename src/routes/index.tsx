@@ -12,7 +12,7 @@ import { BannieresDefilantes } from "@/components/BannieresDefilantes";
 import { ALaUneDefilante } from "@/components/ALaUneDefilante";
 import { CompteMembreCarte } from "@/components/CompteMembreCarte";
 import { GuideBienvenue, relancerGuide } from "@/components/GuideBienvenue";
-import graduateHero from "@/assets/graduate-hero.png";
+import { AvatarMarche } from "@/components/AvatarMarche";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -84,13 +84,7 @@ function Home() {
             </p>
           </div>
           <div className="relative mx-auto flex items-end justify-center px-2 sm:px-0">
-            <img
-              src={graduateHero}
-              alt="Jeune diplômé universitaire africain présentant fièrement l'application CampusLink"
-              width={1024}
-              height={1536}
-              className="avatar-marche relative z-0 max-h-[240px] w-auto sm:max-h-[300px] md:max-h-[420px] -mr-6 sm:-mr-10 md:-mr-24"
-            />
+            <AvatarMarche className="relative z-0 aspect-[244/560] h-[240px] w-auto sm:h-[300px] md:h-[420px] -mr-1 sm:-mr-2 md:-mr-8" />
             <div className="relative z-10">
               <PhoneMockup />
             </div>

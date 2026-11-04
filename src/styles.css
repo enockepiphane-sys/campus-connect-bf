@@ -278,18 +278,5 @@
 @utility icon-danger { color: #b4442f; fill: color-mix(in oklab, #b4442f 22%, transparent); }
 
 /* === Avatar de l'étudiant (accueil) : petite marche sur place, en boucle === */
-@utility avatar-marche {
-  transform-origin: 50% 100%;
-  animation: cl-avatar-marche 2.4s ease-in-out infinite;
-  @media (prefers-reduced-motion: reduce) { animation: none; }
-}
-
-@keyframes cl-avatar-marche {
-  0%   { transform: translate(0, 0) rotate(0deg); }
-  15%  { transform: translate(-3px, -7px) rotate(-2.5deg); }
-  30%  { transform: translate(-5px, 0) rotate(-1deg); }
-  50%  { transform: translate(0, -4px) rotate(0deg); }
-  65%  { transform: translate(5px, -7px) rotate(2.5deg); }
-  80%  { transform: translate(3px, 0) rotate(1deg); }
-  100% { transform: translate(0, 0) rotate(0deg); }
-}
+/* L'ancienne animation « avatar-marche » (simple balancement) a été remplacée
+   par une vraie animation de marche : voir src/components/AvatarMarche.tsx */

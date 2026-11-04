@@ -9,8 +9,8 @@ const db = supabase as unknown as SupabaseClient<any>;
 
 export const COURS_BUCKET = "cours-en-ligne";
 export const MAX_COURS_BYTES = 200 * 1024 * 1024;
-export const NIVEAUX = ["L1", "L2", "L3", "M1", "M2", "Doctorat", "BTS 1", "BTS 2", "Autre"] as const;
-export type Niveau = (typeof NIVEAUX)[number];
+import type { Niveau } from "./cours-groupes";
+export { NIVEAUX, filieresOf, niveauxOf, grouperCours, libelleCours, type Niveau } from "./cours-groupes";
 export type TypeContenu = "video" | "photo" | "manuscrit" | "pdf";
 export const TYPES: { value: TypeContenu; label: string; accept: string; mimes: string[] }[] = [
   { value: "video", label: "Vidéo", accept: "video/mp4,video/webm,video/quicktime", mimes: ["video/mp4", "video/webm", "video/quicktime"] },
@@ -39,12 +39,6 @@ export type Cours = {
   actif: boolean;
   created_at: string;
 };
-
-/** Toutes les filières d'un cours (retombe sur l'ancienne colonne « filiere »). */
-export const filieresOf = (c: Pick<Cours, "filiere" | "filieres">): string[] => (c.filieres?.length ? c.filieres : [c.filiere]);
-
-/** Tous les niveaux d'un cours (retombe sur l'ancienne colonne « niveau »). */
-export const niveauxOf = (c: Pick<Cours, "niveau" | "niveaux">): Niveau[] => (c.niveaux?.length ? c.niveaux : [c.niveau]);
 
 export type CoursInput = {
   filieres: string[];

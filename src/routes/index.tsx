@@ -45,7 +45,7 @@ function Home() {
         className="bg-paper fixed inset-x-0 top-0 z-50"
         style={{ backgroundSize: "100% 100vh", backgroundPosition: "top left" }}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
           <div className="flex items-center gap-3">
             <Logo />
             <div className="flex items-center gap-2">
@@ -59,7 +59,7 @@ function Home() {
         </div>
       </header>
       {/* Réserve la place de l'en-tête figé pour que le contenu ne passe pas dessous au départ */}
-      <div aria-hidden className="h-[92px]" />
+      <div aria-hidden className="h-[68px]" />
 
       {/* Kente accent */}
       <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />

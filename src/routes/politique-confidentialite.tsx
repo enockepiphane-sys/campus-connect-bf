@@ -109,7 +109,7 @@ function Page() {
             nominatifs, etc.).
           </li>
           <li>Pour éviter les abus, le nombre de demandes est limité de façon temporaire.</li>
-          <li>Les réponses de l’IA peuvent contenir des erreurs : vérifiez-les avec votre cours.</li>
+          <li>Les réponses d’IA CampusLink peuvent contenir des erreurs : vérifiez-les avec votre cours.</li>
         </List>
       </Section>
 

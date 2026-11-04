@@ -106,7 +106,7 @@ function Page() {
             <StickerCard
               icon={<Brain className="h-6 w-6" />}
               title="Révision & IA"
-              desc="Importez un cours en PDF ou en photo (même manuscrit) et obtenez un résumé, un QCM, des fiches de révision ou des exercices corrigés. Posez aussi vos questions à l'assistant."
+              desc="Importez un cours en PDF ou en photo (même manuscrit) et obtenez un résumé, un QCM, des fiches de révision ou des exercices corrigés. Posez aussi vos questions à IA CampusLink."
               from="#052e1c"
               to2="#12A150"
               link="/revision-ia"

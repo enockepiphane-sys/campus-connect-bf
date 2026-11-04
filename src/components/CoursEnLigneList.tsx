@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, niveauxOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
+import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, grouperCours, niveauxOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const COLOR = "#c2410c";
@@ -67,7 +67,7 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
         {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{label}</span>
-        <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{niveauxOf(c).join(" · ")}</span>
+        <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{niveauxOf(c).join(" + ")}</span>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLOR }}>{c.module}</p>
@@ -125,22 +125,8 @@ export function CoursEnLigneList() {
     });
   }, [all, filiere, niveau, module, search]);
 
-  // Regroupement : Filière › Niveau
-  const groups = useMemo(() => {
-    const map = new Map<string, Cours[]>();
-    // Un cours multi-filières apparaît dans chacune de ses filières (sans être dupliqué en base).
-    for (const c of filtered) {
-      for (const f of filieresOf(c)) {
-        if (filiere && f !== filiere) continue;
-        for (const n of niveauxOf(c)) {
-          if (niveau && n !== niveau) continue;
-          const k = `${f} › ${n}`;
-          map.set(k, [...(map.get(k) ?? []), c]);
-        }
-      }
-    }
-    return [...map.entries()];
-  }, [filtered, filiere, niveau]);
+  // Regroupement : Filières › Niveaux. Un cours lié à L1 et L2 n'apparaît qu'une fois, sous « … › L1 + L2 ».
+  const groups = useMemo(() => grouperCours(filtered), [filtered]);
 
   return (
     <section className="space-y-6">

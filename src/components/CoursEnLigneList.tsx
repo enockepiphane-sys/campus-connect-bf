@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
+import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, niveauxOf, formatSize, listCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 const COLOR = "#c2410c";
@@ -32,7 +32,7 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
         <DialogHeader>
           <DialogTitle className="font-display text-xl">{cours.titre}</DialogTitle>
           <DialogDescription>
-            {filieresOf(cours).join(" + ")} · {cours.niveau} · {cours.module}
+            {filieresOf(cours).join(" + ")} · {niveauxOf(cours).join(" + ")} · {cours.module}
           </DialogDescription>
         </DialogHeader>
         <div className="overflow-hidden rounded-2xl bg-black">
@@ -67,7 +67,7 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
         <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
         {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
         <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{label}</span>
-        <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{c.niveau}</span>
+        <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{niveauxOf(c).join(" · ")}</span>
       </div>
       <div className="flex flex-1 flex-col p-5">
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLOR }}>{c.module}</p>
@@ -108,9 +108,9 @@ export function CoursEnLigneList() {
   const all = cours.data ?? [];
 
   const filieres = useMemo(() => [...new Set(all.flatMap(filieresOf))].sort((a, b) => a.localeCompare(b, "fr")), [all]);
-  const niveaux = NIVEAUX.filter((n) => all.some((c) => c.niveau === n && (!filiere || filieresOf(c).includes(filiere))));
+  const niveaux = NIVEAUX.filter((n) => all.some((c) => niveauxOf(c).includes(n) && (!filiere || filieresOf(c).includes(filiere))));
   const modules = useMemo(
-    () => [...new Set(all.filter((c) => (!filiere || filieresOf(c).includes(filiere)) && (!niveau || c.niveau === niveau)).map((c) => c.module))].sort((a, b) => a.localeCompare(b, "fr")),
+    () => [...new Set(all.filter((c) => (!filiere || filieresOf(c).includes(filiere)) && (!niveau || niveauxOf(c).includes(niveau as never))).map((c) => c.module))].sort((a, b) => a.localeCompare(b, "fr")),
     [all, filiere, niveau],
   );
 
@@ -118,7 +118,7 @@ export function CoursEnLigneList() {
     const q = plain(search.trim());
     return all.filter((c) => {
       if (filiere && !filieresOf(c).includes(filiere)) return false;
-      if (niveau && c.niveau !== niveau) return false;
+      if (niveau && !niveauxOf(c).includes(niveau as never)) return false;
       if (module && c.module !== module) return false;
       if (!q) return true;
       return plain(`${c.titre} ${c.module} ${filieresOf(c).join(" ")} ${c.enseignant ?? ""} ${c.description ?? ""}`).includes(q);
@@ -132,12 +132,15 @@ export function CoursEnLigneList() {
     for (const c of filtered) {
       for (const f of filieresOf(c)) {
         if (filiere && f !== filiere) continue;
-        const k = `${f} › ${c.niveau}`;
-        map.set(k, [...(map.get(k) ?? []), c]);
+        for (const n of niveauxOf(c)) {
+          if (niveau && n !== niveau) continue;
+          const k = `${f} › ${n}`;
+          map.set(k, [...(map.get(k) ?? []), c]);
+        }
       }
     }
     return [...map.entries()];
-  }, [filtered, filiere]);
+  }, [filtered, filiere, niveau]);
 
   return (
     <section className="space-y-6">

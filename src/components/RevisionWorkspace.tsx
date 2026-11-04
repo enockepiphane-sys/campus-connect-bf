@@ -258,7 +258,7 @@ export function RevisionWorkspace() {
           )}
 
           <p role="status" className="rounded-xl border-l-4 border-gold bg-secondary p-4 text-sm">
-            Pour un cours manuscrit, prenez une photo nette et bien éclairée, une page à la fois. Votre document est envoyé au service d’intelligence artificielle de Google (Gemini) pour générer la réponse. N’y mettez pas d’informations personnelles.
+            Pour un cours manuscrit, prenez une photo nette et bien éclairée, une page à la fois. Votre document est analysé par notre assistant d’intelligence artificielle pour générer la réponse. N’y mettez pas d’informations personnelles.
           </p>
           <Button
             onClick={() => void generate()}

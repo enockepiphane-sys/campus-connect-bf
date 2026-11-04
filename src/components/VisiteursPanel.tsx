@@ -73,7 +73,7 @@ export function VisiteursPanel() {
         <div>
           <h2 className="font-display text-2xl font-bold">Visiteurs du site</h2>
           <p className="text-sm text-muted-foreground">
-            Un visiteur = un téléphone ou navigateur, compté une seule fois par période.
+            Seuls les utilisateurs ayant ouvert au moins leur compte primaire sont comptés. Un utilisateur = un compte, compté une seule fois par période.
             {s?.depuis ? ` Comptage depuis le ${new Date(s.depuis).toLocaleDateString("fr-FR", { dateStyle: "long" })}.` : ""}
           </p>
         </div>

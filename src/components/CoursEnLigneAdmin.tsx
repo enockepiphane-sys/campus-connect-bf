@@ -10,13 +10,13 @@ import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { aucuneImage, imageUrl, type ImageChoix } from "@/lib/images-contenu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
-  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, embedUrl, filieresOf, formatSize, listCours, updateCours, validateFile,
+  FILIERES_SUGGEREES, NIVEAUX, TYPES, addCours, coursFileUrl, deleteCours, embedUrl, filieresOf, niveauxOf, formatSize, listCours, updateCours, validateFile,
   type Cours, type CoursInput,
 } from "@/lib/cours-en-ligne";
 
 const empty = (prev?: Partial<CoursInput>): CoursInput => ({
   filieres: prev?.filieres ?? [],
-  niveau: prev?.niveau ?? "L1",
+  niveaux: prev?.niveaux ?? ["L1"],
   module: prev?.module ?? "",
   titre: "",
   description: "",
@@ -47,7 +47,7 @@ export function CoursEnLigneAdmin() {
   const [saisieFiliere, setSaisieFiliere] = useState("");
 
   const filieres = useMemo(() => [...new Set([...all.flatMap(filieresOf), ...FILIERES_SUGGEREES])].sort((a, b) => a.localeCompare(b, "fr")), [all]);
-  const modules = useMemo(() => [...new Set(all.filter((c) => filieresOf(c).some((f) => form.filieres.includes(f)) && c.niveau === form.niveau).map((c) => c.module))], [all, form.filieres, form.niveau]);
+  const modules = useMemo(() => [...new Set(all.filter((c) => filieresOf(c).some((f) => form.filieres.includes(f)) && niveauxOf(c).some((n) => form.niveaux.includes(n))).map((c) => c.module))], [all, form.filieres, form.niveaux]);
   const type = TYPES.find((t) => t.value === form.type_contenu)!;
 
   const set = <K extends keyof CoursInput>(k: K, v: CoursInput[K]) => setForm((f) => ({ ...f, [k]: v }));
@@ -77,6 +77,7 @@ export function CoursEnLigneAdmin() {
     const filieresFinales = addFiliere(form.filieres, saisieFiliere);
     if (!filieresFinales.length) return setError("Choisissez au moins une filière (ex. : Droit).");
     const donnees = { ...form, filieres: filieresFinales };
+    if (!form.niveaux.length) return setError("Choisissez au moins un niveau (ex. : L1).");
     if (!form.module.trim()) return setError("Indiquez le nom du module.");
     if (!form.titre.trim()) return setError("Indiquez le titre du cours.");
     if (!editing && !file && !form.video_url.trim()) return setError(form.type_contenu === "video" ? "Ajoutez un fichier vidéo ou un lien YouTube/Vimeo." : "Ajoutez le fichier du cours.");
@@ -117,7 +118,10 @@ export function CoursEnLigneAdmin() {
   const visibles = all.filter((c) => !filtre || filieresOf(c).includes(filtre));
   const groups = useMemo(() => {
     const map = new Map<string, Cours[]>();
-    for (const c of visibles) map.set(`${filieresOf(c).join(" + ")} › ${c.niveau} › ${c.module}`, [...(map.get(`${filieresOf(c).join(" + ")} › ${c.niveau} › ${c.module}`) ?? []), c]);
+    for (const c of visibles) {
+      const k = `${filieresOf(c).join(" + ")} › ${niveauxOf(c).join(" + ")} › ${c.module}`;
+      map.set(k, [...(map.get(k) ?? []), c]);
+    }
     return [...map.entries()];
   }, [visibles]);
 
@@ -160,7 +164,7 @@ export function CoursEnLigneAdmin() {
                         setEditing(c);
                         setFile(null);
                         setImage(aucuneImage());
-                        setForm({ filieres: filieresOf(c), niveau: c.niveau, module: c.module, titre: c.titre, description: c.description ?? "", enseignant: c.enseignant ?? "", type_contenu: c.type_contenu, video_url: c.video_url ?? "", actif: c.actif });
+                        setForm({ filieres: filieresOf(c), niveaux: niveauxOf(c), module: c.module, titre: c.titre, description: c.description ?? "", enseignant: c.enseignant ?? "", type_contenu: c.type_contenu, video_url: c.video_url ?? "", actif: c.actif });
                         window.scrollTo({ top: 0, behavior: "smooth" });
                       }}><Pencil /></Button>
                       <Button variant="ghost" size="icon" aria-label={`Supprimer ${c.titre}`} onClick={() => setDeleting(c)}><Trash2 className="text-destructive" /></Button>
@@ -217,18 +221,30 @@ export function CoursEnLigneAdmin() {
             <datalist id="c-filieres">{filieres.filter((f) => !form.filieres.includes(f)).map((f) => <option key={f} value={f} />)}</datalist>
             <p className="text-xs text-muted-foreground">Le cours sera publié une seule fois et apparaîtra dans toutes les filières choisies.</p>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="c-niveau">Niveau *</Label>
-              <select id="c-niveau" value={form.niveau} onChange={(e) => set("niveau", e.target.value as CoursInput["niveau"])} className={selectCls}>
-                {NIVEAUX.map((n) => <option key={n} value={n}>{n}</option>)}
-              </select>
+          <fieldset className="space-y-1.5">
+            <legend className="text-sm font-medium">Niveau(x) * — un ou plusieurs</legend>
+            <div className="flex flex-wrap gap-2">
+              {NIVEAUX.map((n) => {
+                const on = form.niveaux.includes(n);
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => set("niveaux", on ? form.niveaux.filter((x) => x !== n) : NIVEAUX.filter((x) => x === n || form.niveaux.includes(x)))}
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${on ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background text-foreground hover:bg-accent"}`}
+                  >
+                    {on && <Check className="h-3.5 w-3.5" />}{n}
+                  </button>
+                );
+              })}
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="c-module">Module *</Label>
-              <Input id="c-module" list="c-modules" value={form.module} onChange={(e) => set("module", e.target.value)} placeholder="Ex. : Droit civil" maxLength={150} />
-              <datalist id="c-modules">{modules.map((m) => <option key={m} value={m} />)}</datalist>
-            </div>
+            <p className="text-xs text-muted-foreground">Ex. : cochez L1, L2 et L3 si le cours concerne les trois. Il apparaîtra dans chaque niveau choisi.</p>
+          </fieldset>
+          <div className="space-y-1.5">
+            <Label htmlFor="c-module">Module *</Label>
+            <Input id="c-module" list="c-modules" value={form.module} onChange={(e) => set("module", e.target.value)} placeholder="Ex. : Droit civil" maxLength={150} />
+            <datalist id="c-modules">{modules.map((m) => <option key={m} value={m} />)}</datalist>
           </div>
 
           <p className="pt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">2. Le cours</p>

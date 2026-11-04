@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CalendarDays, ChevronLeft, ChevronRight, PartyPopper } from "lucide-react";
 import { LoaderInline } from "@/components/ChargementPremium";
@@ -10,6 +10,37 @@ export function EvenementsSociauxSection() {
   const track = useRef<HTMLDivElement>(null);
   const shown = (upcoming.length ? upcoming : past).slice(0, 8);
   const scroll = (dir: 1 | -1) => track.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
+  // Défilement automatique vers la gauche (comme la bande des fonctionnalités), en boucle.
+  // Pause quand on touche ou survole les affiches ; on peut toujours faire glisser à la main.
+  const enPause = useRef(false);
+  const boucle = shown.length > 1;
+  const items = boucle ? [...shown, ...shown] : shown;
+  useEffect(() => {
+    if (!boucle) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    let raf = 0;
+    let last = performance.now();
+    let pos = track.current?.scrollLeft ?? 0;
+    const tick = (now: number) => {
+      const el = track.current;
+      const dt = Math.min(64, now - last);
+      last = now;
+      if (el) {
+        if (enPause.current) pos = el.scrollLeft;
+        else {
+          pos += dt * 0.04; // ≈ 40 px par seconde
+          const moitie = el.scrollWidth / 2;
+          if (pos >= moitie) pos -= moitie;
+          el.scrollLeft = pos;
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [boucle, shown.length]);
+  const pause = () => { enPause.current = true; };
+  const reprise = () => { enPause.current = false; };
 
   return (
     <section aria-labelledby="evenements-sociaux-titre" className="mx-auto mt-16 max-w-6xl">
@@ -58,10 +89,21 @@ export function EvenementsSociauxSection() {
       )}
 
       {!loading && shown.length > 0 && (
-        <div ref={track} className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 pb-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
-          {shown.map(({ ev, date, status, img }) => (
+        <div
+          ref={track}
+          onMouseEnter={pause}
+          onMouseLeave={reprise}
+          onTouchStart={pause}
+          onTouchEnd={() => setTimeout(reprise, 2500)}
+          onFocus={pause}
+          onBlur={reprise}
+          className={`-mx-4 flex gap-4 ${boucle ? "" : "snap-x snap-mandatory"} overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden`}
+        >
+          {items.map(({ ev, date, status, img }, i) => (
             <Link
-              key={ev.id}
+              key={`${ev.id}-${i}`}
+              aria-hidden={i >= shown.length || undefined}
+              tabIndex={i >= shown.length ? -1 : undefined}
               to="/evenements"
               hash={ev.id}
               className="group relative isolate block aspect-[3/4] w-[62vw] max-w-[260px] shrink-0 snap-start overflow-hidden rounded-3xl shadow-md transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:w-[240px]"

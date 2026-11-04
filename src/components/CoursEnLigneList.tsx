@@ -62,33 +62,33 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
   const yt = parseYoutube(c.video_url);
   const couverture = imageUrl(c.image_path) ?? (yt && !c.fichier_path ? youtubeMiniature(yt.id) : null);
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative flex h-28 items-center justify-center overflow-hidden sm:h-36" style={{ background: `linear-gradient(135deg, #431407, ${COLOR}, #e0764f)` }}>
-        <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-12 w-12 text-white/90" />}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{label}</span>
-        <span className="absolute right-3 top-3 rounded-full bg-black/30 px-2.5 py-0.5 text-[10px] font-bold text-white">{niveauxOf(c).join(" + ")}</span>
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="relative flex h-24 items-center justify-center overflow-hidden sm:h-28 lg:h-32" style={{ background: `linear-gradient(135deg, #431407, ${COLOR}, #e0764f)` }}>
+        <span aria-hidden className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/15" />
+        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-9 w-9 text-white/90 sm:h-11 sm:w-11" />}
+        <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-neutral-900 sm:text-[10px]">{label}</span>
+        <span className="absolute right-2 top-2 max-w-[55%] truncate rounded-full bg-black/40 px-2 py-0.5 text-[9px] font-bold text-white sm:text-[10px]">{niveauxOf(c).join(" + ")}</span>
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: COLOR }}>{c.module}</p>
-        <h3 className="mt-1 line-clamp-2 break-words font-display text-lg font-bold leading-snug">{c.titre}</h3>
-        {c.enseignant && <p className="mt-1 text-sm font-medium text-muted-foreground">{c.enseignant}</p>}
-        {c.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{c.description}</p>}
-        {c.taille ? <p className="mt-3 text-xs text-muted-foreground">{formatSize(c.taille)}</p> : null}
-        <div className="mt-auto flex gap-2 pt-4">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <p className="truncate text-[10px] font-semibold uppercase tracking-wider sm:text-xs" style={{ color: COLOR }}>{c.module}</p>
+        <h3 className="mt-0.5 line-clamp-2 break-words font-display text-sm font-bold leading-snug sm:text-base">{c.titre}</h3>
+        {c.enseignant && <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">{c.enseignant}</p>}
+        {c.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">{c.description}</p>}
+        {c.taille ? <p className="mt-1.5 truncate text-[11px] text-muted-foreground">{formatSize(c.taille)}</p> : null}
+        <div className="mt-auto flex gap-1.5 pt-3">
           {isPdf ? (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: COLOR }}>
+            <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm" style={{ background: COLOR }}>
               <BookOpen className="h-4 w-4" />
               Lire
             </a>
           ) : (
-            <button type="button" onClick={onOpen} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: COLOR }}>
+            <button type="button" onClick={onOpen} className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm" style={{ background: COLOR }}>
               {c.type_contenu === "video" ? <PlayCircle className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
               {c.type_contenu === "video" ? "Regarder" : "Voir"}
             </button>
           )}
           {url && (
-            <BoutonTelechargement url={coursFileUrl(c, `${c.titre}.${extensionOf(c.fichier_type ?? "")}`)} ressource={`cours:${c.id}`} label={`Télécharger ${c.titre}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted">
+            <BoutonTelechargement url={coursFileUrl(c, `${c.titre}.${extensionOf(c.fichier_type ?? "")}`)} ressource={`cours:${c.id}`} label={`Télécharger ${c.titre}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted">
               <Download className="h-4 w-4" />
             </BoutonTelechargement>
           )}
@@ -129,7 +129,7 @@ export function CoursEnLigneList() {
   const groups = useMemo(() => grouperCours(filtered), [filtered]);
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-5">
       <div className="rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-5">
         <p className="mb-3 text-sm font-medium text-muted-foreground">Choisis ta filière, ton niveau puis ton module pour trouver tes cours.</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 [&>*]:min-w-0">
@@ -167,11 +167,11 @@ export function CoursEnLigneList() {
 
       {groups.map(([titre, list]) => (
         <div key={titre}>
-          <h2 className="mb-4 flex items-center gap-2 font-display text-xl font-bold">
-            <span className="h-6 w-1.5 rounded-full" style={{ background: COLOR }} />
+          <h2 className="mb-3 flex items-center gap-2 font-display text-lg font-bold sm:text-xl">
+            <span className="h-5 w-1.5 rounded-full" style={{ background: COLOR }} />
             {titre} <span className="text-sm font-medium text-muted-foreground">({list.length})</span>
           </h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 [&>*]:min-w-0">
             {list.map((c) => <CoursCard key={c.id} c={c} onOpen={() => setOuvert(c)} />)}
           </div>
         </div>

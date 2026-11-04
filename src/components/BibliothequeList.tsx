@@ -144,20 +144,20 @@ function LienCard({ doc, color, onRead }: { doc: Doc; color: string; onRead: (d:
   const Icon = lecture && (lecture.kind === "youtube" || lecture.kind === "video" || (lecture.kind === "iframe" && lecture.format === "video")) ? Video : lecture?.kind === "pdf" ? FileText : lecture?.kind === "image" ? ImageIcon : Link2;
   const lisible = Boolean(a.ok && a.integrable);
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative flex h-32 items-center justify-center overflow-hidden sm:h-40" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
-        <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
-        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />}
-        {yt && <PlayCircle aria-hidden className="absolute h-12 w-12 text-white drop-shadow-lg" />}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{lecture ? etiquetteLien(lecture) : "Lien"}</span>
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="relative flex h-24 items-center justify-center overflow-hidden sm:h-28 lg:h-32" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+        <span aria-hidden className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/15" />
+        {couverture ? <img src={couverture} alt="" loading="lazy" onError={(e) => { e.currentTarget.style.display = "none"; }} className="absolute inset-0 h-full w-full object-cover" /> : <Icon aria-hidden strokeWidth={1.3} className="h-9 w-9 text-white/90 sm:h-11 sm:w-11" />}
+        {yt && <PlayCircle aria-hidden className="absolute h-9 w-9 text-white drop-shadow-lg sm:h-10 sm:w-10" />}
+        <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-neutral-900 sm:text-[10px]">{lecture ? etiquetteLien(lecture) : "Lien"}</span>
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-2 break-words font-display text-lg font-bold leading-snug">{doc.titre}</h3>
-        {doc.auteur && <p className="mt-1 text-sm font-medium text-muted-foreground">{doc.auteur}</p>}
-        {doc.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{doc.description}</p>}
-        {a.ok && <p className="mt-3 text-xs text-muted-foreground">Source : {a.fournisseur || a.hote}</p>}
-        <div className="mt-auto flex gap-2 pt-4">
-          <button type="button" onClick={() => onRead(doc)} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110" style={{ background: color }}>
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h3 className="line-clamp-2 break-words font-display text-sm font-bold leading-snug sm:text-base">{doc.titre}</h3>
+        {doc.auteur && <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">{doc.auteur}</p>}
+        {doc.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">{doc.description}</p>}
+        {a.ok && <p className="mt-1.5 truncate text-[11px] text-muted-foreground">Source : {a.fournisseur || a.hote}</p>}
+        <div className="mt-auto flex gap-1.5 pt-3">
+          <button type="button" onClick={() => onRead(doc)} className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm" style={{ background: color }}>
             {lecture && (yt || lecture.kind === "video") ? <PlayCircle className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
             {lisible ? (yt || lecture?.kind === "video" ? "Regarder" : "Lire") : "Consulter"}
           </button>
@@ -175,30 +175,30 @@ function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPl
   const couverture = imageUrl(doc.image_path);
   const name = `${doc.titre}.${extensionOf(doc.fichier_type)}`;
   return (
-    <article className="flex min-w-0 flex-col overflow-hidden rounded-3xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl">
-      <div className="relative flex h-32 items-center justify-center overflow-hidden sm:h-40" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
-        <span aria-hidden className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/15" />
+    <article className="flex min-w-0 flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+      <div className="relative flex h-24 items-center justify-center overflow-hidden sm:h-28 lg:h-32" style={{ background: `linear-gradient(135deg, ${color}, ${color}bb)` }}>
+        <span aria-hidden className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-white/15" />
         {couverture ? (
           <img src={couverture} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
         ) : isVideo ? (
           <video src={`${fileUrl(doc)}#t=0.5`} preload="metadata" muted playsInline aria-hidden tabIndex={-1} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
         ) : (
-          <Icon aria-hidden strokeWidth={1.3} className="h-14 w-14 text-white/90" />
+          <Icon aria-hidden strokeWidth={1.3} className="h-9 w-9 text-white/90 sm:h-11 sm:w-11" />
         )}
-        {isVideo && <PlayCircle aria-hidden className="absolute h-12 w-12 text-white drop-shadow-lg" />}
-        <span className="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-neutral-900">{isPdf ? "PDF" : isVideo ? "Vidéo" : "Photo"}</span>
+        {isVideo && <PlayCircle aria-hidden className="absolute h-9 w-9 text-white drop-shadow-lg sm:h-10 sm:w-10" />}
+        <span className="absolute left-2 top-2 rounded-full bg-white/90 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-neutral-900 sm:text-[10px]">{isPdf ? "PDF" : isVideo ? "Vidéo" : "Photo"}</span>
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <h3 className="line-clamp-2 break-words font-display text-lg font-bold leading-snug">{doc.titre}</h3>
-        {doc.auteur && <p className="mt-1 text-sm font-medium text-muted-foreground">{doc.auteur}</p>}
-        {doc.description && <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{doc.description}</p>}
-        {doc.taille ? <p className="mt-3 text-xs text-muted-foreground">{formatSize(doc.taille)}</p> : null}
-        <div className="mt-auto flex gap-2 pt-4">
+      <div className="flex flex-1 flex-col p-3 sm:p-4">
+        <h3 className="line-clamp-2 break-words font-display text-sm font-bold leading-snug sm:text-base">{doc.titre}</h3>
+        {doc.auteur && <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">{doc.auteur}</p>}
+        {doc.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">{doc.description}</p>}
+        {doc.taille ? <p className="mt-1.5 truncate text-[11px] text-muted-foreground">{formatSize(doc.taille)}</p> : null}
+        <div className="mt-auto flex gap-1.5 pt-3">
           {isVideo ? (
             <button
               type="button"
               onClick={() => onPlay(doc)}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm"
               style={{ background: color }}
             >
               <PlayCircle className="h-4 w-4" />
@@ -209,7 +209,7 @@ function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPl
               href={fileUrl(doc)}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-110"
+              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm"
               style={{ background: color }}
             >
               <BookOpen className="h-4 w-4" />
@@ -220,7 +220,7 @@ function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPl
             url={fileUrl(doc, name)}
             ressource={`bibliotheque:${doc.id}`}
             label={`Télécharger ${doc.titre}`}
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted"
           >
             <Download className="h-4 w-4" />
           </BoutonTelechargement>
@@ -258,7 +258,7 @@ export function BibliothequeList() {
   const loading = themes.isPending || docs.isPending;
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-5">
       {/* Barre de recherche */}
       <div className="rounded-3xl border border-border bg-surface p-4 shadow-sm sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row">
@@ -348,15 +348,15 @@ export function BibliothequeList() {
       )}
 
       {groups.map((g) => (
-        <div key={g.theme.id} className="space-y-4">
-          <h2 className="flex items-center gap-3 font-display text-xl font-bold sm:text-2xl">
-            <span className="h-7 w-1.5 rounded-full" style={{ background: g.theme.couleur }} />
+        <div key={g.theme.id} className="space-y-3">
+          <h2 className="flex items-center gap-2.5 font-display text-lg font-bold sm:text-xl">
+            <span className="h-6 w-1.5 rounded-full" style={{ background: g.theme.couleur }} />
             {g.theme.nom}
             <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: `${g.theme.couleur}1f`, color: g.theme.couleur }}>
               {g.docs.length}
             </span>
           </h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 [&>*]:min-w-0">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 [&>*]:min-w-0">
             {g.docs.map((d) => (
               <DocCard key={d.id} doc={d} color={colorOf(d.theme_id)} onPlay={setVideo} onRead={setLien} />
             ))}

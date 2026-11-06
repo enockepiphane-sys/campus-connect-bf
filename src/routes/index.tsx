@@ -14,6 +14,8 @@ import { ALaUneDefilante } from "@/components/ALaUneDefilante";
 import { CompteMembreCarte } from "@/components/CompteMembreCarte";
 import { GuideBienvenue, relancerGuide } from "@/components/GuideBienvenue";
 import { AvatarMarche } from "@/components/AvatarMarche";
+import { AvisPlateformeSection, RappelAvis } from "@/components/AvisPlateforme";
+import { ClochePlateforme } from "@/components/ClochePlateforme";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -75,7 +77,10 @@ function Home() {
               <DrapeauBF className="h-5 w-8" />
             </div>
           </div>
-          <div data-guide="menu"><HamburgerMenu /></div>
+          <div className="flex items-center gap-2">
+            <ClochePlateforme />
+            <div data-guide="menu"><HamburgerMenu /></div>
+          </div>
         </div>
       </header>
       {/* Réserve la place de l'en-tête figé pour que le contenu ne passe pas dessous au départ */}
@@ -85,6 +90,7 @@ function Home() {
       <div className="kente-stripe mx-auto mt-2 h-1.5 w-full max-w-7xl rounded-full opacity-80" />
       <div className="mx-auto max-w-7xl"><BandeDefilante /></div>
       <GuideBienvenue />
+      <RappelAvis />
 
       {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">
@@ -155,6 +161,9 @@ function Home() {
 
         {/* Événements sociaux */}
         <EvenementsSociauxSection />
+
+        {/* Avis sur la plateforme */}
+        <AvisPlateformeSection />
 
         {/* Footer */}
         <div className="mt-16 flex flex-col items-center gap-3">

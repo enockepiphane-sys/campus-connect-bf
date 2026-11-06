@@ -41,7 +41,7 @@ export function NotificationsAdmin() {
     } catch { suite = " Push indisponible."; }
 
     setEnvoi(false);
-    setRetour({ ok: true, texte: `Notification envoyée dans la cloche des inscrits.${suite}` });
+    setRetour({ ok: true, texte: `Notification envoyée (cloche des inscrits).${suite}` });
     setTitre(""); setMessage(""); setLien("");
     void charger();
   };
@@ -56,7 +56,7 @@ export function NotificationsAdmin() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 font-display text-2xl font-bold"><BellRing className="icon-terracotta h-6 w-6" />Notifications</h2>
-        {abonnes !== null && <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">{abonnes} appareil(s) avec push activé</span>}
+        {abonnes !== null && <span className="rounded-full bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">{abonnes} appareil(s) abonné(s) (inscrits ou non)</span>}
       </div>
 
       <section className="card-glass space-y-3 rounded-2xl p-5">
@@ -65,7 +65,7 @@ export function NotificationsAdmin() {
         <textarea value={message} onChange={(e) => setMessage(e.target.value.slice(0, 500))} rows={3} placeholder="Message" className="w-full resize-y rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
         <input value={lien} onChange={(e) => setLien(e.target.value.slice(0, 300))} placeholder="Page à ouvrir au clic (facultatif, ex. /evenements)" className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" />
         {retour && <p role="status" className={`text-sm font-medium ${retour.ok ? "text-primary" : "text-destructive"}`}>{retour.texte}</p>}
-        <button type="button" onClick={envoyer} disabled={envoi} className="btn-bf-primary disabled:opacity-60"><Send className="h-4 w-4" />{envoi ? "Envoi…" : "Envoyer à tous les inscrits"}</button>
+        <button type="button" onClick={envoyer} disabled={envoi} className="btn-bf-primary disabled:opacity-60"><Send className="h-4 w-4" />{envoi ? "Envoi…" : "Envoyer à tous les abonnés"}</button>
       </section>
 
       <section>

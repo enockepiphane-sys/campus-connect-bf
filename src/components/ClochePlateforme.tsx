@@ -72,6 +72,9 @@ export function ClochePlateforme() {
         className="relative inline-flex h-11 w-11 items-center justify-center rounded-lg border border-border bg-surface text-primary shadow-sm transition hover:bg-primary-soft"
       >
         <Bell className="h-5 w-5" />
+        {isPushSupported() && !pushActif && nonLues.length === 0 && (
+          <span aria-hidden className="absolute -right-0.5 -top-0.5 h-3 w-3 animate-pulse rounded-full bg-[#F0C419] ring-2 ring-surface" />
+        )}
         {nonLues.length > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
             {nonLues.length > 9 ? "9+" : nonLues.length}

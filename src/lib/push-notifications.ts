@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Clé publique VAPID (peut être exposée côté client sans risque)
-const VAPID_PUBLIC_KEY = "BIgsT37uM5Jsy4EJdnFzlpn5hW-e_0lBcIdVQpzgmnwajwMbgQQJezDj8GEIP4J3Njtkb76jwGwBvNmdVdltInw";
+const VAPID_PUBLIC_KEY = "BLzp0wqV2p_VlGUebTpJi9nHmiPL1HO5DS-wG3L71avEZmaWu-gHNtsM55LMWLYViuyNWeeqGbMujOkbsxUw5z0";
 
 export type PushSetupResult =
   | { status: "ok" }
@@ -43,7 +43,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 
 /**
  * Demande la permission, crée un abonnement push natif (PushManager)
- * et l'enregistre dans `push_subscriptions`. Ne lève jamais d'exception :
+ * et l'enregistre dans `push_subscriptions` (visiteurs sans compte inclus). Ne lève jamais d'exception :
  * l'app continue de fonctionner sans notifications en cas d'échec.
  */
 export async function setupPushNotifications(): Promise<PushSetupResult> {
@@ -83,27 +83,10 @@ export async function setupPushNotifications(): Promise<PushSetupResult> {
       return { status: "error", reason: "Abonnement push incomplet" };
     }
 
-    const { data: userData, error: userErr } = await supabase.auth.getUser();
-    console.log("[push] userData:", userData, "userErr:", userErr);
-    const userId = userData.user?.id;
-    if (!userId) return { status: "error", reason: "Utilisateur non connecté" };
-
-    console.log("[push] URL Supabase utilisée:", (supabase as unknown as { supabaseUrl: string }).supabaseUrl);
-    console.log("[push] tentative upsert avec user_id:", userId, "endpoint:", endpoint);
-
-    const { error, data, status, statusText } = await supabase
-      .from("push_subscriptions")
-      .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "endpoint" })
-      .select();
-    console.log("[push] résultat upsert:", data, "erreur:", error, "status HTTP:", status, statusText);
+    // Fonctionne aussi pour un visiteur sans compte : l'abonnement est rattaché au compte seulement si la personne est connectée.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any).rpc("enregistrer_abonnement_push", { p_endpoint: endpoint, p_p256dh: p256dh, p_auth: auth });
     if (error) return { status: "error", reason: error.message };
-
-    // Vérification indépendante : relire la ligne juste après pour confirmer sa présence réelle
-    const { data: verif, error: verifErr } = await supabase
-      .from("push_subscriptions")
-      .select("id")
-      .eq("endpoint", endpoint);
-    console.log("[push] vérification post-écriture:", verif, "erreur vérif:", verifErr);
 
     return { status: "ok" };
   } catch (err) {
@@ -124,7 +107,8 @@ export async function disablePushNotifications(): Promise<PushSetupResult> {
     if (subscription) {
       const endpoint = subscription.endpoint;
       await subscription.unsubscribe();
-      await supabase.from("push_subscriptions").delete().eq("endpoint", endpoint);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any).rpc("supprimer_abonnement_push", { p_endpoint: endpoint });
     }
 
     return { status: "ok" };

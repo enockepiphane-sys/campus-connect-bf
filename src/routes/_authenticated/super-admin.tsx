@@ -4,6 +4,8 @@ import { CoursEnLigneAdmin } from "@/components/CoursEnLigneAdmin";
 import { GuideAdmin } from "@/components/GuideAdmin";
 import { MarcheAdmin } from "@/components/MarcheAdmin";
 import { VisiteursPanel } from "@/components/VisiteursPanel";
+import { AvisAdmin } from "@/components/AvisAdmin";
+import { NotificationsAdmin } from "@/components/NotificationsAdmin";
 import { createFileRoute } from "@tanstack/react-router";
 import { useHistoryTab } from "@/lib/useHistoryTab";
 import { useEffect, useState } from "react";
@@ -12,7 +14,7 @@ import { signOutAndGoHome } from "@/lib/auth";
 import { humanizeDbError } from "@/lib/auth-timeout";
 import { DrapeauBF } from "@/components/DrapeauBF";
 import { LoaderPleinEcran, LoaderInline } from "@/components/ChargementPremium";
-import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw, Library, BarChart3, MonitorPlay, Compass, ShoppingBag } from "lucide-react";
+import { LogOut, Building2, UserPlus, Mail, ShieldAlert, History, PartyPopper, Trash2, RotateCcw, Library, BarChart3, MonitorPlay, Compass, ShoppingBag, MessageSquareHeart, BellRing } from "lucide-react";
 
 const AFFICHES_SOCIALES_BUCKET = "affiches-evenements-sociaux";
 
@@ -72,7 +74,7 @@ type Demande = { id: string; nom_etablissement: string; nom_contact: string; ema
 type EvenementSocial = { id: string; titre: string; description: string | null; affiche_url: string | null; lien: string | null; date_evenement: string | null; actif: boolean; deleted_at?: string | null };
 
 function Dashboard() {
-  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "demandes", "evenements", "historique", "corbeille", "opportunites", "bibliotheque", "visiteurs", "cours", "guide", "marche"] as const, "etabs");
+  const [tab, setTab] = useHistoryTab(["etabs", "preadmins", "demandes", "evenements", "historique", "corbeille", "opportunites", "bibliotheque", "visiteurs", "cours", "guide", "marche", "avis", "notifications"] as const, "etabs");
   const [authorized, setAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -137,6 +139,8 @@ function Dashboard() {
             { k: "preadmins", l: "Pré-autorisations admin", i: <UserPlus className="icon-blue h-4 w-4" /> },
             { k: "demandes", l: "Demandes partenariat", i: <Mail className="icon-terracotta h-4 w-4" /> },
             { k: "evenements", l: "Événements sociaux", i: <PartyPopper className="icon-gold h-4 w-4" /> },
+            { k: "avis", l: "Notes & commentaires", i: <MessageSquareHeart className="icon-gold h-4 w-4" /> },
+            { k: "notifications", l: "Notifications", i: <BellRing className="icon-terracotta h-4 w-4" /> },
             { k: "corbeille", l: "Corbeille", i: <Trash2 className="text-destructive h-4 w-4" /> },
             { k: "historique", l: "Historique", i: <History className="icon-blue h-4 w-4" /> },
           ].map((t) => (
@@ -159,6 +163,8 @@ function Dashboard() {
         {tab === "preadmins" && <PreAdminsPanel />}
         {tab === "demandes" && <DemandesPanel />}
         {tab === "evenements" && <EvenementsSociauxPanel />}
+        {tab === "avis" && <AvisAdmin />}
+        {tab === "notifications" && <NotificationsAdmin />}
         {tab === "corbeille" && <CorbeilleSuperAdminPanel />}
         {tab === "historique" && <HistoriquePanel />}
       </main>

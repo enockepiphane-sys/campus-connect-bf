@@ -11,3 +11,8 @@ verify_jwt = false
 # verify_jwt = true (le JWT de l'appelant est requis et vérifié en plus du
 # contrôle de rôle fait dans le code de la fonction).
 verify_jwt = true
+
+[functions.send-push]
+# Envoi des notifications push. verify_jwt = true : seul un utilisateur connecté peut l'appeler,
+# et le code vérifie en plus qu'il est super administrateur.
+verify_jwt = true

@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Clé publique VAPID (peut être exposée côté client sans risque)
-const VAPID_PUBLIC_KEY = "BLzp0wqV2p_VlGUebTpJi9nHmiPL1HO5DS-wG3L71avEZmaWu-gHNtsM55LMWLYViuyNWeeqGbMujOkbsxUw5z0";
+const VAPID_PUBLIC_KEY = "BIgsT37uM5Jsy4EJdnFzlpn5hW-e_0lBcIdVQpzgmnwajwMbgQQJezDj8GEIP4J3Njtkb76jwGwBvNmdVdltInw";
 
 export type PushSetupResult =
   | { status: "ok" }

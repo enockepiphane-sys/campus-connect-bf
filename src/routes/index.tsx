@@ -16,6 +16,7 @@ import { GuideBienvenue, relancerGuide } from "@/components/GuideBienvenue";
 import { AvatarMarche } from "@/components/AvatarMarche";
 import { AvisPlateformeSection, RappelAvis } from "@/components/AvisPlateforme";
 import { ClochePlateforme } from "@/components/ClochePlateforme";
+import { InvitationNotifications } from "@/components/InvitationNotifications";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -91,6 +92,7 @@ function Home() {
       <div className="mx-auto max-w-7xl"><BandeDefilante /></div>
       <GuideBienvenue />
       <RappelAvis />
+      <InvitationNotifications />
 
       {/* Hero */}
       <main className="mx-auto max-w-6xl px-6 pb-24 pt-10 md:pt-16">

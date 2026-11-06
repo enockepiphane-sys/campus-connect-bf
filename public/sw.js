@@ -30,6 +30,8 @@ self.addEventListener("push", (event) => {
     data: { url: payload.url || "/" },
     tag: payload.type || "campuslink-notif",
     renotify: true,
+    vibrate: [200, 100, 200], // vibration (le son est celui des notifications du téléphone)
+    requireInteraction: false,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));

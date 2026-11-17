@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { ImageViewer } from "@/components/ImageViewer";
-import { PdfLecteur } from "@/components/PdfLecteur";
+import { LecteurPdf } from "@/components/PdfLecteur";
 import { VideoProtegee } from "@/components/VideoProtegee";
 import { analyserLien } from "@/lib/lecture-externe";
 import type { Doc } from "@/lib/bibliotheque";
@@ -19,6 +19,7 @@ export function LecteurLien({ doc, onClose }: { doc: Doc | null; onClose: () => 
   if (!a.ok) return null;
   const { lecture } = a;
   const estDrive = a.fournisseur === "Google Drive";
+  if (lecture.kind === "pdf") return <LecteurPdf src={lecture.src} titre={doc.titre} sousTitre={doc.auteur ?? "Bibliothèque CampusLink"} onClose={onClose} />;
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -48,7 +49,6 @@ export function LecteurLien({ doc, onClose }: { doc: Doc | null; onClose: () => 
             {estDrive && <div aria-hidden className="absolute right-0 top-0 h-14 w-16 bg-transparent" onContextMenu={(e) => e.preventDefault()} />}
           </div>
         )}
-        {lecture.kind === "pdf" && <PdfLecteur src={lecture.src} />}
         {lecture.kind === "video" && (
           <div className="overflow-hidden rounded-2xl bg-black">
             <VideoProtegee src={lecture.src} playsInline preload="metadata" referrerPolicy="no-referrer" className="max-h-[70vh] w-full" />

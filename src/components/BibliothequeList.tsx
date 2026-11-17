@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LecteurLien } from "@/components/LecteurLien";
-import { PdfLecteur } from "@/components/PdfLecteur";
+import { LecteurPdf } from "@/components/PdfLecteur";
 import { VideoProtegee } from "@/components/VideoProtegee";
 import { analyserLien, etiquetteLien } from "@/lib/lecture-externe";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
@@ -122,21 +122,17 @@ function ProposerLivre({ open, onClose }: { open: boolean; onClose: () => void }
 
 function LecteurVideo({ doc, onClose }: { doc: Doc | null; onClose: () => void }) {
   if (!doc) return null;
-  const estPdf = doc.fichier_type === "application/pdf";
+  if (doc.fichier_type === "application/pdf") return <LecteurPdf src={fileUrl(doc)} titre={doc.titre} sousTitre={doc.auteur ?? "Bibliothèque CampusLink"} onClose={onClose} />;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="break-words font-display text-xl">{doc.titre}</DialogTitle>
-          <DialogDescription>{doc.auteur ?? (estPdf ? "Bibliothèque CampusLink" : "Vidéo de la bibliothèque")}</DialogDescription>
+          <DialogDescription>{doc.auteur ?? "Vidéo de la bibliothèque"}</DialogDescription>
         </DialogHeader>
-        {estPdf ? (
-          <PdfLecteur src={fileUrl(doc)} />
-        ) : (
-          <div className="overflow-hidden rounded-2xl bg-black">
-            <VideoProtegee src={fileUrl(doc)} playsInline autoPlay className="max-h-[70vh] w-full" />
-          </div>
-        )}
+        <div className="overflow-hidden rounded-2xl bg-black">
+          <VideoProtegee src={fileUrl(doc)} playsInline autoPlay className="max-h-[70vh] w-full" />
+        </div>
         {doc.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{doc.description}</p>}
       </DialogContent>
     </Dialog>

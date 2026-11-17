@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
-import { PdfLecteur } from "@/components/PdfLecteur";
+import { LecteurPdf } from "@/components/PdfLecteur";
 import { VideoProtegee } from "@/components/VideoProtegee";
 import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, grouperCours, niveauxOf, formatSize, listCours, proposeCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
@@ -30,7 +30,7 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
   const url = coursFileUrl(cours);
   const isVideoFile = cours.fichier_type?.startsWith("video/");
   const isImage = cours.fichier_type?.startsWith("image/");
-  const isPdfFile = cours.fichier_type === "application/pdf";
+  if (url && cours.fichier_type === "application/pdf") return <LecteurPdf src={url} titre={cours.titre} sousTitre={`${filieresOf(cours).join(" + ")} · ${niveauxOf(cours).join(" + ")} · ${cours.module}`} onClose={onClose} />;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
@@ -40,9 +40,6 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
             {filieresOf(cours).join(" + ")} · {niveauxOf(cours).join(" + ")} · {cours.module}
           </DialogDescription>
         </DialogHeader>
-        {url && isPdfFile ? (
-          <PdfLecteur src={url} />
-        ) : (
         <div className="overflow-hidden rounded-2xl bg-black">
           {url && isVideoFile ? (
             <VideoProtegee src={url} playsInline className="max-h-[70vh] w-full" />
@@ -54,7 +51,6 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
             <iframe src={embed} title={cours.titre} allow="autoplay; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="aspect-video w-full" />
           ) : null}
         </div>
-        )}
         {cours.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{cours.description}</p>}
         {!url && cours.video_url && !embed && (
           <p className="text-sm text-muted-foreground">Ce lien ne peut pas être lu dans CampusLink (seuls YouTube et Vimeo sont pris en charge).</p>

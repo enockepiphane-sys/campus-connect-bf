@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertTriangle, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 
 /**
- * Lecteur PDF intégré à CampusLink (pdf.js). Les pages sont dessinées dans l'application :
- * il n'y a ni barre d'outils Chrome, ni bouton « Télécharger » ou « Imprimer ».
- * Le téléchargement reste possible uniquement via le bouton de parrainage des cartes.
+ * Lecteur PDF intégré à CampusLink (pdf.js), en plein écran.
+ * Les pages sont dessinées dans l'application : ni barre d'outils Chrome, ni bouton Télécharger/Imprimer.
+ * Les pages occupent toute la largeur de l'écran ; les boutons loupe agrandissent le texte.
  * pdf.js est chargé à la demande depuis cdnjs (aucune dépendance à ajouter au projet).
  */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 const VERSION = "3.11.174";
 const BASE = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${VERSION}`;
+const ZOOMS = [1, 1.5, 2, 3];
 let promesse: Promise<any> | null = null;
 
 function chargerPdfJs(): Promise<any> {
@@ -39,90 +40,113 @@ function chargerPdfJs(): Promise<any> {
   return promesse;
 }
 
-export function PdfLecteur({ src }: { src: string }) {
-  const zone = useRef<HTMLDivElement>(null);
+function PdfPages({ src, zoom }: { src: string; zoom: number }) {
+  const defil = useRef<HTMLDivElement>(null);
+  const pages = useRef<HTMLDivElement>(null);
+  const docRef = useRef<any>(null);
   const [etat, setEtat] = useState<"chargement" | "ok" | "erreur">("chargement");
   const [essai, setEssai] = useState(0);
 
+  // 1) Chargement du document
   useEffect(() => {
     let annule = false;
-    let doc: any = null;
-    let obs: IntersectionObserver | null = null;
     setEtat("chargement");
-
+    docRef.current = null;
     (async () => {
       try {
         const lib = await chargerPdfJs();
-        doc = await lib.getDocument({ url: src }).promise;
-        if (annule || !zone.current) return;
-        const conteneur = zone.current;
-        conteneur.replaceChildren();
-        const largeur = Math.max(240, Math.min(conteneur.clientWidth, window.innerWidth) - 16);
-        const p1 = await doc.getPage(1);
-        const base = p1.getViewport({ scale: 1 });
-
-        const dessiner = async (cadre: HTMLElement, n: number) => {
-          try {
-            const page = await doc.getPage(n);
-            const v0 = page.getViewport({ scale: 1 });
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-            const vp = page.getViewport({ scale: (largeur / v0.width) * dpr });
-            const canvas = document.createElement("canvas");
-            canvas.width = Math.floor(vp.width);
-            canvas.height = Math.floor(vp.height);
-            canvas.style.cssText = "display:block;width:100%;max-width:100%;height:auto";
-            await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
-            if (annule) return;
-            cadre.style.aspectRatio = "";
-            cadre.replaceChildren(canvas);
-          } catch {
-            /* page non dessinée : le cadre blanc reste en place */
-          }
-        };
-
-        const deja = new Set<number>();
-        obs = new IntersectionObserver(
-          (entrees) => {
-            for (const e of entrees) {
-              if (!e.isIntersecting) continue;
-              const cadre = e.target as HTMLElement;
-              const n = Number(cadre.dataset.page);
-              if (deja.has(n)) continue;
-              deja.add(n);
-              obs?.unobserve(cadre);
-              void dessiner(cadre, n);
-            }
-          },
-          { rootMargin: "900px 0px" },
-        );
-
-        for (let n = 1; n <= doc.numPages; n++) {
-          const cadre = document.createElement("div");
-          cadre.dataset.page = String(n);
-          cadre.className = "mb-2 w-full min-w-0 max-w-full overflow-hidden rounded bg-white shadow-sm";
-          cadre.style.aspectRatio = `${base.width} / ${base.height}`;
-          conteneur.appendChild(cadre);
-          obs.observe(cadre);
+        const doc = await lib.getDocument({ url: src }).promise;
+        if (annule) {
+          try { void doc.destroy?.(); } catch { /* ignoré */ }
+          return;
         }
+        docRef.current = doc;
         setEtat("ok");
       } catch {
         if (!annule) setEtat("erreur");
       }
     })();
+    return () => {
+      annule = true;
+      const d = docRef.current;
+      docRef.current = null;
+      try { void d?.destroy?.(); } catch { /* ignoré */ }
+    };
+  }, [src, essai]);
+
+  // 2) Dessin des pages (relancé quand le zoom change)
+  useEffect(() => {
+    const doc = docRef.current;
+    const zoneDefil = defil.current;
+    const conteneur = pages.current;
+    if (etat !== "ok" || !doc || !zoneDefil || !conteneur) return;
+    let annule = false;
+    let obs: IntersectionObserver | null = null;
+    const position = zoneDefil.scrollHeight > 0 ? zoneDefil.scrollTop / zoneDefil.scrollHeight : 0;
+    conteneur.replaceChildren();
+
+    (async () => {
+      const largeur = Math.max(200, conteneur.clientWidth);
+      const p1 = await doc.getPage(1);
+      if (annule) return;
+      const base = p1.getViewport({ scale: 1 });
+
+      const dessiner = async (cadre: HTMLElement, n: number) => {
+        try {
+          const page = await doc.getPage(n);
+          const v0 = page.getViewport({ scale: 1 });
+          const dpr = Math.min(window.devicePixelRatio || 1, zoom > 1 ? 1.5 : 2);
+          const vp = page.getViewport({ scale: (largeur / v0.width) * dpr });
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.floor(vp.width);
+          canvas.height = Math.floor(vp.height);
+          canvas.style.cssText = "display:block;width:100%;max-width:100%;height:auto";
+          await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
+          if (annule) return;
+          cadre.style.aspectRatio = "";
+          cadre.replaceChildren(canvas);
+        } catch {
+          /* page non dessinée : le cadre blanc reste en place */
+        }
+      };
+
+      const deja = new Set<number>();
+      obs = new IntersectionObserver(
+        (entrees) => {
+          for (const e of entrees) {
+            if (!e.isIntersecting) continue;
+            const cadre = e.target as HTMLElement;
+            const n = Number(cadre.dataset.page);
+            if (deja.has(n)) continue;
+            deja.add(n);
+            obs?.unobserve(cadre);
+            void dessiner(cadre, n);
+          }
+        },
+        { rootMargin: "900px 0px" },
+      );
+
+      for (let n = 1; n <= doc.numPages; n++) {
+        const cadre = document.createElement("div");
+        cadre.dataset.page = String(n);
+        cadre.className = "mb-1 w-full min-w-0 overflow-hidden bg-white";
+        cadre.style.aspectRatio = `${base.width} / ${base.height}`;
+        conteneur.appendChild(cadre);
+        obs.observe(cadre);
+      }
+      zoneDefil.scrollTop = position * zoneDefil.scrollHeight;
+    })().catch(() => {
+      if (!annule) setEtat("erreur");
+    });
 
     return () => {
       annule = true;
       obs?.disconnect();
-      try {
-        void doc?.destroy?.();
-      } catch {
-        /* document déjà fermé */
-      }
     };
-  }, [src, essai]);
+  }, [etat, zoom]);
 
   return (
-    <div className="relative w-full min-w-0 max-w-full overflow-hidden">
+    <div className="relative min-h-0 w-full min-w-0 flex-1">
       {etat === "chargement" && (
         <p role="status" className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -130,7 +154,7 @@ export function PdfLecteur({ src }: { src: string }) {
         </p>
       )}
       {etat === "erreur" && (
-        <div role="alert" className="space-y-3 py-10 text-center text-sm text-destructive">
+        <div role="alert" className="space-y-3 px-4 py-10 text-center text-sm text-destructive">
           <p className="flex items-center justify-center gap-2">
             <AlertTriangle className="h-4 w-4" />
             Le document n’a pas pu être affiché. Vérifie ta connexion puis réessaie.
@@ -141,24 +165,49 @@ export function PdfLecteur({ src }: { src: string }) {
         </div>
       )}
       <div
-        ref={zone}
+        ref={defil}
         onContextMenu={(e) => e.preventDefault()}
-        className="max-h-[70dvh] w-full min-w-0 max-w-full select-none overflow-y-auto overflow-x-hidden rounded-2xl bg-muted p-2 [-webkit-touch-callout:none]"
+        className={`h-full w-full select-none overflow-y-auto bg-muted [-webkit-touch-callout:none] ${zoom > 1 ? "overflow-x-auto" : "overflow-x-hidden"}`}
         style={{ display: etat === "erreur" ? "none" : undefined }}
-      />
+      >
+        <div ref={pages} style={{ width: `${zoom * 100}%` }} />
+      </div>
     </div>
   );
 }
 
+/** Fenêtre plein écran : le PDF remplit toute la largeur du téléphone, sans déborder. */
 export function LecteurPdf({ src, titre, sousTitre, onClose }: { src: string; titre: string; sousTitre?: string | null; onClose: () => void }) {
+  const [niveau, setNiveau] = useState(0);
+  const zoom = ZOOMS[niveau];
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="break-words font-display text-xl">{titre}</DialogTitle>
-          <DialogDescription>{sousTitre || "Lecture en ligne"}</DialogDescription>
-        </DialogHeader>
-        <PdfLecteur src={src} />
+      <DialogContent className="left-0 top-0 flex h-[100dvh] max-h-none w-[100dvw] max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none p-0 sm:max-w-none sm:rounded-none">
+        <div className="flex shrink-0 items-center gap-2 border-b border-border px-3 py-2 pr-12">
+          <div className="min-w-0 flex-1">
+            <DialogTitle className="truncate font-display text-base leading-tight">{titre}</DialogTitle>
+            <DialogDescription className="truncate text-xs">{sousTitre || "Lecture en ligne"}</DialogDescription>
+          </div>
+          <button
+            type="button"
+            aria-label="Réduire le texte"
+            disabled={niveau === 0}
+            onClick={() => setNiveau((n) => Math.max(0, n - 1))}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border disabled:opacity-40"
+          >
+            <ZoomOut className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            aria-label="Agrandir le texte"
+            disabled={niveau === ZOOMS.length - 1}
+            onClick={() => setNiveau((n) => Math.min(ZOOMS.length - 1, n + 1))}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border disabled:opacity-40"
+          >
+            <ZoomIn className="h-4 w-4" />
+          </button>
+        </div>
+        <PdfPages src={src} zoom={zoom} />
       </DialogContent>
     </Dialog>
   );

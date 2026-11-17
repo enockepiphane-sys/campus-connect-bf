@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
 import { ImageViewer } from "@/components/ImageViewer";
+import { PdfLecteur } from "@/components/PdfLecteur";
+import { VideoProtegee } from "@/components/VideoProtegee";
 import { analyserLien } from "@/lib/lecture-externe";
 import type { Doc } from "@/lib/bibliotheque";
 
@@ -16,6 +18,7 @@ export function LecteurLien({ doc, onClose }: { doc: Doc | null; onClose: () => 
   const a = analyserLien(doc.lien_url);
   if (!a.ok) return null;
   const { lecture } = a;
+  const estDrive = a.fournisseur === "Google Drive";
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -42,16 +45,13 @@ export function LecteurLien({ doc, onClose }: { doc: Doc | null; onClose: () => 
               sandbox="allow-scripts allow-same-origin allow-presentation allow-popups allow-popups-to-escape-sandbox"
               className="absolute inset-0 h-full w-full border-0"
             />
+            {estDrive && <div aria-hidden className="absolute right-0 top-0 h-14 w-16 bg-transparent" onContextMenu={(e) => e.preventDefault()} />}
           </div>
         )}
-        {lecture.kind === "pdf" && (
-          <div className="relative h-[70dvh] w-full overflow-hidden rounded-2xl bg-muted">
-            <iframe src={lecture.src} title={doc.titre} loading="lazy" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full border-0" />
-          </div>
-        )}
+        {lecture.kind === "pdf" && <PdfLecteur src={lecture.src} />}
         {lecture.kind === "video" && (
           <div className="overflow-hidden rounded-2xl bg-black">
-            <video src={lecture.src} controls playsInline preload="metadata" referrerPolicy="no-referrer" className="max-h-[70vh] w-full" />
+            <VideoProtegee src={lecture.src} playsInline preload="metadata" referrerPolicy="no-referrer" className="max-h-[70vh] w-full" />
           </div>
         )}
         {lecture.kind === "image" && <ImageViewer src={lecture.src} alt={doc.titre} />}
@@ -74,9 +74,9 @@ export function LecteurLien({ doc, onClose }: { doc: Doc | null; onClose: () => 
         {doc.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{doc.description}</p>}
 
         <div className="space-y-1 border-t border-border pt-3 text-xs text-muted-foreground">
-          <p>
+          {!estDrive && <p>
             Source : <a href={a.url} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-2">{a.fournisseur || a.hote}</a>. Ce contenu reste la propriété de son auteur et de la plateforme d’origine.
-          </p>
+          </p>}
           {lecture.kind !== "externe" && lecture.kind !== "image" && <p>Le contenu ne s’affiche pas ? Le site d’origine n’autorise peut-être pas la lecture ici : utilise le lien « Source » ci-dessus.</p>}
         </div>
       </DialogContent>

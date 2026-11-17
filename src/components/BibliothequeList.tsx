@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { LecteurLien } from "@/components/LecteurLien";
+import { PdfLecteur } from "@/components/PdfLecteur";
+import { VideoProtegee } from "@/components/VideoProtegee";
 import { analyserLien, etiquetteLien } from "@/lib/lecture-externe";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { extensionOf, fileUrl, formatSize, isVideoType, listDocuments, listThemes, proposeBook, type Doc } from "@/lib/bibliotheque";
@@ -120,16 +122,21 @@ function ProposerLivre({ open, onClose }: { open: boolean; onClose: () => void }
 
 function LecteurVideo({ doc, onClose }: { doc: Doc | null; onClose: () => void }) {
   if (!doc) return null;
+  const estPdf = doc.fichier_type === "application/pdf";
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="break-words font-display text-xl">{doc.titre}</DialogTitle>
-          <DialogDescription>{doc.auteur ?? "Vidéo de la bibliothèque"}</DialogDescription>
+          <DialogDescription>{doc.auteur ?? (estPdf ? "Bibliothèque CampusLink" : "Vidéo de la bibliothèque")}</DialogDescription>
         </DialogHeader>
-        <div className="overflow-hidden rounded-2xl bg-black">
-          <video src={fileUrl(doc)} controls playsInline autoPlay className="max-h-[70vh] w-full" />
-        </div>
+        {estPdf ? (
+          <PdfLecteur src={fileUrl(doc)} />
+        ) : (
+          <div className="overflow-hidden rounded-2xl bg-black">
+            <VideoProtegee src={fileUrl(doc)} playsInline autoPlay className="max-h-[70vh] w-full" />
+          </div>
+        )}
         {doc.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{doc.description}</p>}
       </DialogContent>
     </Dialog>
@@ -194,15 +201,15 @@ function DocCard({ doc, color, onPlay, onRead }: { doc: Doc; color: string; onPl
         {doc.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">{doc.description}</p>}
         {doc.taille ? <p className="mt-1.5 truncate text-[11px] text-muted-foreground">{formatSize(doc.taille)}</p> : null}
         <div className="mt-auto flex gap-1.5 pt-3">
-          {isVideo ? (
+          {isVideo || isPdf ? (
             <button
               type="button"
               onClick={() => onPlay(doc)}
               className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm"
               style={{ background: color }}
             >
-              <PlayCircle className="h-4 w-4" />
-              Regarder
+              {isVideo ? <PlayCircle className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
+              {isVideo ? "Regarder" : "Lire"}
             </button>
           ) : (
             <a

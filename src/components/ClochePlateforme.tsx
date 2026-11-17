@@ -57,7 +57,7 @@ export function ClochePlateforme() {
   const activerPush = async () => {
     const r = await setupPushNotifications();
     if (r.status === "ok") { setPushActif(true); setPushMsg("Notifications activées sur cet appareil."); }
-    else if (r.status === "denied") setPushMsg("Notifications bloquées : autorise-les dans les réglages du navigateur.");
+    else if (r.status === "denied") setPushMsg("Les notifications sont bloquées sur cet appareil. Pour les réactiver : touche le cadenas à côté de l’adresse du site, ouvre « Paramètres du site » puis « Notifications », et choisis « Autoriser ».");
     else if (r.status === "unsupported") setPushMsg("Ton navigateur ne gère pas les notifications push.");
     else setPushMsg("Activation impossible pour le moment.");
   };

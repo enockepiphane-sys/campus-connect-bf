@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { imageUrl } from "@/lib/images-contenu";
 import { parseYoutube, youtubeMiniature } from "@/lib/youtube";
 import { YouTubePlayer } from "@/components/YouTubePlayer";
+import { PdfLecteur } from "@/components/PdfLecteur";
+import { VideoProtegee } from "@/components/VideoProtegee";
 import { NIVEAUX, coursFileUrl, embedUrl, extensionOf, filieresOf, grouperCours, niveauxOf, formatSize, listCours, proposeCours, type Cours, type TypeContenu } from "@/lib/cours-en-ligne";
 
 const plain = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -28,6 +30,7 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
   const url = coursFileUrl(cours);
   const isVideoFile = cours.fichier_type?.startsWith("video/");
   const isImage = cours.fichier_type?.startsWith("image/");
+  const isPdfFile = cours.fichier_type === "application/pdf";
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[92dvh] max-w-4xl overflow-y-auto">
@@ -37,9 +40,12 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
             {filieresOf(cours).join(" + ")} · {niveauxOf(cours).join(" + ")} · {cours.module}
           </DialogDescription>
         </DialogHeader>
+        {url && isPdfFile ? (
+          <PdfLecteur src={url} />
+        ) : (
         <div className="overflow-hidden rounded-2xl bg-black">
           {url && isVideoFile ? (
-            <video src={url} controls playsInline className="max-h-[70vh] w-full" />
+            <VideoProtegee src={url} playsInline className="max-h-[70vh] w-full" />
           ) : url && isImage ? (
             <img src={url} alt={cours.titre} className="max-h-[70vh] w-full bg-white object-contain" />
           ) : youtube ? (
@@ -48,6 +54,7 @@ function Lecteur({ cours, onClose }: { cours: Cours | null; onClose: () => void 
             <iframe src={embed} title={cours.titre} allow="autoplay; fullscreen; picture-in-picture" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen className="aspect-video w-full" />
           ) : null}
         </div>
+        )}
         {cours.description && <p className="whitespace-pre-line text-sm text-muted-foreground">{cours.description}</p>}
         {!url && cours.video_url && !embed && (
           <p className="text-sm text-muted-foreground">Ce lien ne peut pas être lu dans CampusLink (seuls YouTube et Vimeo sont pris en charge).</p>
@@ -207,17 +214,10 @@ function CoursCard({ c, onOpen }: { c: Cours; onOpen: () => void }) {
         {c.description && <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:text-[13px]">{c.description}</p>}
         {c.taille ? <p className="mt-1.5 truncate text-[11px] text-muted-foreground">{formatSize(c.taille)}</p> : null}
         <div className="mt-auto flex gap-1.5 pt-3">
-          {isPdf ? (
-            <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm" style={{ background: COLOR }}>
-              <BookOpen className="h-4 w-4" />
-              Lire
-            </a>
-          ) : (
             <button type="button" onClick={onOpen} className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-semibold text-white transition hover:brightness-110 sm:text-sm" style={{ background: COLOR }}>
               {c.type_contenu === "video" ? <PlayCircle className="h-4 w-4" /> : <BookOpen className="h-4 w-4" />}
-              {c.type_contenu === "video" ? "Regarder" : "Voir"}
+              {c.type_contenu === "video" ? "Regarder" : isPdf ? "Lire" : "Voir"}
             </button>
-          )}
           {url && (
             <BoutonTelechargement url={coursFileUrl(c, `${c.titre}.${extensionOf(c.fichier_type ?? "")}`)} ressource={`cours:${c.id}`} label={`Télécharger ${c.titre}`} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-foreground/70 transition hover:bg-muted">
               <Download className="h-4 w-4" />

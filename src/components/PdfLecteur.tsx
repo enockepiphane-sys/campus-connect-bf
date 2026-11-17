@@ -57,7 +57,7 @@ export function PdfLecteur({ src }: { src: string }) {
         if (annule || !zone.current) return;
         const conteneur = zone.current;
         conteneur.replaceChildren();
-        const largeur = Math.max(260, conteneur.clientWidth - 16);
+        const largeur = Math.max(240, Math.min(conteneur.clientWidth, window.innerWidth) - 16);
         const p1 = await doc.getPage(1);
         const base = p1.getViewport({ scale: 1 });
 
@@ -70,7 +70,7 @@ export function PdfLecteur({ src }: { src: string }) {
             const canvas = document.createElement("canvas");
             canvas.width = Math.floor(vp.width);
             canvas.height = Math.floor(vp.height);
-            canvas.style.cssText = "display:block;width:100%;height:auto";
+            canvas.style.cssText = "display:block;width:100%;max-width:100%;height:auto";
             await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp }).promise;
             if (annule) return;
             cadre.style.aspectRatio = "";
@@ -99,7 +99,7 @@ export function PdfLecteur({ src }: { src: string }) {
         for (let n = 1; n <= doc.numPages; n++) {
           const cadre = document.createElement("div");
           cadre.dataset.page = String(n);
-          cadre.className = "mb-2 w-full overflow-hidden rounded bg-white shadow-sm";
+          cadre.className = "mb-2 w-full min-w-0 max-w-full overflow-hidden rounded bg-white shadow-sm";
           cadre.style.aspectRatio = `${base.width} / ${base.height}`;
           conteneur.appendChild(cadre);
           obs.observe(cadre);
@@ -122,7 +122,7 @@ export function PdfLecteur({ src }: { src: string }) {
   }, [src, essai]);
 
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0 max-w-full overflow-hidden">
       {etat === "chargement" && (
         <p role="status" className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -143,7 +143,7 @@ export function PdfLecteur({ src }: { src: string }) {
       <div
         ref={zone}
         onContextMenu={(e) => e.preventDefault()}
-        className="max-h-[70dvh] select-none overflow-y-auto rounded-2xl bg-muted p-2 [-webkit-touch-callout:none]"
+        className="max-h-[70dvh] w-full min-w-0 max-w-full select-none overflow-y-auto overflow-x-hidden rounded-2xl bg-muted p-2 [-webkit-touch-callout:none]"
         style={{ display: etat === "erreur" ? "none" : undefined }}
       />
     </div>

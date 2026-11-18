@@ -1,4 +1,9 @@
-export type Public = "etudiant" | "admin" | "tous";
+// Quatre « zones » d'aide, jamais mélangées :
+//  - "accueil"  : accueil et pages publiques → fonctionnalités PRIMAIRES (compte gratuit nom + téléphone)
+//  - "etudiant" : espace étudiant (étudiants pré-inscrits par un établissement partenaire)
+//  - "admin"    : espace administrateur / super-administrateur
+//  - "tous"     : espace étudiant ET espace administrateur (jamais l'accueil)
+export type Public = "accueil" | "etudiant" | "admin" | "tous";
 
 export type FaqItem = {
   id: string;
@@ -10,6 +15,557 @@ export type FaqItem = {
 };
 
 export const FAQ: FaqItem[] = [
+  // ============ ACCUEIL — fonctionnalités PRIMAIRES (compte gratuit nom + téléphone) ============
+  // Ces questions s'affichent uniquement sur l'accueil et les pages publiques. Elles ne parlent jamais
+  // de pré-inscription, d'établissement partenaire ou d'administration : voir les sections ÉTUDIANT et ADMIN.
+  {
+    id: "acc-presentation",
+    categorie: "Découvrir CampusLink",
+    publicCible: "accueil",
+    question: "Qu'est-ce que CampusLink et à quoi ça sert ?",
+    variantes: [
+      "C'est quoi CampusLink ?",
+      "À quoi sert l'application ?",
+      "Que puis-je faire sur CampusLink ?",
+      "Quelles sont les fonctionnalités de l'application ?",
+    ],
+    reponse:
+      "CampusLink est l'application des étudiants du Burkina Faso. Avec un simple compte gratuit, tu peux : lire ou télécharger des livres et supports de cours dans la Bibliothèque, suivre des cours en ligne (vidéo, PDF, manuscrits), réviser avec l'IA CampusLink (résumés, QCM, fiches, exercices), consulter des opportunités (stages, emplois, bourses, concours), acheter ou vendre sur le Marché étudiant, lire le Guide du nouveau bachelier, voir les événements sociaux et inviter tes amis grâce au Parrainage.",
+  },
+  {
+    id: "acc-univ-non-partenaire",
+    categorie: "Découvrir CampusLink",
+    publicCible: "accueil",
+    question: "Mon université n'est pas partenaire de CampusLink, puis-je utiliser l'application ?",
+    variantes: [
+      "Mon établissement n'est pas sur CampusLink",
+      "Mon école n'est pas partenaire, est-ce que je peux m'inscrire ?",
+      "Je ne suis dans aucune université partenaire",
+      "Est-ce que CampusLink est réservé à certaines universités ?",
+      "Dois-je être inscrit dans un établissement pour utiliser CampusLink ?",
+    ],
+    reponse:
+      "Oui. Les fonctionnalités de l'accueil (Bibliothèque, Cours en ligne, Révision IA, Opportunités, Marché étudiant, Guide du bachelier, Parrainage) sont ouvertes à tous, même si ton université n'est pas partenaire. Il suffit de créer un compte gratuit avec ton nom, ton numéro de téléphone et un mot de passe. Aucun établissement n'a besoin de t'inscrire.",
+  },
+  {
+    id: "acc-espace-etudiant",
+    categorie: "Découvrir CampusLink",
+    publicCible: "accueil",
+    question: "Où trouver mes notes, mon emploi du temps et les annonces de mon université ?",
+    variantes: [
+      "Où est l'espace étudiant ?",
+      "Je suis dans une université partenaire, où voir mes notes ?",
+      "Comment voir mon emploi du temps sur CampusLink ?",
+      "Comment accéder aux annonces de mon établissement ?",
+    ],
+    reponse:
+      "Les notes, l'emploi du temps et les annonces de l'établissement se trouvent dans l'Espace étudiant, réservé aux étudiants que leur établissement partenaire a pré-inscrits. Connecte-toi depuis la page de connexion de l'espace étudiant : une aide spécifique à cet espace s'y affiche. Si ton établissement n'est pas encore partenaire, cet espace n'est pas disponible pour toi, mais tu gardes accès à toutes les fonctionnalités de l'accueil avec ton compte gratuit.",
+  },
+  {
+    id: "acc-partenaire",
+    categorie: "Découvrir CampusLink",
+    publicCible: "accueil",
+    question: "Comment mon établissement peut-il devenir partenaire de CampusLink ?",
+    variantes: [
+      "Mon université veut rejoindre CampusLink",
+      "Comment inscrire mon école sur la plateforme ?",
+      "Je suis responsable d'un établissement, comment devenir partenaire ?",
+    ],
+    reponse:
+      "Ton établissement peut envoyer une demande avec la page « Devenir partenaire » de CampusLink. Tu peux aussi écrire au support sur WhatsApp au +226 57 47 67 24 pour être mis en relation.",
+  },
+
+  // ---- Compte ----
+  {
+    id: "acc-inscription",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "Comment créer mon compte CampusLink ?",
+    variantes: [
+      "Comment m'inscrire ?",
+      "Comment faire mon inscription ?",
+      "Je veux m'inscrire sur l'application",
+      "Quelles informations faut-il pour créer un compte ?",
+      "Comment ouvrir un compte ?",
+    ],
+    reponse:
+      "Touche « Créer mon compte » et remplis : un nom de profil (2 à 60 caractères), ton numéro de téléphone, un mot de passe et, si tu veux, un email de récupération. L'inscription est gratuite et prend environ 30 secondes. Une fois inscrit, tu es connecté directement et ton téléphone garde ta session.",
+  },
+  {
+    id: "acc-inscription-gratuite",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "L'inscription est-elle gratuite ?",
+    variantes: [
+      "Est-ce que CampusLink est payant ?",
+      "Dois-je payer pour avoir un compte ?",
+      "Combien coûte l'application ?",
+    ],
+    reponse:
+      "Oui, le compte est gratuit, et la lecture en ligne de la Bibliothèque et des cours est gratuite. Les téléchargements se débloquent grâce au Parrainage (en invitant des amis). Seules des options facultatives du Marché étudiant (annonce « à la une », « Vendeur Pro ») sont payantes.",
+  },
+  {
+    id: "acc-mot-de-passe-regles",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "Pourquoi mon mot de passe est refusé à l'inscription ?",
+    variantes: [
+      "Quelles sont les règles du mot de passe ?",
+      "Quel mot de passe choisir ?",
+      "Il manque une majuscule ou un chiffre dans mon mot de passe",
+      "Mot de passe invalide",
+    ],
+    reponse:
+      "Ton mot de passe doit contenir au moins 6 caractères, avec une lettre majuscule, une lettre minuscule et un chiffre (exemple : Awa2026). L'application te dit précisément ce qui manque.",
+  },
+  {
+    id: "acc-telephone",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "Quel numéro de téléphone saisir et comment l'écrire ?",
+    variantes: [
+      "Faut-il mettre l'indicatif 226 ?",
+      "Numéro de téléphone invalide",
+      "Mon numéro n'est pas accepté",
+      "Quel format de numéro utiliser ?",
+    ],
+    reponse:
+      "Saisis ton numéro burkinabè à 8 chiffres (par exemple 70 00 00 00) : l'indicatif +226 est ajouté automatiquement. Tu peux aussi écrire le numéro avec l'indicatif. Utilise toujours le même numéro pour te connecter ensuite.",
+  },
+  {
+    id: "acc-numero-deja-inscrit",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "Pourquoi l'application dit « Ce numéro est déjà inscrit » ?",
+    variantes: [
+      "Numéro déjà utilisé",
+      "J'ai déjà un compte avec ce numéro",
+      "Je n'arrive pas à créer mon compte",
+      "Mon inscription ne passe pas",
+      "Inscription impossible",
+    ],
+    reponse:
+      "Cela veut dire qu'un compte existe déjà avec ce numéro (peut-être créé par toi plus tôt). Au lieu de t'inscrire, utilise « Se connecter » avec ce numéro. Si tu as oublié ton mot de passe, utilise « Mot de passe oublié ». Si les inscriptions sont momentanément fermées ou si tu vois « Trop de tentatives », patiente quelques minutes puis réessaie.",
+  },
+  {
+    id: "acc-email-recuperation",
+    categorie: "Créer mon compte",
+    publicCible: "accueil",
+    question: "L'email de récupération est-il obligatoire ?",
+    variantes: [
+      "Faut-il une adresse email pour s'inscrire ?",
+      "Pourquoi donner mon email ?",
+      "Je n'ai pas d'adresse email",
+    ],
+    reponse:
+      "Non, il est facultatif. Mais il est très utile : si tu oublies ton mot de passe, le code de réinitialisation est envoyé à cet email de récupération. Sans email, contacte le support sur WhatsApp pour retrouver ton compte.",
+  },
+
+  // ---- Connexion ----
+  {
+    id: "acc-connexion",
+    categorie: "Connexion",
+    publicCible: "accueil",
+    question: "Comment me connecter à mon compte ?",
+    variantes: [
+      "Comment se connecter ?",
+      "Avec quoi je me connecte ?",
+      "Je veux accéder à mon compte",
+      "Connexion avec mon numéro de téléphone",
+    ],
+    reponse:
+      "Va sur « Se connecter » et entre le numéro de téléphone avec lequel tu t'es inscrit, puis ton mot de passe. La connexion se fait avec le numéro de téléphone, pas avec un email.",
+  },
+  {
+    id: "acc-connexion-refusee",
+    categorie: "Connexion",
+    publicCible: "accueil",
+    question: "Pourquoi je vois « Numéro ou mot de passe incorrect » ?",
+    variantes: [
+      "Je n'arrive pas à me connecter",
+      "Mon mot de passe ne marche pas",
+      "Connexion impossible",
+      "Impossible de joindre le serveur",
+      "La connexion échoue",
+    ],
+    reponse:
+      "Vérifie que tu saisis le même numéro que celui de l'inscription et un mot de passe exact (attention aux majuscules et minuscules). Si tu hésites, utilise « Mot de passe oublié ». Si le message parle de serveur injoignable, vérifie ta connexion internet puis réessaie.",
+  },
+  {
+    id: "acc-mdp-oublie",
+    categorie: "Connexion",
+    publicCible: "accueil",
+    question: "J'ai oublié mon mot de passe, comment le récupérer ?",
+    variantes: [
+      "Mot de passe oublié",
+      "Comment réinitialiser mon mot de passe ?",
+      "Je ne me souviens plus de mon mot de passe",
+      "Je n'ai pas reçu le code de réinitialisation",
+      "Code reçu par email pour changer le mot de passe",
+    ],
+    reponse:
+      "Sur la page de connexion, touche « Mot de passe oublié » et entre ton numéro. Un code est envoyé à ton email de récupération (celui donné à l'inscription). Saisis ce code puis choisis un nouveau mot de passe. Si tu n'as pas reçu le code, regarde dans les courriers indésirables. Si tu n'avais pas renseigné d'email de récupération, écris au support sur WhatsApp au +226 57 47 67 24.",
+  },
+  {
+    id: "acc-session-redemande",
+    categorie: "Connexion",
+    publicCible: "accueil",
+    question: "Pourquoi on me demande de m'inscrire ou de me connecter pour ouvrir une page ?",
+    variantes: [
+      "Pourquoi la bibliothèque me renvoie vers l'inscription ?",
+      "Pourquoi je dois créer un compte pour voir les cours ?",
+      "La page me redirige vers la connexion",
+      "Pourquoi je dois me reconnecter ?",
+    ],
+    reponse:
+      "La Bibliothèque, les Cours en ligne, la Révision IA, les Opportunités, le Marché, le Guide du bachelier et le Parrainage demandent un compte gratuit. Seuls les événements sociaux sont visibles sans compte. Une fois connecté, ta session reste enregistrée sur l'appareil. Si tu changes de téléphone, vides les données du navigateur ou te déconnectes, tu dois te reconnecter.",
+  },
+
+  // ---- Bibliothèque / téléchargements ----
+  {
+    id: "acc-bibliotheque",
+    categorie: "Bibliothèque",
+    publicCible: "accueil",
+    question: "Comment lire un livre ou un support de cours dans la Bibliothèque ?",
+    variantes: [
+      "Où trouver des livres sur CampusLink ?",
+      "Comment chercher un livre ?",
+      "Comment lire un PDF en ligne ?",
+      "Comment ouvrir un document de la bibliothèque ?",
+      "Comment regarder une vidéo de la bibliothèque ?",
+    ],
+    reponse:
+      "Ouvre la Bibliothèque, choisis un thème ou utilise la recherche, puis touche « Lire » (ou « Regarder » pour une vidéo). Les PDF s'ouvrent en plein écran dans l'application : utilise les boutons loupe pour agrandir le texte. La lecture en ligne est toujours gratuite.",
+  },
+  {
+    id: "acc-bibliotheque-proposer",
+    categorie: "Bibliothèque",
+    publicCible: "accueil",
+    question: "Comment proposer un livre à ajouter dans la Bibliothèque ?",
+    variantes: [
+      "Je cherche un livre qui n'est pas dans la bibliothèque",
+      "Comment suggérer un livre ?",
+      "Puis-je demander l'ajout d'un livre ou d'un cours ?",
+    ],
+    reponse:
+      "Dans la Bibliothèque, utilise l'option pour proposer un livre. Ta proposition est étudiée et le livre est ajouté s'il est retenu. Il y a une limite de propositions par jour : si l'application te dit d'avoir déjà envoyé plusieurs propositions, reviens le lendemain.",
+  },
+  {
+    id: "acc-telecharger",
+    categorie: "Téléchargements",
+    publicCible: "accueil",
+    question: "Comment télécharger un livre ou un cours ?",
+    variantes: [
+      "Où est le bouton télécharger ?",
+      "Je veux télécharger un document",
+      "Comment débloquer le téléchargement ?",
+      "Pourquoi je ne peux pas télécharger ?",
+      "Téléchargement bloqué",
+      "Pourquoi le téléchargement est verrouillé ?",
+    ],
+    reponse:
+      "La lecture en ligne est gratuite, mais le téléchargement se débloque grâce au Parrainage : invite des amis avec ton lien personnel. Avec 3 inscrits validés, tu débloques 1 téléchargement ; avec 5, +3 (4 au total) ; avec 10, +6 (10 au total) et le badge Ambassadeur ; avec 20, tu deviens Super Ambassadeur avec des téléchargements illimités. Ensuite, touche « Télécharger » sur la carte du document. Ton solde de téléchargements restants s'affiche sur la page Parrainage.",
+  },
+
+  // ---- Parrainage ----
+  {
+    id: "acc-parrainage",
+    categorie: "Parrainage",
+    publicCible: "accueil",
+    question: "Comment fonctionne le Parrainage ?",
+    variantes: [
+      "C'est quoi le parrainage ?",
+      "Comment inviter mes amis ?",
+      "Comment gagner des téléchargements ?",
+      "Qu'est-ce que le badge Ambassadeur ?",
+      "Super Ambassadeur",
+    ],
+    reponse:
+      "Chaque membre a un lien d'invitation personnel. Quand un ami s'inscrit avec ton lien, il devient ton filleul. Paliers : 3 filleuls validés = 1 téléchargement ; 5 = +3 (4 au total) ; 10 = +6 (10 au total) et badge Ambassadeur CampusLink ; 20 = Super Ambassadeur avec téléchargements illimités. Un classement des meilleurs parrains est aussi affiché.",
+  },
+  {
+    id: "acc-parrainage-lien",
+    categorie: "Parrainage",
+    publicCible: "accueil",
+    question: "Où trouver et comment partager mon lien de parrainage ?",
+    variantes: [
+      "Comment copier mon lien d'invitation ?",
+      "Où est mon code de parrainage ?",
+      "Comment partager mon lien sur WhatsApp ?",
+    ],
+    reponse:
+      "Ouvre la page Parrainage : ton code et ton lien personnel y sont affichés, avec des boutons pour copier le lien et le partager (par exemple sur WhatsApp). Ton ami doit s'inscrire en passant par ce lien pour être compté comme ton filleul.",
+  },
+  {
+    id: "acc-parrainage-non-compte",
+    categorie: "Parrainage",
+    publicCible: "accueil",
+    question: "Pourquoi mon ami inscrit n'est pas compté dans mes filleuls ?",
+    variantes: [
+      "Mon filleul est en attente",
+      "Le nombre de filleuls n'augmente pas",
+      "Filleul rejeté",
+      "Mon ami s'est inscrit mais je n'ai rien reçu",
+    ],
+    reponse:
+      "Un filleul est compté seulement s'il s'est inscrit avec ton lien et qu'il a ensuite utilisé l'application (validation après environ 24 h : il apparaît d'abord « en attente »). Les inscriptions qui ressemblent à de l'auto-parrainage, par exemple depuis un même appareil, sont rejetées. Vérifie la page Parrainage pour voir tes filleuls validés, en attente et rejetés.",
+  },
+
+  // ---- Cours en ligne ----
+  {
+    id: "acc-cours-en-ligne",
+    categorie: "Cours en ligne",
+    publicCible: "accueil",
+    question: "Comment suivre un cours en ligne ?",
+    variantes: [
+      "Où trouver des cours ?",
+      "Comment chercher un cours par filière ou niveau ?",
+      "Comment regarder une vidéo de cours ?",
+      "Comment lire un cours en PDF ?",
+      "Cours manuscrits",
+    ],
+    reponse:
+      "Ouvre « Cours en ligne » et filtre par filière, niveau et module. Un cours peut être en vidéo, en PDF ou manuscrit, et un même cours peut concerner plusieurs filières et niveaux. Touche « Regarder » ou « Lire » pour l'ouvrir ; les PDF s'affichent en plein écran avec des boutons loupe pour agrandir le texte.",
+  },
+  {
+    id: "acc-cours-video-bloquee",
+    categorie: "Cours en ligne",
+    publicCible: "accueil",
+    question: "La vidéo ou le PDF ne s'affiche pas ou charge sans fin, que faire ?",
+    variantes: [
+      "La vidéo ne se lance pas",
+      "Le document ne s'ouvre pas",
+      "Le PDF reste blanc",
+      "Chargement du document impossible",
+      "Le cours ne charge pas",
+    ],
+    reponse:
+      "Vérifie ta connexion internet (les vidéos et PDF demandent un réseau correct), puis touche « Réessayer » ou rouvre le document. Si c'est un PDF, ferme-le et rouvre-le. Si le problème continue sur plusieurs documents, écris au support sur WhatsApp en précisant le titre du cours et ce qui s'affiche.",
+  },
+
+  // ---- Révision IA ----
+  {
+    id: "acc-revision-ia",
+    categorie: "Révision IA",
+    publicCible: "accueil",
+    question: "Comment utiliser la Révision IA ?",
+    variantes: [
+      "À quoi sert la révision IA ?",
+      "Comment faire un résumé de mon cours ?",
+      "Comment générer un QCM ou des fiches de révision ?",
+      "IA CampusLink",
+      "Comment poser une question sur mon cours à l'IA ?",
+    ],
+    reponse:
+      "Dans « Révision & IA », importe ton cours en PDF ou en photo (JPG, PNG, 5 Mo maximum), choisis ce que tu veux (résumé, QCM, fiches de révision, exercices corrigés) ou pose une question sur le cours. Pour un cours manuscrit, prends une photo nette et bien éclairée, une page à la fois. N'envoie pas d'informations personnelles : le document est analysé par IA CampusLink.",
+  },
+  {
+    id: "acc-revision-ia-erreur",
+    categorie: "Révision IA",
+    publicCible: "accueil",
+    question: "Pourquoi la Révision IA affiche une erreur ou ne répond pas ?",
+    variantes: [
+      "IA CampusLink est indisponible",
+      "Mon fichier est trop lourd",
+      "La photo est trop lourde",
+      "L'IA ne lit pas mon cours",
+      "Erreur de l'intelligence artificielle",
+    ],
+    reponse:
+      "Si l'IA est indisponible, réessaie un peu plus tard. Si ton fichier est refusé, c'est qu'il est trop lourd (5 Mo maximum) : envoie moins de pages à la fois ou une photo moins lourde. Pour une photo, assure-toi qu'elle est nette et bien éclairée.",
+  },
+
+  // ---- Opportunités ----
+  {
+    id: "acc-opportunites",
+    categorie: "Opportunités",
+    publicCible: "accueil",
+    question: "Comment trouver des stages, des bourses ou des offres d'emploi ?",
+    variantes: [
+      "Où voir les opportunités ?",
+      "Comment trouver une bourse d'études ?",
+      "Comment postuler à un concours ?",
+      "Date limite d'une offre",
+      "Comment enregistrer une opportunité en favori ?",
+    ],
+    reponse:
+      "Ouvre « Opportunités » : tu y trouves des stages, emplois, bourses d'études, concours, formations et appels à candidatures, avec la date limite de chacun. Quand tu es connecté, tu peux enregistrer des offres en favoris pour les retrouver. Pour postuler, ouvre l'offre et suis les indications de l'annonceur.",
+  },
+  {
+    id: "acc-opportunites-publier",
+    categorie: "Opportunités",
+    publicCible: "accueil",
+    question: "Comment publier une opportunité ou une offre ?",
+    variantes: [
+      "Je veux publier une offre de stage",
+      "Comment ajouter une bourse ou un concours ?",
+      "Je suis une entreprise, comment diffuser mon offre ?",
+    ],
+    reponse:
+      "La publication des opportunités est réservée aux administrateurs autorisés de CampusLink. Pour proposer une offre, écris au support sur WhatsApp au +226 57 47 67 24 avec les détails (titre, description, date limite, contact).",
+  },
+
+  // ---- Marché étudiant ----
+  {
+    id: "acc-marche-publier",
+    categorie: "Marché étudiant",
+    publicCible: "accueil",
+    question: "Comment vendre ou publier une annonce sur le Marché étudiant ?",
+    variantes: [
+      "Comment publier une annonce ?",
+      "Comment vendre un livre ?",
+      "Comment proposer un service ou une colocation ?",
+      "Combien de photos puis-je ajouter ?",
+      "Comment fixer un prix ?",
+    ],
+    reponse:
+      "Ouvre le Marché étudiant et touche pour publier une annonce : titre, description, prix et jusqu'à 3 photos (5 Mo maximum chacune). Laisse le prix vide pour « à discuter » ou mets 0 pour « gratuit ». Publier est gratuit. Les acheteurs te contactent directement, et ton numéro n'est visible que par les personnes connectées à CampusLink.",
+  },
+  {
+    id: "acc-marche-limite",
+    categorie: "Marché étudiant",
+    publicCible: "accueil",
+    question: "Pourquoi je ne peux plus publier d'annonce (limite atteinte) ?",
+    variantes: [
+      "Limite d'annonces actives",
+      "Je ne peux pas ajouter une nouvelle annonce",
+      "Comment publier plus d'annonces ?",
+      "Qu'est-ce que Vendeur Pro ?",
+    ],
+    reponse:
+      "Le nombre d'annonces actives gratuites est limité. Pour en publier davantage, tu peux supprimer ou clôturer une ancienne annonce, ou devenir « Vendeur Pro » : badge Vendeur Pro et beaucoup plus d'annonces actives pendant 30 jours.",
+  },
+  {
+    id: "acc-marche-paiement-offre",
+    categorie: "Marché étudiant",
+    publicCible: "accueil",
+    question: "Comment payer pour mettre une annonce à la une ou devenir Vendeur Pro ?",
+    variantes: [
+      "Comment payer avec Orange Money ou Moov Money ?",
+      "Mettre mon annonce à la une",
+      "Où entrer la référence de la transaction ?",
+      "Mon paiement n'est pas encore validé",
+      "Combien de temps pour activer mon offre ?",
+    ],
+    reponse:
+      "Choisis l'offre (« À la une » pour 1 semaine ou 1 mois, ou « Vendeur Pro »), puis le moyen de paiement Orange Money ou Moov Money. Envoie le montant indiqué au numéro affiché, puis remplis le formulaire avec le numéro qui a payé et la référence reçue par SMS. Un administrateur vérifie ton paiement et active ton offre, généralement dans la journée. Si rien n'est activé après ce délai, écris au support sur WhatsApp avec ta référence.",
+  },
+  {
+    id: "acc-marche-securite",
+    categorie: "Marché étudiant",
+    publicCible: "accueil",
+    question: "Les paiements entre étudiants passent-ils par CampusLink ? Comment acheter en sécurité ?",
+    variantes: [
+      "Est-ce que CampusLink garantit les ventes ?",
+      "Comment éviter les arnaques sur le marché ?",
+      "Comment contacter un vendeur ?",
+      "Comment payer un vendeur ?",
+    ],
+    reponse:
+      "Non : aucun paiement entre étudiants ne passe par CampusLink, les acheteurs et vendeurs se contactent directement. Vérifie l'article avant de payer, privilégie un rendez-vous dans un lieu public sur ou près du campus, et évite d'envoyer de l'argent à l'avance à quelqu'un que tu ne connais pas.",
+  },
+
+  // ---- Autres ----
+  {
+    id: "acc-guide-bachelier",
+    categorie: "Guide du nouveau bachelier",
+    publicCible: "accueil",
+    question: "À quoi sert le Guide du nouveau bachelier ?",
+    variantes: [
+      "Comment créer mon compte Campus Faso ?",
+      "Comment faire mon orientation après le bac ?",
+      "Comment faire mes vœux d'inscription ?",
+      "Comment consulter mes résultats d'orientation ?",
+    ],
+    reponse:
+      "Le Guide du nouveau bachelier explique pas à pas Campus Faso : créer son compte, choisir ses vœux et son orientation, s'inscrire et suivre ses résultats. Ouvre-le depuis l'accueil de l'application.",
+  },
+  {
+    id: "acc-evenements",
+    categorie: "Événements sociaux",
+    publicCible: "accueil",
+    question: "Comment voir les événements (concerts, conférences, activités) ?",
+    variantes: [
+      "Où est l'agenda des événements ?",
+      "Faut-il un compte pour voir les événements ?",
+      "Comment partager un événement ?",
+      "Comment voir l'affiche en grand ?",
+    ],
+    reponse:
+      "Les événements sociaux sont visibles par tous, même sans compte. Ouvre la page Événements pour rechercher, filtrer (cette semaine, ce mois-ci), agrandir les affiches et partager un événement en un clic.",
+  },
+  {
+    id: "acc-notifications",
+    categorie: "Notifications",
+    publicCible: "accueil",
+    question: "Comment activer ou réactiver les notifications ?",
+    variantes: [
+      "Je ne reçois pas les notifications",
+      "J'ai appuyé sur se désabonner",
+      "J'ai bloqué les notifications par erreur",
+      "Comment recevoir les alertes de CampusLink ?",
+      "Notifications Chrome",
+    ],
+    reponse:
+      "Connecté, touche la cloche de notifications pour activer les alertes et accepte la demande d'autorisation du navigateur. Si tu as touché « Se désabonner » ou « Bloquer » sur une notification, Chrome bloque les alertes de CampusLink : touche le cadenas à côté de l'adresse du site, ouvre « Paramètres du site », puis « Notifications » et choisis « Autoriser ». Installer l'application sur ton écran d'accueil aide aussi à bien recevoir les alertes.",
+  },
+  {
+    id: "acc-installer",
+    categorie: "Application",
+    publicCible: "accueil",
+    question: "Comment installer CampusLink sur mon téléphone ?",
+    variantes: [
+      "Comment mettre l'application sur l'écran d'accueil ?",
+      "Comment avoir l'icône CampusLink ?",
+      "Comment installer sur iPhone ?",
+      "Comment installer sur Android ?",
+    ],
+    reponse:
+      "Sur Android avec Chrome, touche le bouton « Installer » qui s'affiche en haut, ou ouvre le menu ⋮ puis « Installer l'application » (ou « Ajouter à l'écran d'accueil »). Sur iPhone, ouvre CampusLink dans Safari, touche le bouton Partager puis « Sur l'écran d'accueil ». L'application s'ouvre ensuite en un clic, comme une application classique.",
+  },
+  {
+    id: "acc-avis",
+    categorie: "Application",
+    publicCible: "accueil",
+    question: "Comment donner mon avis ou noter CampusLink ?",
+    variantes: [
+      "Comment laisser une note sur l'application ?",
+      "Je veux faire une suggestion",
+      "Comment évaluer la plateforme ?",
+    ],
+    reponse:
+      "Connecte-toi avec ton compte gratuit, puis utilise la section d'avis de la plateforme : tu peux donner une note en quelques secondes et expliquer pourquoi. Ton avis aide à améliorer CampusLink.",
+  },
+  {
+    id: "acc-technique-general",
+    categorie: "Problèmes techniques",
+    publicCible: "accueil",
+    question: "L'application ne fonctionne pas bien (page blanche, chargement bloqué, erreur)",
+    variantes: [
+      "L'application plante",
+      "La page est blanche",
+      "Le chargement ne s'arrête pas",
+      "Une erreur s'affiche",
+      "Rien ne s'affiche",
+    ],
+    reponse:
+      "Rafraîchis la page et vérifie ta connexion internet. Si tu viens d'installer l'application, ferme-la complètement puis rouvre-la. Si le problème continue, écris au support sur WhatsApp au +226 57 47 67 24 en précisant ce que tu faisais, ce qui s'est affiché et, si possible, une capture d'écran.",
+  },
+  {
+    id: "acc-contact-support",
+    categorie: "Contacter le support",
+    publicCible: "accueil",
+    question: "Comment contacter le support CampusLink ?",
+    variantes: [
+      "Comment joindre l'équipe CampusLink ?",
+      "Numéro WhatsApp du support",
+      "Comment signaler un problème ?",
+      "Comment envoyer une capture d'écran au support ?",
+    ],
+    reponse:
+      "Écris-nous sur WhatsApp au +226 57 47 67 24. Pour que nous t'aidions vite, indique ton numéro de profil, la page où tu étais, ce que tu essayais de faire, ce qui s'est passé (message d'erreur si possible) et une capture d'écran si tu en as une.",
+  },
+
   // ============ ÉTUDIANT — Inscription ============
   {
     id: "etu-inscription-non-preinscrit",
@@ -647,4 +1203,23 @@ export function trouverMeilleuresReponses(items: FaqItem[], question: string, li
     .sort((a, b) => b.score - a.score)
     .slice(0, limite)
     .map((s) => s.item);
+}
+
+/** Zone d'aide selon la page ouverte. Chaque zone a sa propre banque de questions. */
+export function contexteAide(pathname: string): Exclude<Public, "tous"> {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/super-admin")) return "admin";
+  if (
+    pathname.startsWith("/etudiant") ||
+    pathname.startsWith("/confirmer-compte") ||
+    pathname.startsWith("/reset-password") ||
+    pathname.startsWith("/reinitialiser-mot-de-passe")
+  ) {
+    return "etudiant";
+  }
+  return "accueil";
+}
+
+/** Questions visibles dans une zone : les siennes, plus celles marquées « tous » (étudiant et admin seulement). */
+export function faqPourContexte(contexte: Exclude<Public, "tous">): FaqItem[] {
+  return FAQ.filter((f) => f.publicCible === contexte || (f.publicCible === "tous" && contexte !== "accueil"));
 }

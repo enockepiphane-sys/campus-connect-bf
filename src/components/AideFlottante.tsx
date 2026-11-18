@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 import { Headset, X, MessageCircle, SendHorizontal } from "lucide-react";
-import { FAQ, trouverMeilleuresReponses, type Public } from "@/lib/faq";
+import { contexteAide, faqPourContexte, trouverMeilleuresReponses } from "@/lib/faq";
 
 type Message =
   | { role: "user"; texte: string }
@@ -79,15 +79,13 @@ export function AideFlottante() {
   }
 
   // Le contenu dépend de la zone de l'app, jamais d'un choix libre de l'utilisateur :
-  // les questions "administrateur" (gestion étudiants, import Excel, configuration...)
-  // ne doivent apparaître que dans les pages admin/super-admin — jamais sur l'accueil
-  // public ni côté étudiant, pour ne pas exposer publiquement comment l'établissement
-  // est géré en interne.
-  const contexte: Public = location.pathname.startsWith("/admin") || location.pathname.startsWith("/super-admin")
-    ? "admin"
-    : "etudiant";
-
-  const banqueFaq = FAQ.filter((f) => f.publicCible === contexte || f.publicCible === "tous");
+  //  - accueil et pages publiques : aide des fonctionnalités primaires (compte gratuit)
+  //  - /etudiant... : aide de l'espace étudiant (étudiants pré-inscrits par un établissement)
+  //  - /admin... et /super-admin... : aide de l'administration
+  // Ainsi un visiteur ne voit jamais de réponses sur la pré-inscription ou l'administration,
+  // et l'administration n'est jamais exposée publiquement.
+  const contexte = contexteAide(location.pathname);
+  const banqueFaq = faqPourContexte(contexte);
 
   // La réponse n'apparaît qu'une fois la question envoyée (comme un vrai
   // échange de chat) — jamais pendant la frappe. Les questions pré-écrites
@@ -141,7 +139,7 @@ export function AideFlottante() {
                 <span className="grid h-9 w-9 place-items-center rounded-full bg-primary-soft text-primary"><Headset className="h-5 w-5" /></span>
                 <div>
                   <h2 className="font-bold leading-tight">Aide & Support</h2>
-                  <p className="text-xs text-muted-foreground">{contexte === "admin" ? "Espace administrateur" : "Espace étudiant"}</p>
+                  <p className="text-xs text-muted-foreground">{contexte === "admin" ? "Espace administrateur" : contexte === "etudiant" ? "Espace étudiant" : "Accueil CampusLink"}</p>
                 </div>
               </div>
               <button onClick={fermer} aria-label="Fermer" className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted">
@@ -154,7 +152,9 @@ export function AideFlottante() {
                 <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-sm text-muted-foreground">
                   <Headset className="h-8 w-8 text-primary/50" />
                   <p>Pose ta question ci-dessous, en tes propres mots.</p>
-                  <p className="text-xs">Exemple : « pourquoi je ne vois pas mes notes ? »</p>
+                  <p className="text-xs">
+                    Exemple : {contexte === "admin" ? "« comment importer des étudiants avec Excel ? »" : contexte === "etudiant" ? "« pourquoi je ne vois pas mes notes ? »" : "« comment télécharger un livre ? »"}
+                  </p>
                 </div>
               )}
 
